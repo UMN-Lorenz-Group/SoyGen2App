@@ -1,13 +1,40 @@
 ##### SoygenGS App Functions
 
+   if(!require("dplyr", quietly = TRUE)){
+    install.packages("dplyr")
+ }
+  library(dplyr) 
+
+ if(!require("rrBLUP", quietly = TRUE)){
+     install.packages("rrBLUP")
+ }
   library(rrBLUP)
+
+if(!require("vcfR", quietly = TRUE)){
+    install.packages("vcfR")
+ }
   library(vcfR)
-  library(dplyr)  
+
+ 
+if(!require("NAM", quietly = TRUE)){
+     install.packages("NAM")
+ }
   library(NAM)
-  library(bWGR)
+
+if(!require("bWGR", quietly = TRUE)){
+     install.packages("bWGR")
+ }
+ library(bWGR)
+
+ if(!require("STPGA", quietly = TRUE)){
+     install.packages("STPGA")
+ }
   library(STPGA)
+if(!require("BGLR", quietly = TRUE)){
+     install.packages("BGLR")
+ }
   library(BGLR)
-  library(sommer)
+
  
  
   if (!require("BiocManager", quietly = TRUE))
@@ -24,6 +51,13 @@
      install.packages("devtools")
    }
    library(devtools)
+   
+   
+   if(!require("sommer", quietly = TRUE)){
+     library(devtools); install_github('covaruber/sommer')
+   }
+  library(sommer)
+   
    
     if(!require("rTASSEL", quietly = TRUE)){
 	 devtools::install_bitbucket(
