@@ -69,25 +69,18 @@ if(!require("BGLR", quietly = TRUE)){
 	 ) 
   } 
   
+dyn.load('/usr/lib/jvm/java-17-openjdk-amd64/lib/server/libjvm.so')
+library(rJava)
+if(!require("rTASSEL", quietly = TRUE)){
+      devtools::install_bitbucket(
+		repo = "bucklerlab/rTASSEL",
+	 	ref = "master",
+	 	build_vignettes = FALSE
+      ) 
+    } 
+  library(rTASSEL)
+   
   
- options(repos = BiocManager::repositories())
- library(rTASSEL)
-  
-  
-  
-  # if(!require("rTASSEL", quietly = TRUE)){
-	 # devtools::install_bitbucket_server(
-		# repo = "bucklerLab/rTASSEL",
-		# Sys.getenv("BITBUCKET_HOST"),
-		# host = "bitbucket.org",
-		# ref = "master",
-		# build_vignettes = FALSE,
-		# INSTALL_opts = "--no-multiarch"
-		
-	 # ) 
-  # }
-  
-
   
 ###########################################################################################  
   
