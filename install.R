@@ -3,6 +3,7 @@ install.packages("dplyr",dependencies=TRUE)
 install.packages("rrBLUP")
 install.packages("vcfR")
 
+install.packages("shiny")
 install.packages("NAM")
 install.packages("bWGR")
 install.packages("STPGA")
