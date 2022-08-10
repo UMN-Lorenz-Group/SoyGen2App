@@ -37,12 +37,12 @@ if(!require("BGLR", quietly = TRUE)){
 
  
  
-  if (!require("BiocManager", quietly = TRUE))
-  install.packages("BiocManager")
-  BiocManager::install(version = "3.14")
+  #if (!require("BiocManager", quietly = TRUE))
+ # install.packages("BiocManager")
+ # BiocManager::install(version = "3.14")
  
-  options(repos = BiocManager::repositories())
-  library(BiocManager)
+ # options(repos = BiocManager::repositories())
+  #suppressPackageStartupMessages(library(BiocManager))
    
  
   options(rsconnect.http.trace = TRUE)
@@ -56,7 +56,7 @@ if(!require("BGLR", quietly = TRUE)){
    if(!require("sommer", quietly = TRUE)){
      library(devtools); install_github('covaruber/sommer')
    }
-  library(sommer)
+  suppressPackageStartupMessages(library(sommer))
    
    
     if(!require("rTASSEL", quietly = TRUE)){
@@ -70,8 +70,21 @@ if(!require("BGLR", quietly = TRUE)){
   } 
   
   
- options(repos = BiocManager::repositories())
+ #options(repos = BiocManager::repositories())
  library(rTASSEL)
+  
+if(!require("qtl", quietly = TRUE)){
+    install.packages("qtl")
+    library(qtl)
+ }
+ if(!require("PopVar", quietly = TRUE)){
+  install.packages("PopVar")
+  library(PopVar)
+ }
+ if(!require("tibble", quietly = TRUE)){
+  install.packages("tibble")
+  library(tibble)
+ }
   
   
   
@@ -775,23 +788,35 @@ getImputedData <- function(FiltGeno,l,k,impMethod){
   return(tasGenoImp)
 } 
 
-getGenoTas_to_DF <- function(tasGeno,gt2d_Geno){
+
+
+getGenoTas_to_DF <- function(tasGeno){
 
     tasSumExp <- rTASSEL::getSumExpFromGenotypeTable(
     tasObj = tasGeno)
 	
 	tasGenoDF <- (SummarizedExperiment::assays(tasSumExp)[[1]])
 	colnames(tasGenoDF) <- SummarizedExperiment::colData(tasSumExp)[,"Sample"]
-    rownames(tasGenoDF) <- SummarizedExperiment::rowData(tasSumExp)[,"tasselIndex"] 
-	#if(nrow(gt2d_Geno)==nrow(tasGenoDF)){
 	
-	commonIndices <- as.numeric(as.character(rownames(tasGenoDF)))+1
-	gt2d_tasGeno <-as_tibble(cbind.data.frame(gt2d_Geno[commonIndices,c(1:5)],tasGenoDF))
+   	
+    ### Extract Table Report DF 
+	
+	tableReport <- rJava::new(
+    rJava::J("net.maizegenetics.dna.map.PositionListTableReport"),
+    tasGeno %>% rTASSEL:::getPositionList()) %>% 
+    rTASSEL:::tableReportToDF() %>% as.data.frame()
+      	
+	varSplit <- strsplit(tableReport[,"VARIANT"],"/")
+	varSplitTab <- cbind.data.frame(unlist(lapply(varSplit,function(x) x[1])),unlist(lapply(varSplit,function(x) x[2])))
+
+    vcfIDTab <- cbind.data.frame(tableReport[,c("Name","Chromosome","Position")],varSplitTab)
+	colnames(vcfIDTab) <- c("SNPID","Chrom","Position","REF","ALT")
+		
+	gt2d_tasGeno <-as_tibble(cbind.data.frame(vcfIDTab,tasGenoDF))
 	
 	return(gt2d_tasGeno)
   
 }
-
 
 
 getPredictionData <- function(Data_Table_Num_List,noCandidates){
@@ -1317,8 +1342,12 @@ getPredictionData <- function(Data_Table_Num_List,noCandidates){
 	# }
 	# if(length(testNAIndices)==0){ }
 	trainGeno_Imp2 <- apply(trainGeno_Imp,2,function(x) x+1)  
-	
-    cleanData <- cleanREP(trainPheno,trainGeno_Imp2)
+	#print(anyNA(trainGeno_Imp2))
+	#print(anyNA(trainPheno))
+	#write.table(trainPheno,"trainPhenoCRep.csv")
+	#write.table(trainGeno_Imp2,"trainGenoTab.txt",sep="\t",quote=FALSE,row.names=FALSE)
+   	
+	cleanData <- cleanREPV2(trainPheno,trainGeno_Imp)
     M <-  cleanData[[2]]
     M.Pdt <- t(M)%*% solve(M %*% t(M) + diag(nrow(M))) %*% M
       
@@ -1477,7 +1506,8 @@ getRankedPredictedValuesMT <- function(Data_Table_Num_Filt_List,nTraits,trait,GP
 ### Upper bound of Reliability
 
     trainGeno_Imp2 <- apply(trainGeno_Imp,2,function(x) x+1)  
-    cleanData <- cleanREP(trainPheno,trainGeno_Imp2)
+   
+    cleanData <- cleanREP(trainPheno,trainGeno_Imp)
     M <-  cleanData[[2]]
     M.Pdt <- t(M)%*% solve(M %*% t(M) + diag(nrow(M))) %*% M
       

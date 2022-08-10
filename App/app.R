@@ -12,6 +12,7 @@ PN <-  paste(getwd(),"/GSPipeline.png",sep="")
 options(shiny.maxRequestSize=500*1024^2)
 
 ui <- fluidPage( 
+  #theme = bslib::bs_theme(bootswatch = "solar"),
   
   fluidRow(
     column(4),
@@ -149,13 +150,13 @@ ui <- fluidPage(
                sidebarPanel(
                 tags$strong(tags$h4("Impute Genotype Table ")),
                 tags$br(),
-                selectInput(inputId="impute","Select Imputation Method",choices=c("LDKNNI","Numeric"),multiple=FALSE,selected="LDKNNI"),
+                selectInput(inputId="imputeMet","Select Imputation Method",choices=c("LDKNNI","Numeric"),multiple=FALSE,selected="LDKNNI"),
                 tags$br(),
-                conditionalPanel(condition="input.impute == LDKNNI",
-                                 numericInput(inputId="l","Number of High LD Sites",value = 30,min =30,max=1000),
-                                 
-                                 numericInput(inputId="k","Neighboring Samples",value =10,min =10, max=100),
-                ),
+                numericInput(inputId="l","Number of High LD Sites",value = 30,min =30,max=1000),
+                numericInput(inputId="k","Neighboring Samples",value =10,min =10, max=100),
+                
+                #conditionalPanel(condition="input.imputeMet == LDKNNI",
+                #),
                 actionButton(inputId="Impute","Impute Genotype Scores"),
                 tags$br()
               ),
@@ -419,6 +420,9 @@ server <- function(input,output){
      gt2d
   })
   
+  
+  #markerSet <- reactive(Geno()[,"SNPID"])
+  
   #Pheno
   Pheno <- reactive({
     
@@ -546,19 +550,25 @@ server <- function(input,output){
  
   GenoFilt2 <- eventReactive(input$FilterTaxa,{
     
-    if(setTasGenoFilt1()==FALSE){        
+    if(setTasGenoFilt1()== FALSE){        
       withProgress(message = 'Filtering Taxa', value = 0, {getFilteredTaxaGenoData(GenoTas(),minNotMissing()) })
-    }
-    if(setTasGenoFilt1()==TRUE){
+    }else if(setTasGenoFilt1()== TRUE){
       withProgress(message = 'Filtering Taxa', value = 0, {getFilteredTaxaGenoData(GenoFilt1(),minNotMissing())})
     }
   })
   
-  Geno_DF <- reactive(getGenoTas_to_DF(GenoTas(),Geno()))
-  GenoFilt1_DF <- reactive(getGenoTas_to_DF(GenoFilt1(),Geno()))
-  GenoFilt2_DF <- reactive(getGenoTas_to_DF(GenoFilt2(),Geno()))
-  setTasGenoFilt2 <- reactive(input$setGenoFilt2Tas)
- 
+   setTasGenoFilt2 <- reactive(input$setGenoFilt2Tas)
+
+## Tas to DF
+   # Geno_DF <- reactive(getGenoTas_to_DF(GenoTas(),Geno()))
+   # GenoFilt1_DF <- reactive(getGenoTas_to_DF(GenoFilt1(),Geno()))
+   # GenoFilt2_DF <- reactive(getGenoTas_to_DF(GenoFilt2(),Geno()))
+   # 
+   Geno_DF <- reactive(getGenoTas_to_DF(GenoTas()))
+   GenoFilt1_DF <- reactive(getGenoTas_to_DF(GenoFilt1()))
+   GenoFilt2_DF <- reactive(getGenoTas_to_DF(GenoFilt2()))
+   
+    
 ####  
   genoFiltHead <- eventReactive(input$FilterSites,{ paste("Filter Sites: Genotype Table with ",ncol(GenoFilt1_DF())-5," lines and ",nrow((GenoFilt1_DF()))," markers",sep="")})
   output$GenoFiltHeader <- renderText({genoFiltHead()})
@@ -571,30 +581,23 @@ server <- function(input,output){
   
 #####
 
-   
 ### Imputation
-   
-   impMethod <- reactive(input$impute)
-   
-   
-    FiltGeno <- reactive({ 
-      if( setTasGenoFilt1() ==FALSE  && setTasGenoFilt2() ==FALSE){        
+#
+  FiltGeno <- reactive({ 
+      if(setTasGenoFilt1()== FALSE  & setTasGenoFilt2()== FALSE){        
         GenoTas()
-      }
-      
-      if(setTasGenoFilt1() ==TRUE  && setTasGenoFilt2() ==FALSE){        
+      }else if(setTasGenoFilt1()== TRUE  & setTasGenoFilt2()== FALSE){        
         GenoFilt1()
-      }
-      if(setTasGenoFilt2() ==TRUE){
+      }else if(setTasGenoFilt2()== TRUE){
         GenoFilt2()
       }
       
-     })
+  })
    
    l<- reactive(input$l)
    k <- reactive(input$k)
    
-   
+   impMethod <- reactive(input$imputeMet)
    
    GenoImp <-  eventReactive(input$Impute,{
      
@@ -602,21 +605,28 @@ server <- function(input,output){
      
       if(impMethod()=="Numeric"){ 
          
-         l <- reactive(NULL)
-         k<- reactive(NULL)
-         getImputedData(FiltGeno(),l(),k(),impMethod())
+        getImputedData(FiltGeno(),l(),k(),impMethod())
          
-      }
-      if(impMethod()=="LDKNNI"){ 
+      }else if(impMethod()=="LDKNNI"){ 
          getImputedData(FiltGeno(),l(),k(),impMethod())
        
       }
      })
-   })
+   },ignoreNULL = TRUE)
    
-   GenoImp_DF <- reactive(getGenoTas_to_DF(GenoImp(),Geno()))
+  # error in evaluating the argument 'x' in selecting a method for function 'ncol': `tasObj` must be of class `TasselGenotypePhenotype`
    
-   genoImpHead <- eventReactive(input$Impute,{ paste("Genotype Table with ",ncol(GenoImp_DF())-5," lines and ",nrow((GenoImp_DF()))," markers",sep="")})
+   #GenoImp_DF <- reactive(getGenoTas_to_DF(GenoImp(),Geno()))
+   GenoImp_DF <- reactive(getGenoTas_to_DF(GenoImp()))
+ 
+   ### if you use only reactive, this will throw an error ncol(GenoImp_DF())-5
+   genoImpHead <- eventReactive(input$Impute,{paste("Genotype Table with ",ncol(GenoImp_DF())-5," lines and ",nrow((GenoImp_DF()))," markers",sep="")})
+   
+   
+   # genoImpHead <- reactive(paste("Genotype Table with ",ncol(GenoImp_DF())-5," lines and ",nrow((GenoImp_DF()))," markers",sep=""))
+   #GenoImp_DF <- eventReactive(input$Impute,{getGenoTas_to_DF(GenoImp(),Geno())})
+   #
+   
    output$GenoImpHeader <- renderText({genoImpHead()})
    output$ImputedGenoTable <- renderTable({as.data.frame((GenoImp_DF())[1:5,1:10])})
    
@@ -631,17 +641,13 @@ server <- function(input,output){
    
    GenoPre <- reactive({
      
-     if( setTasGenoFilt1() ==FALSE  && setTasGenoFilt2() ==FALSE && setTasImpGeno()==FALSE ){        
+     if( setTasGenoFilt1() == FALSE  && setTasGenoFilt2() == FALSE && setTasImpGeno()== FALSE ){        
        Geno_DF()
-     }
-     
-     if(setTasGenoFilt1() ==TRUE  && setTasGenoFilt2() ==FALSE && setTasImpGeno()==FALSE){        
+     }else if(setTasGenoFilt1() == TRUE  && setTasGenoFilt2() == FALSE && setTasImpGeno()== FALSE){        
        GenoFilt1_DF()
-     }
-     if(setTasGenoFilt2() ==TRUE && setTasImpGeno()==FALSE){
+     }else if(setTasGenoFilt2() == TRUE && setTasImpGeno()== FALSE){
       GenoFilt2_DF()
-     }
-     if(setTasImpGeno()==TRUE){
+     }else if(setTasImpGeno()== TRUE){
        GenoImp_DF()
      }
      
@@ -712,8 +718,7 @@ server <- function(input,output){
   TSOptOutputList <- eventReactive(input$Optimize,{
       if(nSelTraits()==1){
         getTSComparisons(predictionData(),Train_STPGA(),Train_Random(),unlist(Trait()),nTraits(),optTS())
-      }
-      if(nSelTraits()>1){
+      }else if(nSelTraits()>1){
         getTSComparisonsMT(predictionData(),Train_STPGA(),Train_Random(),unlist(Trait()),nTraits(),optTS())
       }
       
@@ -780,7 +785,7 @@ server <- function(input,output){
            PATable2 <- c(unlist(Trait())[i()],PATable)
            PATableComb <- rbind(PATableComb,PATable2)
        }
-       PATableComb <- rbind(c("Trait","RR","BB","BL"),PATableComb)
+       PATableComb <- rbind(c("Trait","Ridge Regression","BayesB","Bayes LASSO"),PATableComb)
        colnames(PATableComb) <- rep("",ncol(PATableComb))
        return(PATableComb)
     }
@@ -836,8 +841,7 @@ server <- function(input,output){
       outputDF <-  withProgress(message = 'Running Computations', value = 0, {
       getRankedPredictedValues(predictionData(),nTraits(),unlist(Trait()),GPModelST(),optTS())})
       return(outputDF)
-    }
-    if(nSelTraits()>1){
+    }else if(nSelTraits()>1){
       outputDFComb <- c()
       for(nSelT in 1:nSelTraits()){
         i <- reactive(nSelT)
@@ -904,15 +908,11 @@ server <- function(input,output){
       do.call(tagList,plotOut_List)
     }
   })
-
-      
-    
- 
-    output$plots <- renderPlot({
+  output$plots <- renderPlot({
       if(nSelTraits()==1){
-            plot.default(outputList()[,2],outputList()[,3],type="p",xlab="Predicted Value",ylab="Upper Bound of Reliability",main="Upper bound of Reliability vs Predicted Values",font.lab=2,cex.lab=1.25)
+            plot.default(outputList()[,2],outputList()[,3],type="p",xlab="Predicted Value",ylab="Upper Bound of Reliability",main=paste("Upper bound of Reliability vs Predicted Values for ",Trait(),sep=""),font.lab=2,cex.lab=1.25)
       } 
-    })
+  })
     
   
     
@@ -921,7 +921,7 @@ server <- function(input,output){
       lapply(1:nSelTraits(),function(i){
         loc_i <- reactive(i)
         output[[noquote(paste("'","plot",loc_i(),"'",sep=""))]] <- renderPlot({
-          plot.default(outputList()[,(nSelTraits()+1)],outputList()[,(nSelTraits()+2)],type="p",xlab="Predicted Value",ylab="Upper Bound of Reliability",main="Upper Bound of Reliability vs Predicted Values",font.lab=2,cex.lab=1.25)
+          plot.default(outputList()[,(loc_i()+1)],outputList()[,(nSelTraits()+2)],type="p",xlab="Predicted Value",ylab="Upper Bound of Reliability",main=paste("Upper Bound of Reliability vs Predicted Values for ",Trait()[loc_i()],sep=""),font.lab=2,cex.lab=1.25)
         })
         
       })
@@ -939,7 +939,7 @@ server <- function(input,output){
         lapply(1:nSelTraits(),function(i){
                loc_i <- reactive(i)
                output[[noquote(paste("'","plot",loc_i(),"'",sep=""))]] <- renderPlot({
-                   plot.default(outputListMT()[,(nSelTraits()+1)],outputListMT()[,(nSelTraits()+2)],type="p",xlab="Predicted Value",ylab="Upper Bound of Reliability",main="Upper bound of Reliability vs Predicted Values",font.lab=2,cex.lab=1.25)
+                   plot.default(outputListMT()[,(loc_i()+1)],outputListMT()[,(nSelTraits()+2)],type="p",xlab="Predicted Value",ylab="Upper Bound of Reliability",main=paste("Upper bound of Reliability vs Predicted Values for ",Trait()[loc_i()],sep=""),font.lab=2,cex.lab=1.25)
                 })
          
         })
@@ -988,8 +988,7 @@ server <- function(input,output){
       content = function(file) {
          if(nSelTraits()==1){
           write.csv(as.data.frame(outputList()), file, row.names = FALSE)
-         }
-         if(nSelTraits()>1){
+         }else if(nSelTraits()>1){
            write.csv(as.data.frame(outputListMT()), file, row.names = FALSE)
          }
       }
