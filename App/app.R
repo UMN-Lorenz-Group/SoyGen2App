@@ -1,4 +1,6 @@
-
+if(!require(shiny)){
+	install.packages("shiny")
+}
 library(shiny) 
 
 ### Change source file path to working directory

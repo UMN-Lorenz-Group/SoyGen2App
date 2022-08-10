@@ -59,19 +59,28 @@ if(!require("BGLR", quietly = TRUE)){
   suppressPackageStartupMessages(library(sommer))
    
    
-    if(!require("rTASSEL", quietly = TRUE)){
-	 devtools::install_bitbucket(
+ #   if(!require("rTASSEL", quietly = TRUE)){
+#	 devtools::install_bitbucket(
+#		repo = "bucklerlab/rTASSEL",
+#		host = "bitbucket.org",
+#		ref = "master",
+#		build_vignettes = FALSE,
+#		INSTALL_opts = "--no-multiarch"
+#	 ) 
+# } 
+  
+#dyn.load('/usr/lib/jvm/java-17-openjdk-amd64/lib/server/libjvm.so')
+library(rJava)
+if(!require("rTASSEL", quietly = TRUE)){
+      devtools::install_bitbucket(
 		repo = "bucklerlab/rTASSEL",
-		host = "bitbucket.org",
-		ref = "master",
-		build_vignettes = FALSE,
-		INSTALL_opts = "--no-multiarch"
-	 ) 
-  } 
+	 	ref = "master",
+	 	build_vignettes = FALSE
+      ) 
+    } 
+  library(rTASSEL)
+   
   
-  
- #options(repos = BiocManager::repositories())
- library(rTASSEL)
   
 if(!require("qtl", quietly = TRUE)){
     install.packages("qtl")
@@ -86,21 +95,6 @@ if(!require("qtl", quietly = TRUE)){
   library(tibble)
  }
   
-  
-  
-  # if(!require("rTASSEL", quietly = TRUE)){
-	 # devtools::install_bitbucket_server(
-		# repo = "bucklerLab/rTASSEL",
-		# Sys.getenv("BITBUCKET_HOST"),
-		# host = "bitbucket.org",
-		# ref = "master",
-		# build_vignettes = FALSE,
-		# INSTALL_opts = "--no-multiarch"
-		
-	 # ) 
-  # }
-  
-
   
 ###########################################################################################  
   
