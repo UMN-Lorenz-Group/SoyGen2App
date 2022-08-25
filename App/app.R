@@ -40,19 +40,23 @@ ui <- fluidPage(
                       tags$br(),
                       fluidRow(
                         column(2),column(width=9,tags$a(tags$img(src="GSPipeline.png",title="Genomic Selection Pipeline",width="750",height="400")))), 
-                        
-              ),
-              ## 
+                           
+                      fluidRow(
+                        column(2),column(width=9,tags$h6(("Contributors: Vishnu Ramasubramanian, Cleiton Wartha, Paolo Vitale, Sushan Ru,and Aaron Lorenz")))),
+                      tags$br(),        
+                      fluidRow(
+                        column(2),column(width=9,tags$h6("Contact: Vishnu Ramasubramanian - vramasub@umn.edu")))
+               ),
+            ## 
      
   
               
-              ## Tab for loading data
+     ## Tab for loading data
               
              
        tabPanel("Load Data",
                        #sidebarLayout(
-                         
-                         #sidebarPanel(
+                                               #sidebarPanel(
                        fluidRow(
                           column(4),column(width=4,tags$h3(tags$strong("Load Data Files"))),   
                           column(10),column(width=2,actionButton("Data_Home", "prev"),
@@ -95,7 +99,7 @@ ui <- fluidPage(
                           column(1),column(width=5,tags$h6(tableOutput("PhenoTable"))),
                           column(6),column(width=5,tags$h6(tableOutput("GenoTable")))),
                       tags$br()
-               ),  
+        ),  
        
        ###  
        tabPanel("Filter Genotypic Data",
@@ -171,7 +175,7 @@ ui <- fluidPage(
                      Available options include numeric imputation and imputation using LD-K-Nearest Neighbors method are availble. 
                      For LD-KNN imputation set parameters l and K (Money et al. 2015). l corresponds to the number of high LD sites  
                      and k corresponds to the number of neighboring samples that 
-                     are used to impute scores.")),
+                     are used to impute scores."))
                   ),
                 tags$br(),
                   
@@ -283,7 +287,7 @@ ui <- fluidPage(
                              column(6, div(
                                tags$h5(tags$strong(textOutput("tsOptHeader"))),
                                tags$h6(tableOutput("PredAccuracyTable")), 
-                               tags$br()
+                              
                              )))
                          )
               )), 
@@ -336,22 +340,28 @@ ui <- fluidPage(
               )),
               #   
               ### GP Tab 
-              tabPanel("Genomic Prediction",
+             tabPanel("Genomic Prediction",
+                      tabsetPanel(id="GPModels",
+                                   
+                       tabPanel("Single Trait Genomic Prediction",
+                       
                        sidebarLayout(
                          sidebarPanel(
                            selectInput(inputId="TrainSet","Choose Training Set",c("Complete Input Genotype Set","Optimal Train Set from Step 3","Random Train Set from Step 3")),
                            tags$br(),
                            tags$br(),
+                           selectInput(inputId="fixed","Choose Fixed Effect",choices=NULL),
+                           tags$br(),
+                           tags$br(),
                            selectInput(inputId="GPModelST","Choose Prediction Model for Single Trait",c("rrBLUP (rrBLUP)","rrBLUP (bWGR)","BayesB (bWGR)","BayesLASSO (bWGR)")),
+                           tags$br(),
+                           tags$br(),
                            actionButton("RunPredictionsST", "Predict Single Trait!"),
                            tags$br(),
-						               tags$br(),
-						               tags$br(),
-						               tags$br(),
-                           selectInput(inputId="GPModelMT","Choose Prediction Model for Multiple Traits",c("BRR (BGLR)","RKHS (BGLR)","Spike-Slab(BGLR)","Mmer (Sommer)")),
-                           actionButton("RunPredictionsMT", "Predict Multiple Traits!"),
                            tags$br(),
-						               tags$br()
+                           tags$br(),
+                           tags$br(),
+                           downloadButton("ExportOut", "Export Output Table")
 						   
                          ), mainPanel(
                            fluidRow(
@@ -362,42 +372,160 @@ ui <- fluidPage(
                             
                              column(width=10, tags$p(" Select the statistical method to train the genomic prediction model and predict the values of target lines. rrBLUP method is implemented using the
                                            rrBLUP (Endelman 2011) package. Expectation maximization based RR-BLUP, BayesB and BayesLASSO methods are implemented using the bWGR package (Xavier et al. 2020).
-                                           Multi-trait predictions are implemented using the BGLR and Sommer packages. The Multitrait function in BGLR implements Bayesian Ridge Regression, RKHS, and Spike-Slab methods. 
-                                           The multi-trait GBLUP is implemented using the 'mmer' function in 'sommer' package."))),
+                                           "))),
                            tags$br(),
                            tags$br(),
                            tags$h4(textOutput("RankedLinesHeader")),
                            tableOutput("Ranked_Lines_for_SelectionST"),
-                           tableOutput("Ranked_Lines_for_SelectionMT")
-                          
-                         )
+                           uiOutput("scatter")
+                        )
                        )
-              ),
+                     ),
+                     
+                     tabPanel("Multi-trait Genomic Prediction",
+
+                              sidebarLayout(
+                                sidebarPanel(
+                                  selectInput(inputId="TrainSetMT","Choose Training Set",c("Complete Input Genotype Set","Optimal Train Set from Step 3","Random Train Set from Step 3")),
+                                  tags$br(),
+                                  tags$br(),
+                                  selectInput(inputId="GPModelMT","Choose Prediction Model for Multiple Traits",c("BRR (BGLR)","RKHS (BGLR)","Spike-Slab(BGLR)","Mmer (Sommer)")),
+                                  actionButton("RunPredictionsMT", "Predict Multiple Traits!"),
+                                  tags$br(),
+                                  tags$br(),
+                                  downloadButton("ExportOutMT", "Export Output Table")
+
+                                ), mainPanel(
+                                  fluidRow(
+                                    column(width=8,tags$h3(tags$strong("Train Multi-trait Genomic Prediction Model"))), actionButton("GP_ST", "prev"),
+                                    actionButton("GP_MTME", "next")
+                                  ),
+                                  fluidRow(
+                                    column(width=10, tags$p(" Select the statistical method to train the genomic prediction model and predict the values of target lines.Multi-trait predictions are implemented using the BGLR and Sommer packages. The Multitrait function in BGLR implements Bayesian Ridge Regression, RKHS, and Spike-Slab methods.
+                                           The multi-trait GBLUP is implemented using the 'mmer' function in 'sommer' package."))),
+                                  tags$br(),
+                                  tags$br(),
+                                  #tags$h4(textOutput("RankedLinesHeader")),
+                                  tableOutput("Ranked_Lines_for_SelectionMT"),
+                                  uiOutput("scatterMT")
+
+                                )
+                              )
+                     ) 
+                     
+                     
+                     #tabPanel("Multi-trait Multi-environment Genomic Prediction",
+                              
+                     #          sidebarLayout(
+                     #            sidebarPanel(
+                     #              selectInput(inputId="TrainSet","Choose Training Set",c("Complete Input Genotype Set","Optimal Train Set from Step 3","Random Train Set from Step 3")),
+                     #              tags$br(),
+                     #              tags$br(),
+                     #              selectInput(inputId="GPModelST","Choose Prediction Model for Single Trait",c("rrBLUP (rrBLUP)","rrBLUP (bWGR)","BayesB (bWGR)","BayesLASSO (bWGR)")),
+                     #              actionButton("RunPredictionsST", "Predict Single Trait!"),
+                     #              tags$br(),
+                     #              tags$br(),
+                     #              tags$br(),
+                     #              tags$br(),
+                     #              selectInput(inputId="GPModelMT","Choose Prediction Model for Multiple Traits",c("BRR (BGLR)","RKHS (BGLR)","Spike-Slab(BGLR)","Mmer (Sommer)")),
+                     #              actionButton("RunPredictionsMT", "Predict Multiple Traits!"),
+                     #              tags$br(),
+                     #              tags$br()
+                     #              
+                     #            ), mainPanel(
+                     #              fluidRow(
+                     #                column(width=8,tags$h3(tags$strong("Train Genomic Prediction Model"))), actionButton("GP_CVR", "prev"),
+                     #                actionButton("GP_VP", "next")
+                     #              ),
+                     #              fluidRow(
+                     #                
+                     #                column(width=10, tags$p(" Select the statistical method to train the genomic prediction model and predict the values of target lines. rrBLUP method is implemented using the
+                     #                       rrBLUP (Endelman 2011) package. Expectation maximization based RR-BLUP, BayesB and BayesLASSO methods are implemented using the bWGR package (Xavier et al. 2020).
+                     #                       Multi-trait predictions are implemented using the BGLR and Sommer packages. The Multitrait function in BGLR implements Bayesian Ridge Regression, RKHS, and Spike-Slab methods. 
+                     #                       The multi-trait GBLUP is implemented using the 'mmer' function in 'sommer' package."))),
+                     #              tags$br(),
+                     #              tags$br(),
+                     #              tags$h4(textOutput("RankedLinesHeader")),
+                     #              tableOutput("Ranked_Lines_for_SelectionST"),
+                     #              tableOutput("Ranked_Lines_for_SelectionMT")
+                     #              
+                     #            )
+                     #          )
+                     # )
+                     
+                 )
+                )
+             
+            )
+          )
+
+                     
               #   
+              
+              # ### GP Tab 
+              # tabPanel("Genomic Prediction",
+              #                  sidebarLayout(
+              #                                 sidebarPanel(
+              #                                   selectInput(inputId="TrainSet","Choose Training Set",c("Complete Input Genotype Set","Optimal Train Set from Step 3","Random Train Set from Step 3")),
+              #                                   tags$br(),
+              #                                   tags$br(),
+              #                                   selectInput(inputId="GPModelST","Choose Prediction Model for Single Trait",c("rrBLUP (rrBLUP)","rrBLUP (bWGR)","BayesB (bWGR)","BayesLASSO (bWGR)")),
+              #                                   actionButton("RunPredictionsST", "Predict Single Trait!"),
+              #                                   tags$br(),
+              #                                   tags$br(),
+              #                                   tags$br(),
+              #                                   tags$br(),
+              #                                   selectInput(inputId="GPModelMT","Choose Prediction Model for Multiple Traits",c("BRR (BGLR)","RKHS (BGLR)","Spike-Slab(BGLR)","Mmer (Sommer)")),
+              #                                   actionButton("RunPredictionsMT", "Predict Multiple Traits!"),
+              #                                   tags$br(),
+              #                                   tags$br()
+              #                                   
+              #                                 ), mainPanel(
+              #                                   fluidRow(
+              #                                     column(width=8,tags$h3(tags$strong("Train Genomic Prediction Model"))), actionButton("GP_CVR", "prev"),
+              #                                     actionButton("GP_VP", "next")
+              #                                   ),
+              #                                   fluidRow(
+              #                                     
+              #                                     column(width=10, tags$p(" Select the statistical method to train the genomic prediction model and predict the values of target lines. rrBLUP method is implemented using the
+              #                              rrBLUP (Endelman 2011) package. Expectation maximization based RR-BLUP, BayesB and BayesLASSO methods are implemented using the bWGR package (Xavier et al. 2020).
+              #                              Multi-trait predictions are implemented using the BGLR and Sommer packages. The Multitrait function in BGLR implements Bayesian Ridge Regression, RKHS, and Spike-Slab methods. 
+              #                              The multi-trait GBLUP is implemented using the 'mmer' function in 'sommer' package."))),
+              #                                   tags$br(),
+              #                                   tags$br(),
+              #                                   tags$h4(textOutput("RankedLinesHeader")),
+              #                                   tableOutput("Ranked_Lines_for_SelectionST"),
+              #                                   tableOutput("Ranked_Lines_for_SelectionMT")
+              #                                   
+              #                                 )
+              #                               )
+              #                      ),    
+              # 
+                     
               #   ## Tab for Results
-              tabPanel("Visualize Predictions",
-                       sidebarLayout(
-                         sidebarPanel(
-                          downloadButton("ExportOut", "Export Output Table")
-                          ),
-                         mainPanel(
-                           
-                           fluidRow(
-                             column(3),column(width=8,tags$h3(tags$strong("Visualize and Explore Predictions"))), actionButton("VP_GP", "prev")
-                           ),
-                           tags$br(),
-                           # tags$h4(textOutput("RankedLinesHeader")),
-                           # tableOutput("Ranked_Lines_for_SelectionST"),
-                           # tableOutput("Ranked_Lines_for_SelectionMT"),
-                           #tags$h4("Predicted vs Observed Values"),
-                           #plotOutput("plots")
-                           uiOutput("scatter"),
-                           uiOutput("scatterMT")
-                         )   
-                       ) 
-              )
-  )
-)
+              # tabPanel("Visualize Predictions",
+              #          sidebarLayout(
+              #            sidebarPanel(
+              #             downloadButton("ExportOut", "Export Output Table")
+              #             ),
+              #            mainPanel(
+              #              
+              #              fluidRow(
+              #                column(3),column(width=8,tags$h3(tags$strong("Visualize and Explore Predictions"))), actionButton("VP_GP", "prev")
+              #              ),
+              #              tags$br(),
+              #              # tags$h4(textOutput("RankedLinesHeader")),
+              #              # tableOutput("Ranked_Lines_for_SelectionST"),
+              #              # tableOutput("Ranked_Lines_for_SelectionMT"),
+              #              #tags$h4("Predicted vs Observed Values"),
+              #              #plotOutput("plots")
+              #              uiOutput("scatter"),
+              #              uiOutput("scatterMT")
+              #            )   
+              #          ) 
+              # )
+  
+
 
 
 ###
@@ -441,8 +569,11 @@ server <- function(input,output){
   observeEvent(input$infileBLUEs, {
     updateSelectInput(inputId = "trait",choices = colnames(Pheno())[2:ncol(Pheno())])})
   
+  observeEvent(input$infileBLUEs, {
+    updateSelectInput(inputId = "fixed",choices = c("NULL",colnames(Pheno())[2:ncol(Pheno())]),selected="NULL")})
   
-  #Target
+  
+#Target
   TargetTab <- reactive({
     TargetFile <- input$infileTargetTable
     
@@ -507,6 +638,7 @@ server <- function(input,output){
     print(trTable)
     })
   })
+  
   # boxHead <- eventReactive(input$trait,{paste("Boxplot of selected phenotypic values")})
   # output$boxHeader <- renderText({boxHead()})
   # 
@@ -670,10 +802,10 @@ server <- function(input,output){
    processedData <- reactive(getProcessedData(mergedData(),Trait()))
    
    observeEvent(input$trait, {
-     updateNumericInput(inputId = "noCandidates",value= nrow(processedData()[[1]]),min =1, max=nrow(processedData()[[1]]))}) 
+     updateNumericInput(inputId = "noCandidates",value= nrow(processedData()[[1]]),min =2, max=nrow(processedData()[[1]]))}) 
    
    observeEvent(input$trait,{
-     updateNumericInput(inputId = "noToSelect",value= nrow(processedData()[[1]]),min =1, max=nrow(processedData()[[1]]))})
+     updateNumericInput(inputId = "noToSelect",value= nrow(processedData()[[1]]),min =2, max=nrow(processedData()[[1]]))})
    
    
     
@@ -708,6 +840,7 @@ server <- function(input,output){
       getOptimalTS(predictionData(),unlist(Trait()),nTraits(),noCandidates(),nTrainToSelect(),GAParameters)})
   })
     #%>% bindCache(processedData(),Trait(),nTraits(),noCandidates(),nTrainToSelect())
+
   Train_Random <-   eventReactive(input$Optimize,{
     withProgress(message = 'Running Random Set', value = 0, { 
       getRandomTS(predictionData(),unlist(Trait()),nTraits(),noCandidates(),nTrainToSelect())})
@@ -772,7 +905,7 @@ server <- function(input,output){
     if(nSelTraits()==1){
        PATab <- withProgress(message = 'Running CrossValidations', value = 0, {
          getemCVR(predictionData(),unlist(Trait()),nTraits(),k(),nIter())})
-       PATable <- rbind(c("RR","BB","BL"),round(PATab[c("emRR","emBB","emBL")],digits=2)) 
+       PATable <- rbind(c("Ridge Regression","BayesB","Bayes LASSO"),round(PATab[c("emRR","emBB","emBL")],digits=2)) 
        rownames(PATable)<- c("Prediction Model","Prediction Accuracy")
        colnames(PATable) <- rep("",ncol(PATable))
        return(PATable)
@@ -835,20 +968,33 @@ server <- function(input,output){
     (optimTS)
   })
   
-## GP  Models 
+## GP  Models   /// & Fixed()!= "NULL" ///| Fixed()== "NULL"
   
   GPModelST <- reactive(input$GPModelST)
+  Fixed <- reactive(input$fixed)
+  
+  fixedData_List <- reactive({ 
+    
+    if(!is.null(Fixed()) & Fixed()!="NULL"){
+      getFixedData_List(predictionData(),Trait(),Fixed(),TargetIDs())
+    }else if(is.null(Fixed()) | Fixed() == "NULL"){ 
+       "NULL" 
+    } 
+  })
+      
+  
+ 
   outputList <- eventReactive(input$RunPredictionsST,{ 
     if(nSelTraits()==1){
       outputDF <-  withProgress(message = 'Running Computations', value = 0, {
-      getRankedPredictedValues(predictionData(),nTraits(),unlist(Trait()),GPModelST(),optTS())})
+        getRankedPredictedValues(predictionData(),nTraits(),unlist(Trait()),GPModelST(),fixedX=Fixed(),fixedData=fixedData_List(),optTS())})
       return(outputDF)
     }else if(nSelTraits()>1){
       outputDFComb <- c()
       for(nSelT in 1:nSelTraits()){
         i <- reactive(nSelT)
-       outputDF <-  withProgress(message = 'Running Computations', value = 0, {
-        getRankedPredictedValues(predictionData(),nTraits(),unlist(Trait())[i()],GPModelST(),optTS())})
+        outputDF <-  withProgress(message = 'Running Computations', value = 0, {
+        getRankedPredictedValues(predictionData(),nTraits(),unlist(Trait())[i()],GPModelST(),fixedX=Fixed(),fixedData=fixedData_List(),optTS())})
        
        outputDFComb <- cbind(outputDFComb,outputDF[,2])
       } 
@@ -964,37 +1110,32 @@ server <- function(input,output){
   }
   
   
-  observeEvent(input$Home_Data,{ switch_page(2)})
-  observeEvent(input$Data_Home, switch_page(1))
+########
   
-  observeEvent(input$Data_Trait, switch_page(3))
-  observeEvent(input$Trait_Data, switch_page(2))
-  
-  observeEvent(input$Trait_TS, switch_page(4))
-  observeEvent(input$TS_Trait, switch_page(3))
-  
-  observeEvent(input$TS_CVR, switch_page(5))
-  observeEvent(input$CVR_TS, switch_page(4))
-  
-  observeEvent(input$CVR_GP, switch_page(6))
-  observeEvent(input$GP_CVR,switch_page(5))
-  
-  observeEvent(input$GP_VP, switch_page(7))
-  observeEvent(input$VP_GP, switch_page(6))
-     
   
   output$ExportOut <- downloadHandler(
       filename = function() {
-        "Predictions.csv"
+        "PredictionsST.csv"
       },
       content = function(file) {
-         if(nSelTraits()==1){
-          write.csv(as.data.frame(outputList()), file, row.names = FALSE)
-         }else if(nSelTraits()>1){
-           write.csv(as.data.frame(outputListMT()), file, row.names = FALSE)
-         }
+         
+        write.csv(as.data.frame(outputList()), file, row.names = FALSE)
       }
   )
+  
+  output$ExportOutMT <- downloadHandler(
+    filename = function() {
+      "PredictionsMT.csv"
+    },
+    content = function(file) {
+      
+        write.csv(as.data.frame(outputListMT()), file, row.names = FALSE)
+    }
+  )
+  
+  
+  # session$allowReconnect("force")
+  # options(shiny.launch.browser=FALSE)
 
 }
 
@@ -1268,3 +1409,33 @@ shinyApp(server=server,ui=ui)
 #nSelTraits <- eventReactive(input$CrossValidationST,{(1)})
 
 
+# observeEvent(input$Home_Data,{ switch_page(2)})
+# observeEvent(input$Data_Home, switch_page(1))
+# 
+# observeEvent(input$Data_Trait, switch_page(3))
+# observeEvent(input$Trait_Data, switch_page(2))
+# 
+# observeEvent(input$Trait_TS, switch_page(4))
+# observeEvent(input$TS_Trait, switch_page(3))
+# 
+# observeEvent(input$TS_CVR, switch_page(5))
+# observeEvent(input$CVR_TS, switch_page(4))
+# 
+# observeEvent(input$CVR_GP, switch_page(6))
+# observeEvent(input$GP_CVR,switch_page(5))
+# 
+# observeEvent(input$GP_VP, switch_page(7))
+# observeEvent(input$VP_GP, switch_page(6))
+
+# output$ExportOut <- downloadHandler(
+#   filename = function() {
+#     "Predictions.csv"
+#   },
+#   content = function(file) {
+#     if(nSelTraits()==1){
+#       write.csv(as.data.frame(outputList()), file, row.names = FALSE)
+#     }else if(nSelTraits()>1){
+#       write.csv(as.data.frame(outputListMT()), file, row.names = FALSE)
+#     }
+#   }
+# )

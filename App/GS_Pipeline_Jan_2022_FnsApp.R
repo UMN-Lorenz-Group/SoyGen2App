@@ -1,6 +1,6 @@
 ##### SoygenGS App Functions
 
-   if(!require("dplyr", quietly = TRUE)){
+ if(!require("dplyr", quietly = TRUE)){
     install.packages("dplyr")
  }
   library(dplyr) 
@@ -816,7 +816,7 @@ getGenoTas_to_DF <- function(tasGeno){
 getPredictionData <- function(Data_Table_Num_List,noCandidates){
 
      TrainData_Table_Num_Filt <- Data_Table_Num_List[[1]]
-	 TestData_Table_Num_Filt<- Data_Table_Num_List[[2]]
+	 TestData_Table_Num_Filt <- Data_Table_Num_List[[2]]
 	 set.seed(125)
 	 CandidateIndices <- sample(c(1:nrow(TrainData_Table_Num_Filt)),noCandidates)
 	 Candidates <- as.character(TrainData_Table_Num_Filt[CandidateIndices,1])
@@ -1091,9 +1091,9 @@ getPredictionData <- function(Data_Table_Num_List,noCandidates){
 
 ### Step 2 : Get predicted genetic values usin kin.blup 
 
- getRankedPredictedValues <- function(Data_Table_Num_Filt_List,nTraits,trait,GPModel,fixedX=NULL,optTS=NULL){ 
+ getRankedPredictedValues_Old <- function(Data_Table_Num_Filt_List,nTraits,trait,GPModel,fixedX=NULL,optTS=NULL){ 
     
-     if(!is.null(fixedX)){ 
+     if(!is.null(fixedX) & fixedX !="NULL"){ 
 	   GPModel <- "rrBLUP (rrBLUP)"
 	   Fixed.X <- fixedX[[1]]
 	   Test.X <- fixedX[[2]]
@@ -1167,7 +1167,7 @@ getPredictionData <- function(Data_Table_Num_List,noCandidates){
 	   trainPheno <- trainPheno0[-ph_NA_Indices] 
 	   trainGeno_Imp <- trainGeno_Imp0[-ph_NA_Indices,]
 	   Geno <- as.character(TrainData_Table_Num_Filt[-ph_NA_Indices,1])
-	   if(!is.null(fixedX)){
+	   if(!is.null(fixedX)  & fixedX !="NULL" ){
 	     Fixed.X.Mod <- Fixed.X[-ph_NA_Indices,]
 	   }
 	   
@@ -1177,7 +1177,7 @@ getPredictionData <- function(Data_Table_Num_List,noCandidates){
 	   trainPheno <- trainPheno0
 	   trainGeno_Imp <- trainGeno_Imp0
 	   Geno <- as.character(TrainData_Table_Num_Filt[,1])
-	   if(!is.null(fixedX)){
+	   if(!is.null(fixedX)  & fixedX !="NULL"){
 	     Fixed.X.Mod <- Fixed.X
 	   }
 	  
@@ -1209,11 +1209,11 @@ getPredictionData <- function(Data_Table_Num_List,noCandidates){
 	if(GPModel == "rrBLUP (rrBLUP)"){ 
 	  
 	
-	 if(!is.null(fixedX)){
+	 if(!is.null(fixedX) & fixedX !="NULL"){
 	   pred <- mixed.solve(trainPheno,Z=trainGeno_Imp,X=Fixed.X.Mod,SE=FALSE,return.Hinv =FALSE) 
 	   Mean <- Fixed.X.Mod %*% pred$beta
 	 }
-	 if(is.null(fixedX)){
+	 if(is.null(fixedX) | fixedX =="NULL"){
 	     pred <- mixed.solve(trainPheno,Z=trainGeno_Imp,SE=FALSE,return.Hinv =FALSE) 
 	     Mean <- as.numeric(pred$beta)
 	 }
@@ -1233,10 +1233,10 @@ getPredictionData <- function(Data_Table_Num_List,noCandidates){
  	  SortedPredictedValues <- sort.int(PredictedValues,decreasing=TRUE,index.return=TRUE)
  	  
    
-	   if(!is.null(fixedX)){
+	   if(!is.null(fixedX) & fixedX !="NULL"){
 	        Mean.tst <- Test.X %*% pred$beta
 		  }
-		  if(is.null(fixedX)){
+		  if(is.null(fixedX) | fixedX =="NULL" ){
 		    Mean.tst <- as.numeric(pred$beta)
 		  }
      
@@ -1335,13 +1335,13 @@ getPredictionData <- function(Data_Table_Num_List,noCandidates){
        # trainGeno_Imp2 <- apply(trainGeno_Imp[,-testNAIndices],2,function(x) x+1)  
 	# }
 	# if(length(testNAIndices)==0){ }
-	trainGeno_Imp2 <- apply(trainGeno_Imp,2,function(x) x+1)  
+	 
 	#print(anyNA(trainGeno_Imp2))
 	#print(anyNA(trainPheno))
 	#write.table(trainPheno,"trainPhenoCRep.csv")
 	#write.table(trainGeno_Imp2,"trainGenoTab.txt",sep="\t",quote=FALSE,row.names=FALSE)
-   	
-	cleanData <- cleanREPV2(trainPheno,trainGeno_Imp)
+   	trainGeno_Imp2 <- apply(trainGeno_Imp,2,function(x) x+1) 
+	cleanData <- cleanREPV2(trainPheno,trainGeno_Imp2)
     M <-  cleanData[[2]]
     M.Pdt <- t(M)%*% solve(M %*% t(M) + diag(nrow(M))) %*% M
       
@@ -1371,6 +1371,296 @@ getPredictionData <- function(Data_Table_Num_List,noCandidates){
 	
  }
  
+ 
+	
+### 
+
+
+ getRankedPredictedValues <- function(Data_Table_Num_Filt_List,nTraits,trait,GPModel,fixedX=NULL,fixedData=NULL,optTS=NULL){ 
+    
+     if(!is.null(fixedX) & fixedX != "NULL" & fixedData !="NULL"){ 
+	   GPModel <- "rrBLUP (rrBLUP)"
+	   Fixed.X <- fixedData[[1]]
+	   Test.X <- fixedData[[2]]
+	  }
+	   
+	 TrainData_Table_Num_Filt <- Data_Table_Num_Filt_List[[1]]
+	 TestData_Table_Num_Filt <- Data_Table_Num_Filt_List[[2]]
+	 
+	
+	 TestGenoTable <- apply(TestData_Table_Num_Filt[,-1],2,as.numeric)
+	 initCol <- grep("ss",colnames(TrainData_Table_Num_Filt))[1]
+	 finalCol <- grep("ss",colnames(TrainData_Table_Num_Filt))[length(grep("ss",colnames(TrainData_Table_Num_Filt)))]
+	 
+	
+	 if(is.null(optTS)){
+	    
+		 trainPheno0 <- as.numeric(as.character(TrainData_Table_Num_Filt[,trait]))
+		 geno_012 <- apply(TrainData_Table_Num_Filt[,c(initCol:finalCol)],2,as.numeric)
+		 trainGeno <- apply(geno_012,2,function(x) x-1)
+		 Geno <- as.character(TrainData_Table_Num_Filt[,1])
+		 rownames(trainGeno) <- Geno
+	 }
+	 
+	 if(!is.null(optTS)){
+	     strainID <- as.character(TrainData_Table_Num_Filt[,1])
+		 trainSetID <- as.character(as.vector(optTS))
+	     trainIndices <- which(strainID %in% trainSetID)
+		 trainPheno0 <- as.numeric(as.character(TrainData_Table_Num_Filt[trainIndices,trait]))
+		 geno_012 <- apply(TrainData_Table_Num_Filt[trainIndices,c(initCol:finalCol)],2,as.numeric)
+		 trainGeno <- apply(geno_012,2,function(x) x-1)
+		 Geno <- as.character(TrainData_Table_Num_Filt[trainIndices,1])
+		 rownames(trainGeno) <- Geno
+	 } 
+	 
+	### Check if the markers are missing in > 99% of the lines 
+	 
+	  allNAMarkers <- apply(trainGeno,2,function(x) if(length(which(is.na(x)))==nrow(trainGeno)){1}else{0})
+     
+	  allNAMarkerIndices <- which(allNAMarkers!=0)
+	  
+	  if(length(allNAMarkerIndices)>=1){
+		 trainGeno0 <- trainGeno[,-allNAMarkerIndices]
+	  }else{ trainGeno0 <- trainGeno}
+	 
+	 
+	 
+	 if(anyNA(trainGeno0)){	 
+		trainGeno_Imp0 <- snpQC(trainGeno0,impute=TRUE,remove=FALSE)
+	 }else{trainGeno_Imp0 <- trainGeno0}
+	 
+	 
+	  if(anyNA(TestGenoTable)){ 
+	    testGeno_Imp0 <- snpQC(TestGenoTable,impute=TRUE,remove=FALSE)
+		testGeno_Imp <- apply(testGeno_Imp0,2,function(x) as.numeric(x-1))
+		
+		testNA <- apply(testGeno_Imp,2,function(x) length(which(is.na(x))))
+		testNAIndices <-(which(unlist(testNA) !=0))
+		if(length(testNAIndices)<1){
+		   testNAIndices <- NULL
+		}
+	 }else{testGeno_Imp <- apply(TestGenoTable,2,function(x) as.numeric(x-1)) 
+	    testNAIndices <- NULL
+	 }
+	 
+	
+
+ ### Remove lines with missing pheno	 
+	  
+	if(anyNA(trainPheno0)){
+	   ph_NA_Indices <- which(is.na(trainPheno0))
+	   trainPheno <- trainPheno0[-ph_NA_Indices] 
+	   trainGeno_Imp <- trainGeno_Imp0[-ph_NA_Indices,]
+	   Geno <- as.character(TrainData_Table_Num_Filt[-ph_NA_Indices,1])
+	   if(!is.null(fixedX)  & fixedX !="NULL" & fixedData != "NULL" ){
+	     Fixed.X.Mod <- Fixed.X[-ph_NA_Indices,]
+	   }
+	   
+	 }
+	 if(!anyNA(trainPheno0)){
+	  
+	   trainPheno <- trainPheno0
+	   trainGeno_Imp <- trainGeno_Imp0
+	   Geno <- as.character(TrainData_Table_Num_Filt[,1])
+	   if(!is.null(fixedX)  & fixedX !="NULL" & fixedData != "NULL"){
+	     Fixed.X.Mod <- Fixed.X
+	   }
+	  
+	 }
+	 
+####### Set the same set of markers for both train and test sets with the same order 
+     ##Check with sorted markers and check with test set 
+	  trainssIDs <- colnames(trainGeno_Imp)
+	  testssIDs <- colnames(testGeno_Imp) 
+	  testGeno_Imp_Ord <- testGeno_Imp[, match(trainssIDs,testssIDs)]
+	  testGeno_Imp <- testGeno_Imp_Ord
+	 
+	  
+## Kinship Matrix
+	 # A <- A.mat(trainGeno_Imp)	
+	 # colnames(A) <- Geno
+	 # rownames(A) <- Geno
+
+## Prepare Data Table for GP 
+	 Data <- cbind.data.frame(Geno,trainPheno)
+	 colnames(Data) <- c("Geno","Pheno")
+	 Geno <- "Geno"
+	 Pheno <- "Pheno"
+	
+#### Impute trainGeno and train using mixed.solve
+		 
+	if(GPModel == "rrBLUP (rrBLUP)"){ 
+	  	
+	 if(!is.null(fixedX) & fixedX !="NULL" & fixedData != "NULL"){
+	   pred <- mixed.solve(trainPheno,Z=trainGeno_Imp,X=Fixed.X.Mod,SE=FALSE,return.Hinv =FALSE) 
+	   Mean <- Fixed.X.Mod %*% pred$beta
+	 }
+	 if(is.null(fixedX) | fixedX =="NULL" | fixedData == "NULL"){
+	     pred <- mixed.solve(trainPheno,Z=trainGeno_Imp,SE=FALSE,return.Hinv =FALSE) 
+	     Mean <- as.numeric(pred$beta)
+	 }
+ 	 Effects <- pred$u
+   
+    while(anyNA(testGeno_Imp)){
+      testGeno_Imp_Mod <- testGeno_Imp
+      trainGeno_Imp_Mod <- trainGeno_Imp
+      Effects_Mod <- Effects
+      testNA <- apply(testGeno_Imp_Mod,2,function(x) length(which(is.na(x))))
+      testNAIndices <-(which(unlist(testNA) !=0))
+      testGeno_Imp <-testGeno_Imp_Mod[,-testNAIndices]
+      Effects <- Effects_Mod[-testNAIndices]
+      trainGeno_Imp <- trainGeno_Imp_Mod[,-testNAIndices]
+    }
+ 	  PredictedValues <- Mean + (trainGeno_Imp %*% Effects)
+ 	  SortedPredictedValues <- sort.int(PredictedValues,decreasing=TRUE,index.return=TRUE)
+ 	  
+   
+	  if(!is.null(fixedX) & fixedX !="NULL" & fixedData != "NULL" ){
+	        Mean.tst <- Test.X %*% pred$beta
+	  }
+	  if(is.null(fixedX) | fixedX =="NULL" | fixedData == "NULL" ){
+		    Mean.tst <- as.numeric(pred$beta)
+	  }
+     
+    
+		 		  
+	   Test_PredictedValues <-  Mean.tst + (testGeno_Imp %*% Effects)
+	 
+	   Test_SortedPredictedValues <- sort.int(Test_PredictedValues,decreasing=TRUE,index.return=TRUE) 
+	   Test_StrainID <- rownames(TestData_Table_Num_Filt)
+    
+	 }
+	 
+	 
+	 if(GPModel == "rrBLUP (bWGR)"){
+	 
+		 pred <- emRR(trainPheno,trainGeno_Imp) 
+		 Mean <- as.numeric(pred$mu)
+		 Effects <- pred$b
+		 
+		 while(anyNA(testGeno_Imp)){
+		   testGeno_Imp_Mod <- testGeno_Imp
+		   trainGeno_Imp_Mod <- trainGeno_Imp
+		   Effects_Mod <- Effects
+		   testNA <- apply(testGeno_Imp_Mod,2,function(x) length(which(is.na(x))))
+		   testNAIndices <-(which(unlist(testNA) !=0))
+		   testGeno_Imp <-testGeno_Imp_Mod[,-testNAIndices]
+		   Effects <- Effects_Mod[-testNAIndices]
+		   trainGeno_Imp <- trainGeno_Imp_Mod[,-testNAIndices]
+		 }
+		 
+		 PredictedValues <- Mean + (trainGeno_Imp %*% Effects)
+		 SortedPredictedValues <- sort.int(PredictedValues,decreasing=TRUE,index.return=TRUE)
+		 Test_PredictedValues <-  Mean + (testGeno_Imp %*% Effects)
+		 Test_SortedPredictedValues <- sort.int(Test_PredictedValues,decreasing=TRUE,index.return=TRUE) 
+		 Test_StrainID <- rownames(TestData_Table_Num_Filt)
+    
+	 }
+	 
+	 
+	  if(GPModel == "BayesB (bWGR)"){ 
+	 
+		 pred <- emBB(trainPheno,trainGeno_Imp) 
+		 Mean <- as.numeric(pred$mu)
+		 Effects <- pred$b
+		 
+		 while(anyNA(testGeno_Imp)){
+		   testGeno_Imp_Mod <- testGeno_Imp
+		   trainGeno_Imp_Mod <- trainGeno_Imp
+		   Effects_Mod <- Effects
+		   testNA <- apply(testGeno_Imp_Mod,2,function(x) length(which(is.na(x))))
+		   testNAIndices <-(which(unlist(testNA) !=0))
+		   testGeno_Imp <-testGeno_Imp_Mod[,-testNAIndices]
+		   Effects <- Effects_Mod[-testNAIndices]
+		   trainGeno_Imp <- trainGeno_Imp_Mod[,-testNAIndices]
+		 }
+		 
+		 
+		 PredictedValues <- Mean + (trainGeno_Imp %*% Effects)
+		 SortedPredictedValues <- sort.int(PredictedValues,decreasing=TRUE,index.return=TRUE)
+		 
+		 Test_PredictedValues <-  Mean + (testGeno_Imp %*% Effects)
+		 Test_SortedPredictedValues <- sort.int(Test_PredictedValues,decreasing=TRUE,index.return=TRUE) 
+		 Test_StrainID <- rownames(TestData_Table_Num_Filt)
+    }
+	  
+	  if(GPModel == "BayesLASSO (bWGR)"){ 
+	 
+		 pred <- emBL(trainPheno,trainGeno_Imp) 
+		 Mean <- as.numeric(pred$mu)
+		 Effects <- pred$b
+		 
+		 while(anyNA(testGeno_Imp)){
+		   testGeno_Imp_Mod <- testGeno_Imp
+		   trainGeno_Imp_Mod <- trainGeno_Imp
+		   Effects_Mod <- Effects
+		   testNA <- apply(testGeno_Imp_Mod,2,function(x) length(which(is.na(x))))
+		   testNAIndices <- (which(unlist(testNA) !=0))
+		   testGeno_Imp <- testGeno_Imp_Mod[,-testNAIndices]
+		   Effects <- Effects_Mod[-testNAIndices]
+		   trainGeno_Imp <- trainGeno_Imp_Mod[,-testNAIndices]
+		 }
+		 
+		 	 
+		 PredictedValues <- Mean + (trainGeno_Imp %*% Effects)
+		 SortedPredictedValues <- sort.int(PredictedValues,decreasing=TRUE,index.return=TRUE)
+	     Test_PredictedValues <-  Mean + (testGeno_Imp %*% Effects)
+	     Test_SortedPredictedValues <- sort.int(Test_PredictedValues,decreasing=TRUE,index.return=TRUE) 
+	     Test_StrainID <- rownames(TestData_Table_Num_Filt)
+    }
+	  
+### 
+	# pred.kb <- kin.blup(as.data.frame(Data),Geno,Pheno,GAUSS=FALSE,K=A,covariate=NULL,PEV=TRUE,n.core=1,theta.seq=NULL)
+		 
+### Upper bound of Reliability
+   
+	trainGeno_Imp2 <- apply(trainGeno_Imp,2,function(x) as.numeric(x)+1)
+	
+	rownames(trainGeno_Imp2) <- rownames(trainGeno_Imp)
+	print(dim(trainGeno_Imp2))
+	print(length(trainPheno))
+	cleanData <- cleanREPV2(trainPheno,trainGeno_Imp)
+	
+	#cleanData <- cleanREP(trainPheno,trainGeno_Imp2)
+    
+	M <-  cleanData[[2]]
+    M.Pdt <- t(M)%*% solve(M %*% t(M) + diag(nrow(M))) %*% M
+      
+    getU <- function(M.Pdt,v){
+	   v.hat <- M.Pdt %*% v
+	   U <- (t(v.hat)%*% v.hat)/ (t(v) %*% v)
+	   return(U)
+    }
+	
+		  
+	U <- apply(testGeno_Imp,1,function(x) getU(M.Pdt,x)) 
+		
+	Test_SortedIndices <- Test_SortedPredictedValues[[2]]
+	Sorted_Test_StrainID <- Test_StrainID[Test_SortedIndices]
+	U_Sorted <- U[(Test_SortedIndices)]
+	
+	outputDF <- cbind.data.frame(Sorted_Test_StrainID ,round(Test_SortedPredictedValues[[1]],digits=2),round(U_Sorted,digits=5))
+	colnames(outputDF) <- c("LineID",paste("Predicted Value for ",trait,sep=""),"Upper Bound of Reliability")
+	
+	
+   return(outputDF)
+   
+    # if(length(testNAIndices)>0){
+       # trainGeno_Imp2 <- apply(trainGeno_Imp[,-testNAIndices],2,function(x) x+1)  
+	# }
+	# if(length(testNAIndices)==0){ }
+	
+	#print(anyNA(trainGeno_Imp2))
+	#print(anyNA(trainPheno))
+	#write.table(trainPheno,"trainPhenoCRep.csv")
+	#write.table(trainGeno_Imp2,"trainGenoTab.txt",sep="\t",quote=FALSE,row.names=FALSE)
+   	
+	# if(length(testNAIndices)>0){
+      # U <- apply(testGeno_Imp[,-testNAIndices],1,function(x) getU(M.Pdt,x)) 
+	# }
+	# if(length(testNAIndices)==0){ }
+	
+ }
  
 	
 #### 
@@ -1403,7 +1693,7 @@ getRankedPredictedValuesMT <- function(Data_Table_Num_Filt_List,nTraits,trait,GP
 	
 	 if(is.null(optTS)){
 	
-		 trainPheno <- TrainData_Table_Num_Filt[,trait]
+		 trainPheno0 <- TrainData_Table_Num_Filt[,trait]
 		 geno_012 <- apply(TrainData_Table_Num_Filt[,c(initCol:finalCol)],2,as.numeric)
 		 trainGeno <- apply(geno_012,2,function(x) x-1)
 		 #Geno <- rownames(TrainData_Table_Num_Filt)
@@ -1415,7 +1705,7 @@ getRankedPredictedValuesMT <- function(Data_Table_Num_Filt_List,nTraits,trait,GP
 	     strainID <- as.character(TrainData_Table_Num_Filt[,1])
 		 trainSetID <- as.character(as.vector(optTS[,1]))
 	     trainIndices <- which(strainID %in% trainSetID)
-		 trainPheno <- TrainData_Table_Num_Filt[trainIndices,trait]
+		 trainPheno0 <- TrainData_Table_Num_Filt[trainIndices,trait]
 		 geno_012 <- apply(TrainData_Table_Num_Filt[trainIndices,c(initCol:finalCol)],2,as.numeric)
 		 trainGeno <- apply(geno_012,2,function(x) x-1)
 		 Geno <- as.character(TrainData_Table_Num_Filt[trainIndices,1])
@@ -1430,10 +1720,65 @@ getRankedPredictedValuesMT <- function(Data_Table_Num_Filt_List,nTraits,trait,GP
 
 #### Impute trainGeno and train using mixed.solve
 	
-	if(anyNA(trainGeno)){	 
-		trainGeno_Imp <- snpQC(trainGeno,impute=TRUE,remove=FALSE)
-	}else{trainGeno_Imp <- trainGeno}
+	# if(anyNA(trainGeno)){	 
+		# trainGeno_Imp <- snpQC(trainGeno,impute=TRUE,remove=FALSE)
+	# }else{trainGeno_Imp <- trainGeno}
+	
+	
+### Check if the markers are missing in > 99% of the lines 
 	 
+	  allNAMarkers <- apply(trainGeno,2,function(x) if(length(which(is.na(x)))==nrow(trainGeno)){1}else{0})
+     
+	  allNAMarkerIndices <- which(allNAMarkers!=0)
+	  
+	  if(length(allNAMarkerIndices)>=1){
+		 trainGeno0 <- trainGeno[,-allNAMarkerIndices]
+	  }else{ trainGeno0 <- trainGeno}
+	 	 
+	 
+	 if(anyNA(trainGeno0)){	 
+		trainGeno_Imp0 <- snpQC(trainGeno0,impute=TRUE,remove=FALSE)
+	 }else{trainGeno_Imp0 <- trainGeno0}
+	 
+	 
+	  if(anyNA(TestGenoTable)){ 
+	    testGeno_Imp0 <- snpQC(TestGenoTable,impute=TRUE,remove=FALSE)
+		testGeno_Imp <- apply(testGeno_Imp0,2,function(x) as.numeric(x-1))
+		
+		testNA <- apply(testGeno_Imp,2,function(x) length(which(is.na(x))))
+		testNAIndices <-(which(unlist(testNA) !=0))
+		if(length(testNAIndices)<1){
+		   testNAIndices <- NULL
+		}
+	 }else{testGeno_Imp <- apply(TestGenoTable,2,function(x) as.numeric(x-1)) 
+	    testNAIndices <- NULL
+	 }
+	 
+	
+
+ ### Remove lines with missing pheno	 
+	  
+	if(anyNA(trainPheno0)){
+	   ph_NA_Indices_Tab <- apply(trainPheno0,2,function(x) which(is.na(x)))
+	   ph_NA_Indices <- unique(c(unlist(ph_NA_Indices_Tab)))
+	   trainPheno <- trainPheno0[-ph_NA_Indices,]
+	   trainGeno_Imp <- trainGeno_Imp0[-ph_NA_Indices,]
+	   Geno <- as.character(TrainData_Table_Num_Filt[-ph_NA_Indices,1])
+	}
+	if(!anyNA(trainPheno0)){
+	  
+	   trainPheno <- trainPheno0
+	   trainGeno_Imp <- trainGeno_Imp0
+	   Geno <- as.character(TrainData_Table_Num_Filt[,1])
+	}
+	 
+####### Set the same set of markers for both train and test sets with the same order 
+     ##Check with sorted markers and check with test set 
+	  trainssIDs <- colnames(trainGeno_Imp)
+	  testssIDs <- colnames(testGeno_Imp) 
+	  testGeno_Imp_Ord <- testGeno_Imp[, match(trainssIDs,testssIDs)]
+	  testGeno_Imp <- testGeno_Imp_Ord
+
 ## Kinship Matrix 
     # rownames(trainGeno_Imp) <- Geno
 	 #rownames(trainPheno) <- Geno
@@ -1499,7 +1844,7 @@ getRankedPredictedValuesMT <- function(Data_Table_Num_Filt_List,nTraits,trait,GP
 	Test_StrainID <- rownames(TestData_Table_Num_Filt)	 
 ### Upper bound of Reliability
 
-    trainGeno_Imp2 <- apply(trainGeno_Imp,2,function(x) x+1)  
+   # trainGeno_Imp2 <- apply(trainGeno_Imp,2,function(x) x+1)  
    
     cleanData <- cleanREP(trainPheno,trainGeno_Imp)
     M <-  cleanData[[2]]
@@ -2196,6 +2541,9 @@ getRankedPredictedValuesMT <- function(Data_Table_Num_Filt_List,nTraits,trait,GP
 	 
 	return(PA_Out_Table)
  }
+ 
+ 
+ 
   
 	
 #function to remove repeated genotypes
@@ -2229,7 +2577,8 @@ cleanREPV2 = function(y,gen,fam=NULL,thr=0.95){
   rownames(G) = 1:nrow(G)
   
   lt = G*lower.tri(G) # lower triang
-  r = 1* lt>thr # logical matrix: repeatitions
+  r = 1* lt>thr # logical matrix: repetitions
+  
   # starting point of new data
   #rownames(gen) = 1:nrow(gen)
   Ny=y;  Nfam=fam;  Ngen=gen 
@@ -2237,6 +2586,7 @@ cleanREPV2 = function(y,gen,fam=NULL,thr=0.95){
   # summary
   cs = colSums(r) # how many times id will be repeated
   while(any(cs>0)){
+  
     i = which(cs>0)[1]
     cat("indiviual",rownames(gen)[i],"had",cs[i],'duplicate(s)\n')
     w = which(r[,i])
@@ -2244,7 +2594,7 @@ cleanREPV2 = function(y,gen,fam=NULL,thr=0.95){
     }else{y[i] = mean(y[c(i,w)],na.rm=T)}
     if(ncol(y)>1){Ny=Ny[-w,]}else{Ny=Ny[-w]}
     Nfam=Nfam[-w]
-    Ngen=Ngen[-w,]
+    Ngen=NGen[-w,]
 	rownames(Ngen) <- rownames(NGen)[-w]
 	NGen <- Ngen
     r = r[-w,]
@@ -2255,3 +2605,28 @@ cleanREPV2 = function(y,gen,fam=NULL,thr=0.95){
 
 
 ###############################################################################
+
+
+getFixedData_List <- function(Processed_Data_Table_Num_Split_Filt,trait,fixedCoVar,target_ID){
+
+  traitSel <- c(trait,fixedCoVar)
+    
+  Processed_Merged_BLUEs <- Processed_Data_Table_Num_Split_Filt[[1]][,c("StrainID",traitSel)]
+  
+  Processed_BLUEs_Test <- matrix(NA,nrow=nrow(Processed_Data_Table_Num_Split_Filt[[2]]), ncol=ncol(Processed_Merged_BLUEs))
+  Processed_BLUEs_Test[,1]<- Processed_Data_Table_Num_Split_Filt[[2]][,1]
+  Processed_BLUEs_Test[,ncol(Processed_BLUEs_Test)] <- rep("BD",nrow(Processed_BLUEs_Test))
+  
+  colnames(Processed_BLUEs_Test) <- colnames(Processed_Merged_BLUEs)
+  Processed_BLUEs_Comb <- rbind(Processed_Merged_BLUEs,Processed_BLUEs_Test)
+  
+  
+  testIndices <- which(Processed_BLUEs_Comb[,"StrainID"] %in% target_ID)
+  trainIndices <- setdiff(c(1:nrow(Processed_BLUEs_Comb)),testIndices)
+  
+  X <- model.matrix(~as.factor(Processed_BLUEs_Comb[,fixedCoVar]))
+  Fixed.X <- X[trainIndices,]
+  Test.X <- X[testIndices,]
+
+  return(list(Fixed.X,Test.X))
+}
