@@ -70,6 +70,12 @@ if(!require("BGLR", quietly = TRUE)){
 # } 
   
 #dyn.load('/usr/lib/jvm/java-17-openjdk-amd64/lib/server/libjvm.so')
+
+if(file.exists("/usr/lib/jvm/java-17-openjdk-amd64/lib/server/libjvm.so")){
+   
+   dyn.load('/usr/lib/jvm/java-17-openjdk-amd64/lib/server/libjvm.so')
+}
+
 library(rJava)
 if(!require("rTASSEL", quietly = TRUE)){
       devtools::install_bitbucket(
