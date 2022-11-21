@@ -20,12 +20,14 @@ library(rrBLUP)
 # LinkMap <- read.csv(infileLinkMap)
 
 
-WorkDir <- "C:/Users/ivanv/Desktop/UMN_GIT/GPSoy/SoyGen2/Data"
-setwd(WorkDir)
+# WorkDir <- "C:/Users/ivanv/Desktop/UMN_GIT/GPSoy/SoyGen2/Data"
+# setwd(WorkDir)
+
+setwd("C:/Users/ivanv/Desktop/UMN_GIT/DataShare_Demo/")
 infileBLUEs <- "Pheno.csv" 
 infileVCF <- "Geno.vcf"
 infileTestSet <- "Target.csv"
-source("C:/Users/ivanv/Desktop/UMN_GIT/GPSoy/SoyGen2/App/GS_Pipeline_Jan_2022_FnsApp.R")
+source("C:/Users/ivanv/Desktop/UMN_GIT/GPSoy/App/GS_Pipeline_Jan_2022_FnsApp.R")
 
 NUST_Genotypes_VCF <- read.table(infileVCF)
 NUST_BLUEs <- read.csv(infileBLUEs,header=TRUE)
@@ -75,9 +77,7 @@ NUST_Test_Data_Table <- read.csv(infileTestSet)
  
   
 ## STPGA 
-  source("C:/Users/ivanv/Desktop/UMN_GIT/GPSoy/SoyGen2/App/GS_Pipeline_Jan_2022_FnsApp.R")
-
-
+  source("C:/Users/ivanv/Desktop/UMN_GIT/GPSoy/App/GS_Pipeline_Jan_2022_FnsApp.R")
   noToReduce <-  2237
   nTrainToSelect <- 500 
   testIds <- testIDs 
@@ -86,6 +86,8 @@ NUST_Test_Data_Table <- read.csv(infileTestSet)
   GAParameters <- list(InitPop=NULL,npop=100, nelite=10, mutprob=.5, mutintensity = 1,
          niterations=100,minitbefstop=50, tabu=TRUE,errorstat="PEVMEAN2",tabumemsize = 1,plotiters=FALSE, lambda=1e-6, mc.cores=10)
   
+  
+  NUST_Data_Table_Num_Filt <- NUST_Data_Table_Num_Filt_1K
   Train_STPGA <- c()
   system.time({
 	 if(is.null(optTS)){
@@ -96,7 +98,7 @@ NUST_Test_Data_Table <- read.csv(infileTestSet)
     TS_STPGA <- as.character(as.vector(optTS))
    }
    TS_Random <- getRandomTS(NUST_Data_Table_Num_Filt,trait,nTraits,noToReduce,nTrainToSelect) 
-   PA_Table <- getTSComparisons(NUST_Data_Table_Num_Filt,TS_STPGA,TS_Random,trait,nTraits,testIDs,optTS)
+   PA_Table <- getTSComparisons(NUST_Data_Table_Num_Filt,TS_STPGA,TS_Random,trait,nTraits,testIDs)
 	 
 #save(TS_STPGA,TS_Random,PA_Table,file="TS_Demo_PreComputed_Out.RData")  
  
