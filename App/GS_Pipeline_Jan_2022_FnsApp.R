@@ -1410,8 +1410,9 @@ getPredictionData <- function(Data_Table_Num_List,noCandidates){
 	 
 	 if(!is.null(optTS)){
 	     strainID <- as.character(TrainData_Table_Num_Filt[,1])
+		 StrainID <- as.character(TrainData_Table_Num_Filt[,ncol(TrainData_Table_Num_Filt)])
 		 trainSetID <- as.character(as.vector(optTS))
-	     trainIndices <- which(strainID %in% trainSetID)
+	     trainIndices <- which(StrainID %in% trainSetID)
 		 trainPheno0 <- as.numeric(as.character(TrainData_Table_Num_Filt[trainIndices,trait]))
 		 geno_012 <- apply(TrainData_Table_Num_Filt[trainIndices,c(initCol:finalCol)],2,as.numeric)
 		 trainGeno <- apply(geno_012,2,function(x) x-1)
@@ -1505,7 +1506,9 @@ getPredictionData <- function(Data_Table_Num_List,noCandidates){
 	     pred <- mixed.solve(trainPheno,Z=trainGeno_Imp,SE=FALSE,return.Hinv =FALSE) 
 	     Mean <- as.numeric(pred$beta)
 	 }
+	 
  	 Effects <- pred$u
+	 
    
     while(anyNA(testGeno_Imp)){
       testGeno_Imp_Mod <- testGeno_Imp
@@ -1517,6 +1520,7 @@ getPredictionData <- function(Data_Table_Num_List,noCandidates){
       Effects <- Effects_Mod[-testNAIndices]
       trainGeno_Imp <- trainGeno_Imp_Mod[,-testNAIndices]
     }
+	
  	  PredictedValues <- Mean + (trainGeno_Imp %*% Effects)
  	  SortedPredictedValues <- sort.int(PredictedValues,decreasing=TRUE,index.return=TRUE)
  	  
@@ -2084,10 +2088,20 @@ getRankedPredictedValuesMT <- function(Data_Table_Num_Filt_List,nTraits,trait,GP
 	# NAIndices <-  which(is.na(TrainData_Table_Num[,trait]))
     # Train_Data_Table_Num_Filt <- NUST_Data_Table_Num[-NAIndices,]
 		 
+    initCol <- grep("ss",colnames(TrainData_Table_Num_Filt))[1]
+	finalCol <- grep("ss",colnames(TrainData_Table_Num_Filt))[length(grep("ss",colnames(TrainData_Table_Num_Filt)))]
+	 
+	initColTst <- grep("ss",colnames(TestData_Table_Num_Filt))[1]
+	finalColTst <- grep("ss",colnames(TestData_Table_Num_Filt))[length(grep("ss",colnames(TestData_Table_Num_Filt)))]
+	 
 	
 	trainPheno <- TrainData_Table_Num_Filt[,trait]
-	trainGeno_012 <- apply(TrainData_Table_Num_Filt[,c(3:(ncol(TrainData_Table_Num_Filt)-nTraits))],2,as.numeric)
+	trainGeno_012 <- apply(TrainData_Table_Num_Filt[,c(3:(ncol(TrainData_Table_Num_Filt)-nTraits-2))],2,as.numeric)
 	testGeno_012 <- apply(TestData_Table_Num_Filt[,c(2:(ncol(TestData_Table_Num_Filt)))],2,as.numeric)
+	
+		
+	# trainGeno_012 <- apply(TrainData_Table_Num_Filt[,c(initCol:finalCol)],2,as.numeric)
+	# testGeno_012 <- apply(TestData_Table_Num_Filt[,c(initColTst:finalColTst)],2,as.numeric)
 	
 ## Complete Genotypes table
 	
@@ -2113,12 +2127,13 @@ getRankedPredictedValuesMT <- function(Data_Table_Num_Filt_List,nTraits,trait,GP
 ## Reduce or keep candidate genotypic data 
     
     nTrain <- nrow(TrainData_Table_Num_Filt)
-	trainSetIndices <- c(1:nTrain)
-	# if(noCandidates!= nTrain){
-	  # trainSetIndices <-sample(c(1:nTrain),noCandidates)
-	# }
-	# if(noCandidates== nTrain){
-	#}
+	
+	 if(noCandidates!= nTrain){
+	   trainSetIndices <-sample(c(1:nTrain),noCandidates)
+	 }
+	 if(noCandidates== nTrain){
+	   trainSetIndices <- c(1:nTrain)
+	 }
 	
 	G <- rbind(totGeno[trainSetIndices,],totGeno[testIndices,])
 	rownames(G) <- c(rownames(totGeno)[trainSetIndices],rownames(totGeno)[testIndices])
@@ -2127,7 +2142,7 @@ getRankedPredictedValuesMT <- function(Data_Table_Num_Filt_List,nTraits,trait,GP
 	G_Imp <- snpQC(G,remove=FALSE,impute=TRUE)
 	rownames(G_Imp) <- rownames(G)
     GenoSVD <- svd(G_Imp,nu=99,nv=99)
-    PC99 <- G%*%GenoSVD$v
+    PC99 <- G_Imp%*%GenoSVD$v
     rownames(PC99)<-rownames(G_Imp)
     Train_STPGA <- c()
 	
@@ -2152,9 +2167,9 @@ getRankedPredictedValuesMT <- function(Data_Table_Num_Filt_List,nTraits,trait,GP
 	  
     })
 	
-	Train_STPGA_Indices <-  which(Candidates %in% as.character(Train_STPGA$`Solution with rank 1`))
-    	
-    return(list(Train_STPGA,Train_STPGA_Indices))
+	Train_STPGA_Ids <- as.character(Train_STPGA$`Solution with rank 1`)
+	Train_STPGA_Indices <-  which(Candidates %in% Train_STPGA_Ids)
+    return(list(Train_STPGA,Train_STPGA_Ids,Train_STPGA_Indices))
  }
  
  
@@ -2171,7 +2186,14 @@ getRankedPredictedValuesMT <- function(Data_Table_Num_Filt_List,nTraits,trait,GP
 	 rownames(trainPheno) <- rownames(TrainData_Table_Num_Filt)
     }
 	
-	trainGeno_012 <- apply(TrainData_Table_Num_Filt[,c(3:(ncol(TrainData_Table_Num_Filt)-nTraits))],2,as.numeric)
+	initCol <- grep("ss",colnames(TrainData_Table_Num_Filt))[1]
+	finalCol <- grep("ss",colnames(TrainData_Table_Num_Filt))[length(grep("ss",colnames(TrainData_Table_Num_Filt)))]
+	 
+	initColTst <- grep("ss",colnames(TestData_Table_Num_Filt))[1]
+	finalColTst <- grep("ss",colnames(TestData_Table_Num_Filt))[length(grep("ss",colnames(TestData_Table_Num_Filt)))]
+	 
+	
+	trainGeno_012 <- apply(TrainData_Table_Num_Filt[,c(3:(ncol(TrainData_Table_Num_Filt)-nTraits-2))],2,as.numeric)
 	testGeno_012 <- apply(TestData_Table_Num_Filt[,c(2:(ncol(TestData_Table_Num_Filt)))],2,as.numeric)
 	
 ## Complete genotypic table of all candidates
@@ -2187,13 +2209,14 @@ getRankedPredictedValuesMT <- function(Data_Table_Num_Filt_List,nTraits,trait,GP
 ## Reduce or keep Candidate Genotypic data 
     nTrain <- nrow(TrainData_Table_Num_Filt)
 	set.seed(125)
-	trainSetIndices <- c(1:nTrain)
+	# trainSetIndices <- c(1:nTrain)
 	
-	# if(noCandidates!= nTrain){
-	# trainSetIndices <-sample(c(1:nTrain),noCandidates)
-	# }
-	# if(noCandidates== nTrain){
-	#}
+	if(noCandidates!= nTrain){
+	  trainSetIndices <-sample(c(1:nTrain),noCandidates)
+	}
+	if(noCandidates== nTrain){
+	 trainSetIndices <- c(1:nTrain)
+	}
 	
 ### Define candidate training set
 	
@@ -2213,17 +2236,25 @@ getRankedPredictedValuesMT <- function(Data_Table_Num_Filt_List,nTraits,trait,GP
   }
   
    
- getTSComparisons <- function(Data_Table_Num_Filt_List,Train_STPGA,Train_Random,trait,nTraits,testIds,optTS=NULL){ 
+ getTSComparisons <- function(Data_Table_Num_Filt_List,Train_STPGA,Train_Random,trait,nTraits,testIds){ 
   
     TrainData_Table_Num_Filt <- Data_Table_Num_Filt_List[[1]]
 	TestData_Table_Num_Filt <- Data_Table_Num_Filt_List[[2]]
 	
 	trainPheno <- TrainData_Table_Num_Filt[,trait]
 	names(trainPheno) <- rownames(TrainData_Table_Num_Filt)
+	
+	initCol <- grep("ss",colnames(TrainData_Table_Num_Filt))[1]
+	finalCol <- grep("ss",colnames(TrainData_Table_Num_Filt))[length(grep("ss",colnames(TrainData_Table_Num_Filt)))]
+	 
+	initColTst <- grep("ss",colnames(TestData_Table_Num_Filt))[1]
+	finalColTst <- grep("ss",colnames(TestData_Table_Num_Filt))[length(grep("ss",colnames(TestData_Table_Num_Filt)))]
+	 
    	
-	trainGeno_012 <- apply(TrainData_Table_Num_Filt[,c(3:(ncol(TrainData_Table_Num_Filt)-nTraits))],2,as.numeric)
+	trainGeno_012 <- apply(TrainData_Table_Num_Filt[,c(3:(ncol(TrainData_Table_Num_Filt)-nTraits-2))],2,as.numeric)
 	testGeno_012 <- apply(TestData_Table_Num_Filt[,c(2:(ncol(TestData_Table_Num_Filt)))],2,as.numeric)
 	
+		
 	trainGeno <-  apply(trainGeno_012,2,function(x) x-1)
 	testGeno <- apply(testGeno_012,2,function(x) x-1)
 	rownames(trainGeno) <- rownames(TrainData_Table_Num_Filt)
@@ -2237,21 +2268,22 @@ getRankedPredictedValuesMT <- function(Data_Table_Num_Filt_List,nTraits,trait,GP
     Test <- testIds
     Candidates <- as.character(rownames(trainGeno))
  
-    ## Train Set for STPGA and Random   
+   
+   ## Train Set for STPGA and Random   
  
+	
+	  
+	 train_STPGA_Ind <- which(Candidates %in% as.character(Train_STPGA[[1]]$`Solution with rank 1`))
+	
+	
 	# if(is.null(optTS)){
 	  
-	   # train_STPGA_Ind <- which(Candidates %in% as.character(Train_STPGA[[1]]$`Solution with rank 1`))
+	   # train_STPGA_Ind <- c(1:length(Candidates))
 	# } 
-	
-	if(is.null(optTS)){
-	  
-	   train_STPGA_Ind <- c(1:length(Candidates))
-	} 
-    if(!is.null(optTS)){ 
+    # if(!is.null(optTS)){ 
   
-       train_STPGA_Ind <- which(Candidates %in% as.character(as.vector(optTS))) 
-	}
+       # train_STPGA_Ind <- which(Candidates %in% as.character(as.vector(optTS))) 
+	# }
   
      train_Random_Ind <- which(Candidates %in% as.character(Train_Random[[1]]))
      trainGeno_STPGA <- trainGeno[train_STPGA_Ind,]
@@ -2279,20 +2311,27 @@ getRankedPredictedValuesMT <- function(Data_Table_Num_Filt_List,nTraits,trait,GP
   
    
    
- getTSComparisonsMT <- function(Data_Table_Num_Filt_List,Train_STPGA,Train_Random,trait,nTraits,testIds,optTS=NULL){ 
+ getTSComparisonsMT <- function(Data_Table_Num_Filt_List,Train_STPGA,Train_Random,trait,nTraits,testIds){ 
   
     TrainData_Table_Num_Filt <- Data_Table_Num_Filt_List[[1]]
 	TestData_Table_Num_Filt <- Data_Table_Num_Filt_List[[2]]
 		
 	
-	trainGeno_012 <- apply(TrainData_Table_Num_Filt[,c(3:(ncol(TrainData_Table_Num_Filt)-nTraits))],2,as.numeric)
-	testGeno_012 <- apply(TestData_Table_Num_Filt[,c(2:(ncol(TestData_Table_Num_Filt)))],2,as.numeric)
+	initCol <- grep("ss",colnames(TrainData_Table_Num_Filt))[1]
+	finalCol <- grep("ss",colnames(TrainData_Table_Num_Filt))[length(grep("ss",colnames(TrainData_Table_Num_Filt)))]
+	 
+	initColTst <- grep("ss",colnames(TestData_Table_Num_Filt))[1]
+	finalColTst <- grep("ss",colnames(TestData_Table_Num_Filt))[length(grep("ss",colnames(TestData_Table_Num_Filt)))]
+	 
 	
+	trainGeno_012 <- apply(TrainData_Table_Num_Filt[,c(3:(ncol(TrainData_Table_Num_Filt)-nTraits-2))],2,as.numeric)
+	testGeno_012 <- apply(TestData_Table_Num_Filt[,c(2:(ncol(TestData_Table_Num_Filt)))],2,as.numeric)
+		
 	trainGeno <-  apply(trainGeno_012,2,function(x) x-1)
 	testGeno <- apply(testGeno_012,2,function(x) x-1)
 	rownames(trainGeno) <- rownames(TrainData_Table_Num_Filt)
 
-    ## TotGeno
+   ## TotGeno
 	
 	geno_012 <- rbind(trainGeno_012,testGeno_012)
     totGeno <-  apply(geno_012,2,function(x) x-1)
@@ -2303,22 +2342,12 @@ getRankedPredictedValuesMT <- function(Data_Table_Num_Filt_List,nTraits,trait,GP
  
     ## Train Set for STPGA and Random   
  
-	# if(is.null(optTS)){
-	  
-	   # train_STPGA_Ind <- which(Candidates %in% as.character(Train_STPGA[[1]]$`Solution with rank 1`))
-	# }
-    if(is.null(optTS)){
-	  
-	   train_STPGA_Ind <- c(1:length(Candidates))
-	} 	
-    if(!is.null(optTS)){ 
-  
-       train_STPGA_Ind <- which(Candidates %in% as.character(as.vector(optTS))) 
-	}
-  
-     train_Random_Ind <- which(Candidates %in% as.character(Train_Random[[1]]))
-     trainGeno_STPGA <- trainGeno[train_STPGA_Ind,]
-	 trainGeno_Random <- trainGeno[train_Random_Ind,]
+
+	train_STPGA_Ind <- which(Candidates %in% as.character(Train_STPGA[[1]]$`Solution with rank 1`))
+	
+    train_Random_Ind <- which(Candidates %in% as.character(Train_Random[[1]]))
+    trainGeno_STPGA <- trainGeno[train_STPGA_Ind,]
+	trainGeno_Random <- trainGeno[train_Random_Ind,]
   
 	 
 	## Impute missing values 
@@ -2598,7 +2627,7 @@ cleanREPV2 = function(y,gen,fam=NULL,thr=0.95){
     w = which(r[,i])
     if(ncol(y)>1){y[i,] = colMeans(y[c(i,w),],na.rm=T)
     }else{y[i] = mean(y[c(i,w)],na.rm=T)}
-    if(ncol(y)>1){Ny=Ny[-w,]}else{Ny=Ny[-w]}
+    if(ncol(y)>1){Ny=Ny[-w,] ;rownames(Ny) <- rownames(Ny)[-w]}else{Ny=Ny[-w];names(Ny) <- names(Ny)[-w]}
     Nfam=Nfam[-w]
     Ngen=NGen[-w,]
 	rownames(Ngen) <- rownames(NGen)[-w]

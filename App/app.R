@@ -52,8 +52,7 @@ ui <- fluidPage(
   
               
      ## Tab for loading data
-              
-             
+     
        tabPanel("Load Data",
                        #sidebarLayout(
                                                #sidebarPanel(
@@ -239,12 +238,16 @@ ui <- fluidPage(
                            tags$br(),
                            tags$br(),
                            tags$br(),
-                           
+                           downloadButton("ExportOptTS", "Export Optimal TrainSet"),
+                           tags$br(),
+                           tags$br(),
+                           tags$br(),
                            checkboxInput("setGA", "Use Default Genetic Algorithm Parameters", TRUE),
                            conditionalPanel(condition="input.setGA == false",
                                             numericInput(inputId="noPop","GA Population Size",value = 100,min =1,max=1000),
                                             
                                             numericInput(inputId="noElite","Elite Population Size",value =10,min =1, max=50),
+                                            
                                             numericInput(inputId="mutProb","Mutation Probability",value =0.5,min =0.1, max=1),
                                             
                                             numericInput(inputId="mutInt","Mutation Intensity",value =1,min =0, max=1),
@@ -343,11 +346,11 @@ ui <- fluidPage(
              tabPanel("Genomic Prediction",
                       tabsetPanel(id="GPModels",
                                    
-                       tabPanel("Single Trait Genomic Prediction",
+                       tabPanel("Single Trait",
                        
                        sidebarLayout(
                          sidebarPanel(
-                           selectInput(inputId="TrainSet","Choose Training Set",c("Complete Input Genotype Set","Optimal Train Set from Step 3","Random Train Set from Step 3")),
+                           selectInput(inputId="TrainSet","Choose Training Set",c("Complete Input Genotype Set","Optimal Train Set from Step 3","Random Train Set from Step 3"),selected="Complete Input Genotype Set"),
                            tags$br(),
                            tags$br(),
                            selectInput(inputId="fixed","Choose Fixed Effect",choices=NULL),
@@ -382,7 +385,7 @@ ui <- fluidPage(
                        )
                      ),
                      
-                     tabPanel("Multi-trait Genomic Prediction",
+                     tabPanel("Multi-trait",
 
                               sidebarLayout(
                                 sidebarPanel(
@@ -411,54 +414,54 @@ ui <- fluidPage(
 
                                 )
                               )
-                     ) 
+                     )
                      
-                     
-                     #tabPanel("Multi-trait Multi-environment Genomic Prediction",
-                              
+                     # tabPanel("Multi-environment",
+                     #          
                      #          sidebarLayout(
                      #            sidebarPanel(
-                     #              selectInput(inputId="TrainSet","Choose Training Set",c("Complete Input Genotype Set","Optimal Train Set from Step 3","Random Train Set from Step 3")),
+                     #              selectInput(inputId="Year","Select Year/Years",NULL),
                      #              tags$br(),
                      #              tags$br(),
-                     #              selectInput(inputId="GPModelST","Choose Prediction Model for Single Trait",c("rrBLUP (rrBLUP)","rrBLUP (bWGR)","BayesB (bWGR)","BayesLASSO (bWGR)")),
-                     #              actionButton("RunPredictionsST", "Predict Single Trait!"),
-                     #              tags$br(),
+                     #              selectInput(inputId="Location","Select Location/Locations",NULL),
                      #              tags$br(),
                      #              tags$br(),
                      #              tags$br(),
-                     #              selectInput(inputId="GPModelMT","Choose Prediction Model for Multiple Traits",c("BRR (BGLR)","RKHS (BGLR)","Spike-Slab(BGLR)","Mmer (Sommer)")),
-                     #              actionButton("RunPredictionsMT", "Predict Multiple Traits!"),
+                     #              selectInput(inputId="fixed","Choose Fixed Effect",choices=NULL),
+                     #              tags$br(),
+                     #              tags$br(),
+                     #              tags$br(),
+                     #              selectInput(inputId="MEModel","Choose MultiEnvironment Model ",c("Main Effect","Homogeneous Variance (CS)","Heterogeneous Variance (CS+DG)","Unstructured (US)")),
+                     #              actionButton("RunPredictionsME", "Fit Multi-environmental Model!"),
+                     #              tags$br(),
+                     #              tags$br(),
                      #              tags$br(),
                      #              tags$br()
-                     #              
+                     # 
                      #            ), mainPanel(
                      #              fluidRow(
-                     #                column(width=8,tags$h3(tags$strong("Train Genomic Prediction Model"))), actionButton("GP_CVR", "prev"),
+                     #                column(width=8,tags$h3(tags$strong("Fit Multi-environmental GP Model"))), actionButton("GP_CVR", "prev"),
                      #                actionButton("GP_VP", "next")
                      #              ),
                      #              fluidRow(
-                     #                
-                     #                column(width=10, tags$p(" Select the statistical method to train the genomic prediction model and predict the values of target lines. rrBLUP method is implemented using the
-                     #                       rrBLUP (Endelman 2011) package. Expectation maximization based RR-BLUP, BayesB and BayesLASSO methods are implemented using the bWGR package (Xavier et al. 2020).
-                     #                       Multi-trait predictions are implemented using the BGLR and Sommer packages. The Multitrait function in BGLR implements Bayesian Ridge Regression, RKHS, and Spike-Slab methods. 
-                     #                       The multi-trait GBLUP is implemented using the 'mmer' function in 'sommer' package."))),
+                     #                column(width=10, tags$p("Environments are defined as combinations of year and locations in which phenotypic data are collected. 
+                     #                Multi-environmental models are implemented using the 'mmer' function in 'sommer' package.
+                     #                Fit genomic prediction models taking into account only the main effects or the main effects + GxE effects using the 'sommer' package'.  
+                     #                The user needs to select one or many years and locations and the type of variance-covariance structure for fitting the model"))),
                      #              tags$br(),
                      #              tags$br(),
                      #              tags$h4(textOutput("RankedLinesHeader")),
-                     #              tableOutput("Ranked_Lines_for_SelectionST"),
-                     #              tableOutput("Ranked_Lines_for_SelectionMT")
-                     #              
+                     #              tableOutput("Ranked_Lines_for_SelectionSTME"),
+                     #              tableOutput("Ranked_Lines_for_SelectionMTME")
+                     # 
                      #            )
                      #          )
                      # )
-                     
-                 )
-                )
+                  )
+              )
+      )
+)
              
-            )
-          )
-
                      
               #   
               
@@ -525,9 +528,6 @@ ui <- fluidPage(
               #          ) 
               # )
   
-
-
-
 ###
 
 server <- function(input,output){
@@ -650,8 +650,6 @@ server <- function(input,output){
  
   
 ### Filter Data
-  
- 
 
 ### Filter 1  
   observeEvent(input$infileVCF, {
@@ -817,29 +815,28 @@ server <- function(input,output){
   optimCriteria <- reactive(input$optCriteria)
   
   predictionData <- reactive({getPredictionData(processedData(),noCandidates())}) 
-#  GAParameters <- reactiveValues(npop=100,nelite=10,mutprob=0.5,mutintensity=1,niterations=100,minitbefstop=50,tabu="TRUE",tabumemsize=1,plotiters="FALSE",errorstat=optimCriteria(),lambda=1e-6,mc.cores=10)
+
+  GAParameters <- reactiveValues(npop=100,nelite=10,mutprob=0.5,mutintensity=1,niterations=100,minitbefstop=50,tabu="TRUE",tabumemsize=1,plotiters="FALSE",errorstat="PEVMEAN2",lambda=1e-6,mc.cores=10)
   
+  # GAParameters$npop= reactive(input$noPop)
+  # GAParameters$nelite=reactive(input$noElite)
+  # GAParameters$mutprob=reactive(input$mutProb)
+  # GAParameters$mutintensity=reactive(input$mutInt)
+  # GAParameters$niterations=reactive(input$nIterGA)
+  # GAParameters$tabu= reactive(input$tabu)
+  # GAParameters$tabumemsize= reactive(input$tabumemsize)
+  # GAParameters$plotiters=reactive(FALSE)
+  # GAParameters$errorstat= reactive(input$optCriteria)
+  # GAParameters$lambda=reactive(input$lambda)
+  # GAParameters$mc.cores= reactive(input$mcCores)
   
   # 
-  # GAParameters <- reactiveValues() 
-  # GAParameters$npop=100
-  # GAParameters$nelite=10
-  # GAParameters$mutprob=0.5
-  # GAParameters$mutintensity=1
-  # GAParameters$niterations=100
-  # GAParameters$minitbefstop=50
-  # GAParameters$tabu=TRUEd
-  # GAParameters$tabumemsize=1
-  # GAParameters$plotiters=FALSE
-  # GAParameters$errorstat=optimCriteria()
-  # GAParameters$lambda=1e-6
-  # GAParameters$mc.cores=10
-  
   Train_STPGA <-   eventReactive(input$Optimize,{
     withProgress(message = 'Running Optimizations', value = 0, {
-      getOptimalTS(predictionData(),unlist(Trait()),nTraits(),noCandidates(),nTrainToSelect(),GAParameters)})
+      getOptimalTS(predictionData(),unlist(Trait()),nTraits(),noCandidates(),nTrainToSelect(),isolate(reactiveValuesToList(GAParameters)))})
   })
-    #%>% bindCache(processedData(),Trait(),nTraits(),noCandidates(),nTrainToSelect())
+    
+  #%>% bindCache(processedData(),Trait(),nTraits(),noCandidates(),nTrainToSelect())
 
   Train_Random <-   eventReactive(input$Optimize,{
     withProgress(message = 'Running Random Set', value = 0, { 
@@ -848,15 +845,32 @@ server <- function(input,output){
     
   #%>% bindCache(processedData(),Trait(),nTraits(),noCandidates(),nTrainToSelect())
  
+  
+ #  TSOptOutputList <- reactive({
+ #    if(nSelTraits()==1){
+ #      withProgress(message = 'Performing CrossValidations', value = 0, {
+ #        getTSComparisons(predictionData(),Train_STPGA(),Train_Random(),unlist(Trait()),nTraits(),optTS())
+ #      })
+ #    }else if(nSelTraits()>1){
+ #      withProgress(message = 'Performing CrossValidations', value = 0, {
+ #        getTSComparisonsMT(predictionData(),Train_STPGA(),Train_Random(),unlist(Trait()),nTraits(),optTS())
+ #      })
+ #    }
+ # })
+  
  
       
   TSOptOutputList <- eventReactive(input$Optimize,{
       if(nSelTraits()==1){
-        getTSComparisons(predictionData(),Train_STPGA(),Train_Random(),unlist(Trait()),nTraits(),optTS())
+       withProgress(message = 'Performing CrossValidations', value = 0, {
+        getTSComparisons(predictionData(),Train_STPGA(),Train_Random(),unlist(Trait()),nTraits(),TargetIDs())
+       })
       }else if(nSelTraits()>1){
-        getTSComparisonsMT(predictionData(),Train_STPGA(),Train_Random(),unlist(Trait()),nTraits(),optTS())
+       withProgress(message = 'Performing CrossValidations', value = 0, {
+        getTSComparisonsMT(predictionData(),Train_STPGA(),Train_Random(),unlist(Trait()),nTraits(),TargetIDs())
+       })
       }
-      
+
     })
   
   tsOptHead <- eventReactive(input$Optimize,{paste("Correlation between observed and predicted values")})
@@ -950,20 +964,18 @@ server <- function(input,output){
   
   TS <- reactive(input$TrainSet) 
   
-  optTS <-  eventReactive(input$TrainSet,{
-    
+  #optTS <-  eventReactive(input$TrainSet,{
+   
+  optTS <-  reactive({ 
     if(TS() == "Complete Input Genotype Set"){
+      optimTS <- NULL
+    }else if(TS() == "Optimal Train Set from Step 3"){
       
-      optimTS<- NULL
-    }
-    if(TS() == "Optimal Train Set from Step 3"){
+      optimTS <- Train_STPGA()[[2]]
+    }else if(TS() == "Random Train Set from Step 3"){
       
-      optimTS <- Train_STPGA()$ind
-    }
-    
-    if(TS() == "Random Train Set from Step 3"){
+      optimTS <- Train_Random()[[1]]
       
-      optimTS <- Train_Random()$ind
     }
     (optimTS)
   })
@@ -1111,8 +1123,17 @@ server <- function(input,output){
   
   
 ########
+  output$ExportOptTS <- downloadHandler(
+    filename = function() {
+      "OptimalTS.csv"
+    },
+    content = function(file) {
+      
+      write.csv(as.data.frame((Train_STPGA()[[2]])), file, row.names = FALSE)
+    }
+  )
   
-  
+
   output$ExportOut <- downloadHandler(
       filename = function() {
         "PredictionsST.csv"
@@ -1141,7 +1162,7 @@ server <- function(input,output){
 
 shinyApp(server=server,ui=ui)
 
-
+ 
 
 
 
