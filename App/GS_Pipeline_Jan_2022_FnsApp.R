@@ -1458,7 +1458,8 @@ getPredictionData <- function(Data_Table_Num_List,noCandidates){
 	   ph_NA_Indices <- which(is.na(trainPheno0))
 	   trainPheno <- trainPheno0[-ph_NA_Indices] 
 	   trainGeno_Imp <- trainGeno_Imp0[-ph_NA_Indices,]
-	   Geno <- as.character(TrainData_Table_Num_Filt[-ph_NA_Indices,1])
+	  # Geno <- as.character(TrainData_Table_Num_Filt[-ph_NA_Indices,1])
+	   Geno <- as.character(rownames(trainGeno_Imp))
 	   if(!is.null(fixedX)  & fixedX !="NULL" & fixedData != "NULL" ){
 	     Fixed.X.Mod <- Fixed.X[-ph_NA_Indices,]
 	   }
@@ -1468,7 +1469,8 @@ getPredictionData <- function(Data_Table_Num_List,noCandidates){
 	  
 	   trainPheno <- trainPheno0
 	   trainGeno_Imp <- trainGeno_Imp0
-	   Geno <- as.character(TrainData_Table_Num_Filt[,1])
+	  # Geno <- as.character(TrainData_Table_Num_Filt[,1])
+	   Geno <- as.character(rownames(trainGeno_Imp))
 	   if(!is.null(fixedX)  & fixedX !="NULL" & fixedData != "NULL"){
 	     Fixed.X.Mod <- Fixed.X
 	   }
@@ -1489,10 +1491,10 @@ getPredictionData <- function(Data_Table_Num_List,noCandidates){
 	 # rownames(A) <- Geno
 
 ## Prepare Data Table for GP 
-	 Data <- cbind.data.frame(Geno,trainPheno)
-	 colnames(Data) <- c("Geno","Pheno")
-	 Geno <- "Geno"
-	 Pheno <- "Pheno"
+	 # Data <- cbind.data.frame(Geno,trainPheno)
+	 # colnames(Data) <- c("Geno","Pheno")
+	 # Geno <- "Geno"
+	 # Pheno <- "Pheno"
 	
 #### Impute trainGeno and train using mixed.solve
 		 
