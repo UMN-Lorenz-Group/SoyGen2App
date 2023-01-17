@@ -54,15 +54,12 @@ ui <- fluidPage(
      ## Tab for loading data
      
        tabPanel("Load Data",
-                       #sidebarLayout(
-                                               #sidebarPanel(
+                       
                        fluidRow(
                           column(4),column(width=4,tags$h3(tags$strong("Load Data Files"))),   
-                          column(10),column(width=2,actionButton("Data_Home", "prev"),
-                          actionButton("Data_Trait", "next"))), 
-                      
-                     #  fluidRow(
-                     #     column(2),column(width=8,tags$h4("Load data files containing phenotypic data, genotypic data and information on target lines."))),
+                          #column(10),column(width=2,actionButton("Data_Home", "prev"),
+                          #actionButton("Data_Trait", "next"))
+                          ), 
                        tags$br(),
                        fluidRow(
                          column(1),column(width=3,tags$h4(tags$strong("Phenotypic Data"))),
@@ -85,12 +82,7 @@ ui <- fluidPage(
                        column(width=5,tags$ul(tags$li("A '.vcf' containing the genotypic information of both the candidate lines used to train the GP model and the target lines whose values need to be predicted.")))
                      ),
                      tags$br(),
-                      # fluidRow(
-                      #   column(2),column(width=5,fileInput("infileBLUEs", "Choose Phenotype File (CSV)", accept = ".csv")),
-                      #   column(7),column(width=5,fileInput("infileVCF", "Choose Genotype File (VCF)", accept = ".vcf"))
-                      # ),
-                      # tags$br(),
-                      fluidRow(
+                     fluidRow(
                            column(1),column(width=5,tags$h4(tags$strong(textOutput("PhenoHeader")))),
                            column(6),column(width=5,tags$h4(tags$strong(textOutput("GenoHeader"))))
                       ),
@@ -101,56 +93,138 @@ ui <- fluidPage(
         ),  
        
        ###  
-       tabPanel("Filter Genotypic Data",
-              sidebarLayout(
-                
-                sidebarPanel(
-                  tags$strong(tags$h4("Filter Genotype Table Sites")),
-                  tags$br(), 
-                  numericInput(inputId="siteMinCnt","Minimum Site Count (TASSEL)",value = 0,min =0, max=0),
-                  tags$br(),
-                  
-               
-                  numericInput(inputId="MAF","Minimum Allele Frequency",value =0.02,min =0, max=0.5),
-                  tags$br(),
-                  actionButton(inputId="FilterSites","Filter Genotype Table Sites"),
-                  tags$br(),
-                  tags$br(),
-                  checkboxInput("setGenoFilt1Tas", "Use Filtered Genotypes From Filter Sites For Next Steps", TRUE),
-                  tags$br(),
-                  tags$br(),
-                  tags$strong(tags$h4("Filter Genotype Table Taxa")),
-                  tags$br(),
-                  numericInput(inputId="minNotMissing","Minimum Not Missing (TASSEL)",value = 0.9,min =0.5, max=1),
-                  tags$br(),
-                  actionButton(inputId="FilterTaxa","Filter Genotype Table Taxa"),
-                  tags$br(),
-                  tags$br(),
-                  checkboxInput("setGenoFilt2Tas", "Use Filtered Genotypes From Filter Taxa For Next Steps", TRUE)
-                ),
-                
-               mainPanel(
-                 tags$br(),
-                 tags$br(),
-                  fluidRow(
-                    column(width=10,"Filter sites (markers) and taxa (lines) in genotype table using rTASSEL (Monier et al. 2021), if you uploaded a raw genotype file or a QC genotype file that requires filtering. For example, it is common to 
+       #tabPanel("Filter Genotypic Data",
+              # sidebarLayout(
+              #   
+              #   sidebarPanel(
+              #     tags$strong(tags$h4("Filter Genotype Table Sites")),
+              #     tags$br(), 
+              #     numericInput(inputId="siteMinCnt","Minimum Site Count (TASSEL)",value = 0,min =0, max=0),
+              #     tags$br(),
+              #     
+              #  
+              #     numericInput(inputId="MAF","Minimum Allele Frequency",value =0.02,min =0, max=0.5),
+              #     tags$br(),
+              #     actionButton(inputId="FilterSites","Filter Genotype Table Sites"),
+              #     tags$br(),
+              #     tags$br(),
+              #     checkboxInput("setGenoFilt1Tas", "Use Filtered Genotypes From Filter Sites For Next Steps", TRUE),
+              #     tags$br(),
+              #     tags$br(),
+              #     tags$strong(tags$h4("Filter Genotype Table Taxa")),
+              #     tags$br(),
+              #     numericInput(inputId="minNotMissing","Minimum Not Missing (TASSEL)",value = 0.9,min =0.5, max=1),
+              #     tags$br(),
+              #     actionButton(inputId="FilterTaxa","Filter Genotype Table Taxa"),
+              #     tags$br(),
+              #     tags$br(),
+              #     checkboxInput("setGenoFilt2Tas", "Use Filtered Genotypes From Filter Taxa For Next Steps", TRUE)
+              #   ),
+              #   
+              #  mainPanel(
+              #    tags$br(),
+              #    tags$br(),
+              #     fluidRow(
+              #       column(width=10,"Filter sites (markers) and taxa (lines) in genotype table using rTASSEL (Monier et al. 2021), if you uploaded a raw genotype file or a QC genotype file that requires filtering. For example, it is common to 
+              #       set minimum number of sites that are not missing to 80% of the lines in the input genotype data and set the MAF threshold to 0.02/0.05. 
+              #       If you uploaded a QC genotype file, you can choose to skip this step")),
+              #     
+              #      tags$br(),
+              #      tags$br(),
+              #      fluidRow(column(2),column(width=8,tags$h4(tags$strong(textOutput("GenoFiltHeader"))))),
+              #      tags$br(),
+              #      fluidRow(column(3),column(width=7,tags$h6(tableOutput("FilteredGenoTable")))),
+              #      fluidRow(column(2),column(width=8,tags$h4(tags$strong(textOutput("GenoFiltHeader2"))))),
+              #      tags$br(),
+              #      fluidRow(column(3),column(width=7,tags$h6(tableOutput("FilteredGenoTable2")))),
+              #      tags$br(),
+              #      tags$br(),
+              #      tags$br()
+              #  ))),
+              # 
+     
+     # sidebarPanel(
+       
+      
+     ###  
+     tabPanel("Filter Genotypic Data",
+       
+    # mainPanel(
+       tags$br(),
+       tags$br(),
+       fluidRow(column(1),
+         column(width=10,"Filter sites (markers) and taxa (lines) in genotype table using rTASSEL (Monier et al. 2021), if you uploaded a raw genotype file or a QC genotype file that requires filtering. For example, it is common to 
                     set minimum number of sites that are not missing to 80% of the lines in the input genotype data and set the MAF threshold to 0.02/0.05. 
                     If you uploaded a QC genotype file, you can choose to skip this step")),
-                  
-                   tags$br(),
-                   tags$br(),
-                   fluidRow(column(2),column(width=8,tags$h4(tags$strong(textOutput("GenoFiltHeader"))))),
-                   tags$br(),
-                   fluidRow(column(3),column(width=7,tags$h6(tableOutput("FilteredGenoTable")))),
-                   fluidRow(column(2),column(width=8,tags$h4(tags$strong(textOutput("GenoFiltHeader2"))))),
-                   tags$br(),
-                   fluidRow(column(3),column(width=7,tags$h6(tableOutput("FilteredGenoTable2")))),
-                   tags$br(),
-                   tags$br(),
-                   tags$br()
-               ))),
-            
-          tabPanel("Impute Genotypic Data",  
+       
+       tags$br(),
+       tags$br(),
+       
+       fluidRow(
+         column(1),column(width=3,tags$strong(tags$h4("Filter Genotype Table Sites"))),
+         #Filt2
+         column(5,offset=2,tags$strong(tags$h4("Filter Genotype Table Taxa")))),
+       tags$br(),
+       fluidRow(
+         #Filt1
+         column(1),column(width=3,
+                          numericInput(inputId="siteMinCnt","Minimum Site Count (TASSEL)",value = 0,min =0, max=0)),
+         #Filt2
+         column(5,offset=2,numericInput(inputId="minNotMissing","Minimum Not Missing (TASSEL)",value = 0.9,min =0.5, max=1))),
+         tags$br(),
+    
+       tags$br(),
+       fluidRow(
+         #filt1
+         column(1),column(width=3,
+                          numericInput(inputId="MAF","Minimum Allele Frequency",value =0.02,min =0, max=0.5)),
+         #Filt2
+         column(5,offset=2,
+           actionButton(inputId="FilterTaxa","Filter Genotype Table Taxa"))),
+    
+       tags$br(),
+       fluidRow(
+         #Filt1
+         column(1),column(width=3,
+                          actionButton(inputId="FilterSites","Filter Genotype Table Sites"))),
+         
+       tags$br(),
+       tags$br(),
+       fluidRow(
+         column(1),column(width=3,
+                          checkboxInput("setGenoFilt1Tas", "Use Filtered Genotypes From Filter Sites For Next Steps", TRUE)),
+         column(5,offset=2,
+           checkboxInput("setGenoFilt2Tas", "Use Filtered Genotypes From Filter Taxa For Next Steps", TRUE))),  
+       tags$br(),
+       tags$br(),
+       # fluidRow(
+       #   column(6),column(width=3,tags$strong(tags$h4("Filter Genotype Table Taxa")))),
+       # tags$br(),
+       #fluidRow(
+         # column(5,offset=2,numericInput(inputId="minNotMissing","Minimum Not Missing (TASSEL)",value = 0.9,min =0.5, max=1))),
+       tags$br(),
+     # fluidRow(
+     #  column(5,offset=0,
+     #   actionButton(inputId="FilterTaxa","Filter Genotype Table Taxa"))),
+       tags$br(),
+       tags$br(),
+     # fluidRow(
+     #   column(5,offset=0,
+     #    checkboxInput("setGenoFilt2Tas", "Use Filtered Genotypes From Filter Taxa For Next Steps", TRUE))),
+     # 
+       fluidRow(column(1),column(width=4,tags$h4(tags$strong(textOutput("GenoFiltHeader")))),
+                column(7),column(width=4,tags$h4(tags$strong(textOutput("GenoFiltHeader2"))))),      
+       tags$br(),
+       fluidRow(column(1),column(width=4,tags$h6(tableOutput("FilteredGenoTable"))),
+                column(7),column(width=4,tags$h6(tableOutput("FilteredGenoTable2")))),
+       #fluidRow(column(6),column(width=5,tags$h4(tags$strong(textOutput("GenoFiltHeader2"))))),
+       tags$br(),
+       #fluidRow(column(6),column(width=5,tags$h6(tableOutput("FilteredGenoTable2")))),
+       tags$br(),
+       tags$br()
+     ),
+     
+    tabPanel("Impute Genotypic Data",  
               sidebarLayout(
                sidebarPanel(
                 tags$strong(tags$h4("Impute Genotype Table ")),
@@ -199,8 +273,8 @@ ui <- fluidPage(
                        fluidRow(
                          column(2),column(width=4,tags$h4(tags$strong("Set Target Population"))),
                          column(6),column(width=4,tags$h4(tags$strong("Select Trait"))),
-                         actionButton("Trait_Data", "prev"),
-                         actionButton("Trait_TS", "next")
+                         #actionButton("Trait_Data", "prev"),
+                         #actionButton("Trait_TS", "next")
                        ),
                        tags$br(),
                        fluidRow(
@@ -267,14 +341,15 @@ ui <- fluidPage(
                          ), mainPanel(
                            fluidRow(
                              column(width=10,tags$h3(tags$strong("Select Optimal Training Population using 'STPGA' "))),
-                             actionButton("TS_Trait", "prev"),
-                             actionButton("TS_CVR", "next")),
+                             #actionButton("TS_Trait", "prev"),
+                             #actionButton("TS_CVR", "next")
+                           ),
                            fluidRow(
                              
                              column(width=10, tags$p("A training population for genomic prediction is selected by optimizing an objective function using a genetic algorithm.
                               The optimization method uses the 'GenAlgForSubsetSelection' function implemented in the 'STPGA' R package (Akdemir 2017).
                               In this implementation, the parameters for the genetic algorithm are set to default values.") 
-                              )),
+                            )),
                            tags$br(),
                            tags$br(),
                            fluidRow(
@@ -315,8 +390,8 @@ ui <- fluidPage(
                         mainPanel(
                          fluidRow(
                            column(1),column(width=7,tags$h3(tags$strong("Cross Validation of GP Models"))), 
-                           actionButton("CVR_TS", "prev"),
-                           actionButton("CVR_GP", "next")
+                           #actionButton("CVR_TS", "prev"),
+                           #actionButton("CVR_GP", "next")
                          
                          ),
                          fluidRow(
@@ -368,8 +443,9 @@ ui <- fluidPage(
 						   
                          ), mainPanel(
                            fluidRow(
-                             column(width=8,tags$h3(tags$strong("Train Genomic Prediction Model"))), actionButton("GP_CVR", "prev"),
-                             actionButton("GP_VP", "next")
+                             column(width=8,tags$h3(tags$strong("Train Genomic Prediction Model"))), 
+                            #actionButton("GP_CVR", "prev"),
+                            # actionButton("GP_VP", "next")
                            ),
                            fluidRow(
                             
@@ -400,12 +476,12 @@ ui <- fluidPage(
 
                                 ), mainPanel(
                                   fluidRow(
-                                    column(width=8,tags$h3(tags$strong("Train Multi-trait Genomic Prediction Model"))), actionButton("GP_ST", "prev"),
-                                    actionButton("GP_MTME", "next")
+                                    column(width=8,tags$h3(tags$strong("Train Multi-trait Genomic Prediction Model"))), 
+                                    #actionButton("GP_ST", "prev"),
+                                    #actionButton("GP_MTME", "next")
                                   ),
                                   fluidRow(
-                                    column(width=10, tags$p(" Select the statistical method to train the genomic prediction model and predict the values of target lines.Multi-trait predictions are implemented using the BGLR and Sommer packages. The Multitrait function in BGLR implements Bayesian Ridge Regression, RKHS, and Spike-Slab methods.
-                                           The multi-trait GBLUP is implemented using the 'mmer' function in 'sommer' package."))),
+                                    column(width=10, tags$p("Select the statistical method to train the genomic prediction model and predict the values of target lines.Multi-trait predictions are implemented using the BGLR and Sommer packages. The Multitrait function in BGLR implements Bayesian Ridge Regression, RKHS, and Spike-Slab methods (Perez-Rodriguez P and de Los Campos G, 2022).The multi-trait GBLUP is implemented using the 'mmer' function in 'sommer' package (Covarrubias-Pazaran G 2016)."))),
                                   tags$br(),
                                   tags$br(),
                                   #tags$h4(textOutput("RankedLinesHeader")),
@@ -704,12 +780,12 @@ server <- function(input,output){
 ####  
   genoFiltHead <- eventReactive(input$FilterSites,{ paste("Filter Sites: Genotype Table with ",ncol(GenoFilt1_DF())-5," lines and ",nrow((GenoFilt1_DF()))," markers",sep="")})
   output$GenoFiltHeader <- renderText({genoFiltHead()})
-  output$FilteredGenoTable <- renderTable({as.data.frame((GenoFilt1_DF())[1:5,1:10])})
+  output$FilteredGenoTable <- renderTable({as.data.frame((GenoFilt1_DF())[1:5,1:6])})
   
 ###
   genoFiltHead2 <- eventReactive(input$FilterTaxa,{ paste("Filter Taxa: Genotype Table with ",ncol(GenoFilt2_DF())-5," lines and ",nrow((GenoFilt2_DF()))," markers",sep="")})
   output$GenoFiltHeader2 <- renderText({genoFiltHead2()})
-  output$FilteredGenoTable2 <- renderTable({as.data.frame((GenoFilt2_DF())[1:5,1:10])})
+  output$FilteredGenoTable2 <- renderTable({as.data.frame((GenoFilt2_DF())[1:5,1:6])})
   
 #####
 
