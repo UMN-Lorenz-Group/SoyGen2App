@@ -9,6 +9,7 @@ install.packages("bWGR")
 install.packages("STPGA")
 install.packages("BGLR")
 install.packages("SOMMER")
+install.packages("DT")
 
 install.packages("BiocManager")
 BiocManager::install(version = "3.14")
