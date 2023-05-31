@@ -2,7 +2,10 @@ if(!require(shiny)){
 	install.packages("shiny")
 }
 library(shiny) 
-library(DT)
+if(!require(DT)){
+  install.packages("DT")
+}
+ library(DT)
 
 ### Change source file path to working directory
 
