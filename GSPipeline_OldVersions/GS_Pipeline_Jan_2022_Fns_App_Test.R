@@ -27,11 +27,12 @@ setwd("C:/Users/ivanv/Desktop/UMN_GIT/DataShare_Demo/")
 infileBLUEs <- "Pheno.csv" 
 infileVCF <- "Geno.vcf"
 infileTestSet <- "Target.csv"
-source("C:/Users/ivanv/Desktop/UMN_GIT/GPSoy/App/GS_Pipeline_Jan_2022_FnsApp.R")
+
 
 NUST_Genotypes_VCF <- read.table(infileVCF)
 NUST_BLUEs <- read.csv(infileBLUEs,header=TRUE)
 NUST_Test_Data_Table <- read.csv(infileTestSet)
+
 
 #### Single Trait 
   
@@ -54,11 +55,20 @@ NUST_Test_Data_Table <- read.csv(infileTestSet)
  infileVCF <- "Geno.vcf"
  
     tasGeno <- rTASSEL::readGenotypeTableFromPath(
-		path = infileVCF
+		path = infileVCFstr
 	)
 	
 	tasSumExp <- rTASSEL::getSumExpFromGenotypeTable(
     tasObj = tasGeno )
+	
+	
+	infileVCF <- "Geno.vcf"
+	
+	tasGeno <- rTASSEL::readGenotypeTableFromPath(
+	  path = infileVCF
+	)
+	
+	
 	
 	tasGenoDF <- (SummarizedExperiment::assays(tasSumExp)[[1]])
 	SummarizedExperiment::colData(tasSumExp)[,"Sample"]
