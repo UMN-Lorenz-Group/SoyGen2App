@@ -16,7 +16,7 @@ BiocManager::install(version = "3.16")
 options(repos = BiocManager::repositories())
 library(BiocManager)
 
-
+install.packages("crayon")
 install.packages("devtools")
 library(devtools)
 
