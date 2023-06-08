@@ -11,7 +11,7 @@ install.packages("SOMMER")
 install.packages("DT")
 
 install.packages("BiocManager")
-BiocManager::install(version = "3.14")
+BiocManager::install(version = "3.16")
  
 options(repos = BiocManager::repositories())
 library(BiocManager)
