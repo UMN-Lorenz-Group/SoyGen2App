@@ -1,4 +1,3 @@
-#install.packages("rlang")
 install.packages("dplyr",dependencies=TRUE)
 install.packages("rrBLUP")
 install.packages("vcfR")
@@ -9,6 +8,7 @@ install.packages("bWGR")
 install.packages("STPGA")
 install.packages("BGLR")
 install.packages("SOMMER")
+install.packages("DT")
 
 install.packages("BiocManager")
 BiocManager::install(version = "3.14")

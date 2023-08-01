@@ -1379,7 +1379,7 @@ getPredictionData <- function(Data_Table_Num_List,noCandidates){
  
  
 	
-### 
+###
 
 
  getRankedPredictedValues <- function(Data_Table_Num_Filt_List,nTraits,trait,GPModel,fixedX=NULL,fixedData=NULL,optTS=NULL){ 
