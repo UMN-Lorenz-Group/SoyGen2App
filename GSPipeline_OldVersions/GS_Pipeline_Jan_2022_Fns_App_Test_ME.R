@@ -23,15 +23,40 @@ library(rrBLUP)
 # WorkDir <- "C:/Users/ivanv/Desktop/UMN_GIT/GPSoy/SoyGen2/Data"
 # setwd(WorkDir)
 
-setwd("C:/Users/ivanv/Desktop/UMN_GIT/DataShare_Demo/")
-infileBLUEs <- "Pheno.csv" 
-infileVCF <- "Geno.vcf"
-infileTestSet <- "Target.csv"
-source("C:/Users/ivanv/Desktop/UMN_GIT/GPSoy/App/GS_Pipeline_Jan_2022_FnsApp.R")
 
+## Set input filenames 
+infileVCF1 <- "2021_03_19_NUST_Geno_Master_Filt_Imp_TASSEL.vcf" 
+
+infileMetaTable <- "NUST_2004_2021_Line_Program_Metadata_V2.csv"
+infileBLUEs <- "BLUE_GermplasmId_Output_table_wide_duplic_checks__2021_10_21_years28.csv" 
+infileLinkMap <- "GeneticMap_SoySNP_6K_cM.csv"
+infileVCF <- "NUST_geno_filt_imp.vcf"
+infileTestSet <- "Agriplex_2021_091_PRISM.csv"
+WorkDir <- "C:/Users/ivanv/Desktop/UMN_GIT/GPSoy/SoyGen2App_Work/"
+
+
+
+setwd(WorkDir)
+NUST_Meta_Table <- read.csv(infileMetaTable)
 NUST_Genotypes_VCF <- read.table(infileVCF)
 NUST_BLUEs <- read.csv(infileBLUEs,header=TRUE)
-NUST_Test_Data_Table <- read.csv(infileTestSet)
+LinkMap <- read.csv(infileLinkMap)
+Test_Data_Table <- read.csv(infileTestSet)
+
+source("C:/Users/ivanv/Desktop/UMN_GIT/GPSoy/SoyGen2App_Work/GS_Pipeline_Jan_2022_FnsApp.R")
+
+
+
+
+# setwd("C:/Users/ivanv/Desktop/UMN_GIT/DataShare_Demo/")
+# infileBLUEs <- "Pheno.csv" 
+# infileVCF <- "Geno.vcf"
+# infileTestSet <- "Target.csv"
+# source("C:/Users/ivanv/Desktop/UMN_GIT/GPSoy/App/GS_Pipeline_Jan_2022_FnsApp.R")
+
+ NUST_Genotypes_VCF <- read.table(infileVCF)
+ NUST_BLUEs <- read.csv(infileBLUEs,header=TRUE)
+ NUST_Test_Data_Table <- read.csv(infileTestSet)
 
 #### Single Trait 
   

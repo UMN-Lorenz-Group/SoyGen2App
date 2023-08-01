@@ -678,7 +678,7 @@ server <- function(input,output){
   
   TargetHead <- eventReactive(input$infileTargetTable,{ paste("Table with information on ",nrow(TargetTab())," Target lines",sep="")})
   output$TargetHeader <- renderText({TargetHead()})
-  output$TargetTable <-  renderTable({as.data.frame(TargetTab()[1:5,c(1,2)])})
+  output$TargetTable <-  renderTable({as.data.frame(TargetTab()[1:5,1:ncol(TargetTab())])})
   
   
   
@@ -799,7 +799,6 @@ server <- function(input,output){
       }else if(setTasGenoFilt2()== TRUE){
         GenoFilt2()
       }
-      
   })
    
    l<- reactive(input$l)

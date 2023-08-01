@@ -90,6 +90,86 @@ ui <- fluidPage(
                       tags$br()
                ),
               
+			  
+			   ###  
+		 tabPanel("Filter Genotypic Data",
+		   
+		# mainPanel(
+		   tags$br(),
+		   tags$br(),
+		   fluidRow(column(1),
+			 column(width=10,"Filter sites (markers) and taxa (lines) in genotype table using rTASSEL (Monier et al. 2021), if you uploaded a raw genotype file or a QC genotype file that requires filtering. For example, it is common to 
+						set minimum number of sites that are not missing to 80% of the lines in the input genotype data and set the MAF threshold to 0.02/0.05. 
+						If you uploaded a QC genotype file, you can choose to skip this step")),
+		   
+		   tags$br(),
+		   tags$br(),
+		   
+		   fluidRow(
+			 column(1),column(width=3,tags$strong(tags$h4("Filter Genotype Table Sites"))),
+			 #Filt2
+			 column(5,offset=2,tags$strong(tags$h4("Filter Genotype Table Taxa")))),
+		   tags$br(),
+		   fluidRow(
+			 #Filt1
+			 column(1),column(width=3,
+							  numericInput(inputId="siteMinCnt","Minimum Site Count (TASSEL)",value = 0,min =0, max=0)),
+			 #Filt2
+			 column(5,offset=2,numericInput(inputId="minNotMissing","Minimum Not Missing (TASSEL)",value = 0.9,min =0.5, max=1))),
+			 tags$br(),
+		
+		   tags$br(),
+		   fluidRow(
+			 #filt1
+			 column(1),column(width=3,
+							  numericInput(inputId="MAF","Minimum Allele Frequency",value =0.02,min =0, max=0.5)),
+			 #Filt2
+			 column(5,offset=2,
+			   actionButton(inputId="FilterTaxa","Filter Genotype Table Taxa"))),
+		
+		   tags$br(),
+		   fluidRow(
+			 #Filt1
+			 column(1),column(width=3,
+							  actionButton(inputId="FilterSites","Filter Genotype Table Sites"))),
+			 
+		   tags$br(),
+		   tags$br(),
+		   fluidRow(
+			 column(1),column(width=3,
+							  checkboxInput("setGenoFilt1Tas", "Use Filtered Genotypes From Filter Sites For Next Steps", TRUE)),
+			 column(5,offset=2,
+			   checkboxInput("setGenoFilt2Tas", "Use Filtered Genotypes From Filter Taxa For Next Steps", TRUE))),  
+		   tags$br(),
+		   tags$br(),
+		   # fluidRow(
+		   #   column(6),column(width=3,tags$strong(tags$h4("Filter Genotype Table Taxa")))),
+		   # tags$br(),
+		   #fluidRow(
+			 # column(5,offset=2,numericInput(inputId="minNotMissing","Minimum Not Missing (TASSEL)",value = 0.9,min =0.5, max=1))),
+		   tags$br(),
+		 # fluidRow(
+		 #  column(5,offset=0,
+		 #   actionButton(inputId="FilterTaxa","Filter Genotype Table Taxa"))),
+		   tags$br(),
+		   tags$br(),
+		 # fluidRow(
+		 #   column(5,offset=0,
+		 #    checkboxInput("setGenoFilt2Tas", "Use Filtered Genotypes From Filter Taxa For Next Steps", TRUE))),
+		 # 
+		   fluidRow(column(1),column(width=4,tags$h4(tags$strong(textOutput("GenoFiltHeader")))),
+					column(7),column(width=4,tags$h4(tags$strong(textOutput("GenoFiltHeader2"))))),      
+		   tags$br(),
+		   fluidRow(column(1),column(width=4,tags$h6(tableOutput("FilteredGenoTable"))),
+					column(7),column(width=4,tags$h6(tableOutput("FilteredGenoTable2")))),
+		   #fluidRow(column(6),column(width=5,tags$h4(tags$strong(textOutput("GenoFiltHeader2"))))),
+		   tags$br(),
+		   #fluidRow(column(6),column(width=5,tags$h6(tableOutput("FilteredGenoTable2")))),
+		   tags$br(),
+		   tags$br()
+		 ),
+			  
+			  
               
               ## Tab for Trait Selection 
               
