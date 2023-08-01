@@ -1,3 +1,5 @@
+#!/usr/bin/env Rscript
+
 install.packages("dplyr",dependencies=TRUE)
 install.packages("rrBLUP")
 install.packages("vcfR")
@@ -34,7 +36,6 @@ devtools::install_bitbucket(
 		build_vignettes = FALSE
 ) 
 library(rTASSEL)
-
 
 
 

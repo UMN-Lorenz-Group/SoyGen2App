@@ -1,4 +1,3 @@
-
 library(vcfR)
 library(dplyr)
 library(rrBLUP)
