@@ -76,15 +76,19 @@ if(file.exists("/usr/lib/jvm/java-17-openjdk-amd64/lib/server/libjvm.so")){
    dyn.load('/usr/lib/jvm/java-17-openjdk-amd64/lib/server/libjvm.so')
 }
 
-library(rJava)
-if(!require("rTASSEL", quietly = TRUE)){
-      devtools::install_bitbucket(
-		repo = "bucklerlab/rTASSEL",
-	 	ref = "master",
-	 	build_vignettes = FALSE
-      ) 
-    } 
-  library(rTASSEL)
+ library(rJava)
+# if(!require("rTASSEL", quietly = TRUE)){
+      # devtools::install_bitbucket(
+		# repo = "bucklerlab/rTASSEL",
+	 	# ref = "master",
+	 	# build_vignettes = FALSE
+      # ) 
+   # } 
+   
+ if(!require("rTASSEL", quietly = TRUE)){  
+   devtools::install_github("maize-genetics/rTASSEL")
+  }
+ library(rTASSEL)
    
   
   
@@ -439,10 +443,8 @@ getMergedData <- function(gt2d,Pheno,testIDs){
 	Genotypes_VCF <-   gt2d[,-c(1:5,Non_ZeroIndices)]
 		
 	Genotypes_VCF_ID <- colnames(Genotypes_VCF)
-
     markerID <- as.vector(unlist(gt2d[,1]))
   
-
 ### Remove special characters from strain ID in meta table and genotype table
 
 	Genotypes_VCF_ID <- gsub("-","",Genotypes_VCF_ID) 
@@ -460,10 +462,7 @@ getMergedData <- function(gt2d,Pheno,testIDs){
 	length(unique(Genotypes_VCF_ID4))
 
 ### Remove duplicated IDs from genotype table
-
-
 	Genotypes_Table_Mod <- cbind(Genotypes_VCF_ID4,t(Genotypes_VCF)) 
-
 	colnames(Genotypes_Table_Mod) <- c("Strain",markerID)
 
 ### Numeric coded genotype table from merged data table 
@@ -535,7 +534,7 @@ getMergedData <- function(gt2d,Pheno,testIDs){
       Train_Genotypes_Table_Mod_Num_Filt <- Genotypes_Table_Mod_Num_Filt[trainIndices,]
     }
   
-   if(is.null(TestIDs)){ 
+   if(is.null(TestIDs) | nrow(Test_Genotypes_Table_Mod_Num_Filt)==0){ 
      
 	  print("Load Target File")
    }
@@ -546,10 +545,7 @@ getMergedData <- function(gt2d,Pheno,testIDs){
 ### PhenoIDs  
 
 	StrainID_List <- strsplit(as.character(Pheno[,1]),"[-_.()]")
-
 	StrainID <- unlist(lapply(StrainID_List,function(x) paste(x,collapse="")))
-	
-	
 
 ## Remove MG from PhenoIDs
 	if(length(grep("MG",as.character(StrainID))) >1){
@@ -562,15 +558,11 @@ getMergedData <- function(gt2d,Pheno,testIDs){
 			StrainIDMod <- as.character(StrainID)
     }	
 
-
     Pheno1 <- cbind(Pheno,StrainIDMod)
 	Pheno1[,1] <- StrainID
 	colnames(Pheno1)[ncol(Pheno1)] <- "StrainID"
-
 				
 ### GenoIDs  
-  
-   
 	
 	# length(which(StrainIDMod %in% trainStrainID))
   
@@ -591,7 +583,6 @@ getMergedData <- function(gt2d,Pheno,testIDs){
 
   GenoTable_Filtered <- cbind(trainStrainID,Train_Genotypes_Table_Mod_Num_Filt)
   colnames(GenoTable_Filtered)[1] <- "StrainID" 
-  
             
   PhenoTable_Filtered <- Pheno1[which(as.character(Pheno1[,"StrainID"]) %in% trainStrainID),]
 	
@@ -757,7 +748,7 @@ getFilteredSitesGenoData <- function(tasGeno,siteMinCnt,MAF){
 
    
    return(tasGenoFilt)
-} 
+}
 
 
 
@@ -790,7 +781,7 @@ getImputedData <- function(FiltGeno,l,k,impMethod){
 
 
 
-getGenoTas_to_DF <- function(tasGeno){
+getGenoTas_to_DF_Old <- function(tasGeno){
 
     tasSumExp <- rTASSEL::getSumExpFromGenotypeTable(
     tasObj = tasGeno)
@@ -819,6 +810,41 @@ getGenoTas_to_DF <- function(tasGeno){
 }
 
 
+
+
+getGenoTas_to_DF <- function(tasGeno){
+
+    tasGenoMat <- as.matrix(tasGeno)
+	
+	# tasSumExp <- rTASSEL::getSumExpFromGenotypeTable(
+    # tasObj = tasGeno)
+	# tasGenoDF <- (SummarizedExperiment::assays(tasSumExp)[[1]])
+	# colnames(tasGenoDF) <- SummarizedExperiment::colData(tasSumExp)[,"Sample"]
+	
+	tasGenoDF <- as.data.frame(t(tasGenoMat))
+   	tasGenoDF$SNPID <- rownames(tasGenoDF)
+	
+    ### Extract Table Report DF 
+	
+	tableReport <- rJava::new(
+    rJava::J("net.maizegenetics.dna.map.PositionListTableReport"),
+    tasGeno %>% rTASSEL:::getPositionList()) %>% 
+    rTASSEL:::tableReportToDF() %>% as.data.frame()
+      	
+	varSplit <- strsplit(tableReport[,"VARIANT"],"/")
+	varSplitTab <- cbind.data.frame(unlist(lapply(varSplit,function(x) x[1])),unlist(lapply(varSplit,function(x) x[2])))
+
+    vcfIDTab <- cbind.data.frame(tableReport[,c("Name","Chromosome","Position")],varSplitTab)
+	colnames(vcfIDTab) <- c("SNPID","Chrom","Position","REF","ALT")
+		
+	# gt2d_tasGeno <-as_tibble(cbind.data.frame(vcfIDTab,tasGenoDF))
+	gt2d_tasGeno <-as_tibble(merge(vcfIDTab,tasGenoDF,by="SNPID"))
+	return(gt2d_tasGeno)
+  
+}
+
+
+
 getPredictionData <- function(Data_Table_Num_List,noCandidates){
 
      TrainData_Table_Num_Filt <- Data_Table_Num_List[[1]]
@@ -844,7 +870,7 @@ getPredictionData <- function(Data_Table_Num_List,noCandidates){
 
 ### Step 2 : Get predicted genetic values usin kin.blup 
 
- getRankedPredictedValues_V2 <- function(Data_Table_Num_Filt_List,nTraits,trait,GPModel,optTS=NULL){ 
+getRankedPredictedValues_V2 <- function(Data_Table_Num_Filt_List,nTraits,trait,GPModel,optTS=NULL){ 
    
 	 TrainData_Table_Num_Filt <- Data_Table_Num_Filt_List[[1]]
 	 TestData_Table_Num_Filt <- Data_Table_Num_Filt_List[[2]]
@@ -1379,7 +1405,7 @@ getPredictionData <- function(Data_Table_Num_List,noCandidates){
  
  
 	
-###
+### 
 
 
  getRankedPredictedValues <- function(Data_Table_Num_Filt_List,nTraits,trait,GPModel,fixedX=NULL,fixedData=NULL,optTS=NULL){ 
@@ -1388,7 +1414,7 @@ getPredictionData <- function(Data_Table_Num_List,noCandidates){
 	   GPModel <- "rrBLUP (rrBLUP)"
 	   Fixed.X <- fixedData[[1]]
 	   Test.X <- fixedData[[2]]
-	  }
+	 }
 	   
 	 TrainData_Table_Num_Filt <- Data_Table_Num_Filt_List[[1]]
 	 TestData_Table_Num_Filt <- Data_Table_Num_Filt_List[[2]]
@@ -1474,7 +1500,6 @@ getPredictionData <- function(Data_Table_Num_List,noCandidates){
 	   if(!is.null(fixedX)  & fixedX !="NULL" & fixedData != "NULL"){
 	     Fixed.X.Mod <- Fixed.X
 	   }
-	  
 	 }
 	 
 ####### Set the same set of markers for both train and test sets with the same order 
@@ -1753,7 +1778,7 @@ getRankedPredictedValuesMT <- function(Data_Table_Num_Filt_List,nTraits,trait,GP
 	 }else{trainGeno_Imp0 <- trainGeno0}
 	 
 	 
-	  if(anyNA(TestGenoTable)){ 
+	 if(anyNA(TestGenoTable)){ 
 	    testGeno_Imp0 <- snpQC(TestGenoTable,impute=TRUE,remove=FALSE)
 		testGeno_Imp <- apply(testGeno_Imp0,2,function(x) as.numeric(x-1))
 		
@@ -1766,8 +1791,6 @@ getRankedPredictedValuesMT <- function(Data_Table_Num_Filt_List,nTraits,trait,GP
 	    testNAIndices <- NULL
 	 }
 	 
-	
-
  ### Remove lines with missing pheno	 
 	  
 	if(anyNA(trainPheno0)){
@@ -1784,7 +1807,7 @@ getRankedPredictedValuesMT <- function(Data_Table_Num_Filt_List,nTraits,trait,GP
 	   Geno <- as.character(TrainData_Table_Num_Filt[,1])
 	}
 	 
-####### Set the same set of markers for both train and test sets with the same order 
+####### Set the same set of markers for both train and test sets in the same order 
      ##Check with sorted markers and check with test set 
 	  trainssIDs <- colnames(trainGeno_Imp)
 	  testssIDs <- colnames(testGeno_Imp) 
@@ -1794,24 +1817,24 @@ getRankedPredictedValuesMT <- function(Data_Table_Num_Filt_List,nTraits,trait,GP
 ## Kinship Matrix 
     # rownames(trainGeno_Imp) <- Geno
 	 #rownames(trainPheno) <- Geno
-	 A <- A.mat(trainGeno)	
+	 A <- A.mat(trainGeno_Imp)	
 	 colnames(A) <- Geno
 	 rownames(A) <- Geno
 
 	 Y <- trainPheno
-	 X <- rbind(trainGeno_Imp,TestGenoTable)
+	 X <- rbind(trainGeno_Imp,testGeno_Imp)
 	 #rownames(X) <- c(rownames(trainGeno_Imp),rownames(TestGenoTable))
 	 n <- nrow(X)
 	 p <- ncol(X)
 	 
-	 nTst <- nrow(TestGenoTable)
+	 nTst <- nrow(testGeno_Imp)
 	 Ytst <- matrix(rep(NA,nTst*ncol(Y)),nrow=nTst,ncol=ncol(Y))
 	 colnames(Ytst) <- colnames(Y)
 	 yNA <- as.matrix(rbind(Y,Ytst))
 	 yNA_DF <- as.data.frame(yNA)
 	 
 	 #yNA_DF$id <- as.factor(rownames(X))
-	 yNA_DF$id <- as.factor(paste(c(Geno,rownames(TestGenoTable)),"_",yNA_DF[,1],sep=""))
+	 yNA_DF$id <- as.factor(paste(c(Geno,rownames(testGeno_Imp)),"_",yNA_DF[,1],sep=""))
 	 
 	 if(GPModelMT == "BRR (BGLR)"){ 
 				  
@@ -1837,8 +1860,7 @@ getRankedPredictedValuesMT <- function(Data_Table_Num_Filt_List,nTraits,trait,GP
 			colnames(A.Tot) <- yNA_DF$id #c(Geno,rownames(TestGenoTable))
 			fm3 <- mmer(as.formula(paste("cbind(",paste(trait,collapse=","),")~1",sep="")),
             random=~vs(id,Gu=A.Tot),
-            rcov=~units,MVM=TRUE,
-            data=yNA_DF,verbose = TRUE)
+            rcov=~units,data=yNA_DF,verbose = TRUE)
 	 }
 	 tst <- c((length(trainSetID)+1):nrow(X))
 	 if(GPModelMT != "GBLUP (SOMMER)"){ 
@@ -1858,7 +1880,8 @@ getRankedPredictedValuesMT <- function(Data_Table_Num_Filt_List,nTraits,trait,GP
 
    # trainGeno_Imp2 <- apply(trainGeno_Imp,2,function(x) x+1)  
    
-    cleanData <- cleanREP(trainPheno,trainGeno_Imp)
+    
+    cleanData <- cleanREP(trainPheno[,1],apply(trainGeno_Imp,2,function(x) x))
     M <-  cleanData[[2]]
     M.Pdt <- t(M)%*% solve(M %*% t(M) + diag(nrow(M))) %*% M
       
@@ -1867,7 +1890,8 @@ getRankedPredictedValuesMT <- function(Data_Table_Num_Filt_List,nTraits,trait,GP
 	   U <- (t(v.hat)%*% v.hat)/ (t(v) %*% v)
 	   return(U)
     }
-    U <- apply(TestGenoTable,1,function(x) getU(M.Pdt,x)) 
+    
+	U <- apply(testGeno_Imp,1,function(x) getU(M.Pdt,x)) 
 
 ### Sort Output
 	

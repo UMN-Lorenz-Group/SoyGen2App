@@ -2,10 +2,6 @@ if(!require(shiny)){
 	install.packages("shiny")
 }
 library(shiny) 
-if(!require(DT)){
-  install.packages("DT")
-}
- library(DT)
 
 ### Change source file path to working directory
 
@@ -19,6 +15,7 @@ options(shiny.maxRequestSize=500*1024^2)
 
 ui <- fluidPage( 
   #theme = bslib::bs_theme(bootswatch = "solar"),
+  tags$style(HTML(".message-text { color: red; }")),
   
   fluidRow(
     column(4),
@@ -91,19 +88,65 @@ ui <- fluidPage(
                            column(6),column(width=5,tags$h4(tags$strong(textOutput("GenoHeader"))))
                       ),
                       fluidRow(
-                          #column(1),column(width=5,tags$h6(tableOutput("PhenoTable"))),
-                          #column(6),column(width=5,tags$h6(tableOutput("GenoTable")))),
-                          column(1),column(width=5,tags$h6(dataTableOutput("PhenoTable"))),
-                          column(6),column(width=5,tags$h6(dataTableOutput("GenoTable")))),
-                          # 
-                          # column(1),column(width=5,div(id = "PhenoTable", style = "width:100%;")),
-                          # column(6),column(width=5,div(id = "GenoTable", style = "width:100%;"))),
-                          tags$br()
+                          column(1),column(width=5,tags$h6(tableOutput("PhenoTable"))),
+                          column(6),column(width=5,tags$h6(tableOutput("GenoTable")))),
+                      tags$br()
         ),  
        
-   
-     ###  
-        
+       ###  
+       #tabPanel("Filter Genotypic Data",
+              # sidebarLayout(
+              #   
+              #   sidebarPanel(
+              #     tags$strong(tags$h4("Filter Genotype Table Sites")),
+              #     tags$br(), 
+              #     numericInput(inputId="siteMinCnt","Minimum Site Count (TASSEL)",value = 0,min =0, max=0),
+              #     tags$br(),
+              #     
+              #  
+              #     numericInput(inputId="MAF","Minimum Allele Frequency",value =0.02,min =0, max=0.5),
+              #     tags$br(),
+              #     actionButton(inputId="FilterSites","Filter Genotype Table Sites"),
+              #     tags$br(),
+              #     tags$br(),
+              #     checkboxInput("setGenoFilt1Tas", "Use Filtered Genotypes From Filter Sites For Next Steps", TRUE),
+              #     tags$br(),
+              #     tags$br(),
+              #     tags$strong(tags$h4("Filter Genotype Table Taxa")),
+              #     tags$br(),
+              #     numericInput(inputId="minNotMissing","Minimum Not Missing (TASSEL)",value = 0.9,min =0.5, max=1),
+              #     tags$br(),
+              #     actionButton(inputId="FilterTaxa","Filter Genotype Table Taxa"),
+              #     tags$br(),
+              #     tags$br(),
+              #     checkboxInput("setGenoFilt2Tas", "Use Filtered Genotypes From Filter Taxa For Next Steps", TRUE)
+              #   ),
+              #   
+              #  mainPanel(
+              #    tags$br(),
+              #    tags$br(),
+              #     fluidRow(
+              #       column(width=10,"Filter sites (markers) and taxa (lines) in genotype table using rTASSEL (Monier et al. 2021), if you uploaded a raw genotype file or a QC genotype file that requires filtering. For example, it is common to 
+              #       set minimum number of sites that are not missing to 80% of the lines in the input genotype data and set the MAF threshold to 0.02/0.05. 
+              #       If you uploaded a QC genotype file, you can choose to skip this step")),
+              #     
+              #      tags$br(),
+              #      tags$br(),
+              #      fluidRow(column(2),column(width=8,tags$h4(tags$strong(textOutput("GenoFiltHeader"))))),
+              #      tags$br(),
+              #      fluidRow(column(3),column(width=7,tags$h6(tableOutput("FilteredGenoTable")))),
+              #      fluidRow(column(2),column(width=8,tags$h4(tags$strong(textOutput("GenoFiltHeader2"))))),
+              #      tags$br(),
+              #      fluidRow(column(3),column(width=7,tags$h6(tableOutput("FilteredGenoTable2")))),
+              #      tags$br(),
+              #      tags$br(),
+              #      tags$br()
+              #  ))),
+              # 
+     
+     # sidebarPanel(
+       
+      
      ###  
      tabPanel("Filter Genotypic Data",
        
@@ -155,18 +198,29 @@ ui <- fluidPage(
            checkboxInput("setGenoFilt2Tas", "Use Filtered Genotypes From Filter Taxa For Next Steps", TRUE))),  
        tags$br(),
        tags$br(),
-      
+       # fluidRow(
+       #   column(6),column(width=3,tags$strong(tags$h4("Filter Genotype Table Taxa")))),
+       # tags$br(),
+       #fluidRow(
+         # column(5,offset=2,numericInput(inputId="minNotMissing","Minimum Not Missing (TASSEL)",value = 0.9,min =0.5, max=1))),
        tags$br(),
-     # 
+     # fluidRow(
+     #  column(5,offset=0,
+     #   actionButton(inputId="FilterTaxa","Filter Genotype Table Taxa"))),
        tags$br(),
        tags$br(),
+     # fluidRow(
+     #   column(5,offset=0,
+     #    checkboxInput("setGenoFilt2Tas", "Use Filtered Genotypes From Filter Taxa For Next Steps", TRUE))),
      # 
        fluidRow(column(1),column(width=4,tags$h4(tags$strong(textOutput("GenoFiltHeader")))),
                 column(7),column(width=4,tags$h4(tags$strong(textOutput("GenoFiltHeader2"))))),      
        tags$br(),
        fluidRow(column(1),column(width=4,tags$h6(tableOutput("FilteredGenoTable"))),
                 column(7),column(width=4,tags$h6(tableOutput("FilteredGenoTable2")))),
+       #fluidRow(column(6),column(width=5,tags$h4(tags$strong(textOutput("GenoFiltHeader2"))))),
        tags$br(),
+       #fluidRow(column(6),column(width=5,tags$h6(tableOutput("FilteredGenoTable2")))),
        tags$br(),
        tags$br()
      ),
@@ -206,7 +260,7 @@ ui <- fluidPage(
                 tags$br(),
                 tags$br(),
                 tags$br(),
-                checkboxInput("setGenoImpTas", "Use Imputed Genotypes For Next Steps", FALSE), 
+                checkboxInput("setGenoImpTas", "Use Imputed Genotypes For Next Steps", TRUE), 
                 tags$br(),
                 tags$br()
               )
@@ -220,7 +274,8 @@ ui <- fluidPage(
                        fluidRow(
                          column(2),column(width=4,tags$h4(tags$strong("Set Target Population"))),
                          column(6),column(width=4,tags$h4(tags$strong("Select Trait"))),
-                         
+                         #actionButton("Trait_Data", "prev"),
+                         #actionButton("Trait_TS", "next")
                        ),
                        tags$br(),
                        fluidRow(
@@ -236,12 +291,18 @@ ui <- fluidPage(
                        fluidRow(
                         column(1),column(width=5,div(
                                     tags$h4(tags$strong(textOutput("TargetHeader"))),
-                                    #tags$h6(tableOutput("TargetTable")))),
-                                    tags$h6(dataTableOutput("TargetTable")))),
+                                    tags$h6(tableOutput("TargetTable")))),
                          column(5),column(width=5,div( 
                            tags$h4(tags$strong(textOutput("summaryHeader"))),
                            tags$h6(tableOutput("Summary"))))
-                       ),
+                        ),
+                       
+                       # Define a CSS class for text color
+                     
+                       fluidRow(
+                         column(4),column(width=5,div(
+                           tags$h4(tags$strong(uiOutput("MssgTarget")))))),
+                           #tags$h6(tableOutput("TargetTable"))))
                        tags$br()
                 ),
               
@@ -486,7 +547,70 @@ ui <- fluidPage(
 )
              
                      
-          
+              #   
+              
+              # ### GP Tab 
+              # tabPanel("Genomic Prediction",
+              #                  sidebarLayout(
+              #                                 sidebarPanel(
+              #                                   selectInput(inputId="TrainSet","Choose Training Set",c("Complete Input Genotype Set","Optimal Train Set from Step 3","Random Train Set from Step 3")),
+              #                                   tags$br(),
+              #                                   tags$br(),
+              #                                   selectInput(inputId="GPModelST","Choose Prediction Model for Single Trait",c("rrBLUP (rrBLUP)","rrBLUP (bWGR)","BayesB (bWGR)","BayesLASSO (bWGR)")),
+              #                                   actionButton("RunPredictionsST", "Predict Single Trait!"),
+              #                                   tags$br(),
+              #                                   tags$br(),
+              #                                   tags$br(),
+              #                                   tags$br(),
+              #                                   selectInput(inputId="GPModelMT","Choose Prediction Model for Multiple Traits",c("BRR (BGLR)","RKHS (BGLR)","Spike-Slab(BGLR)","Mmer (Sommer)")),
+              #                                   actionButton("RunPredictionsMT", "Predict Multiple Traits!"),
+              #                                   tags$br(),
+              #                                   tags$br()
+              #                                   
+              #                                 ), mainPanel(
+              #                                   fluidRow(
+              #                                     column(width=8,tags$h3(tags$strong("Train Genomic Prediction Model"))), actionButton("GP_CVR", "prev"),
+              #                                     actionButton("GP_VP", "next")
+              #                                   ),
+              #                                   fluidRow(
+              #                                     
+              #                                     column(width=10, tags$p(" Select the statistical method to train the genomic prediction model and predict the values of target lines. rrBLUP method is implemented using the
+              #                              rrBLUP (Endelman 2011) package. Expectation maximization based RR-BLUP, BayesB and BayesLASSO methods are implemented using the bWGR package (Xavier et al. 2020).
+              #                              Multi-trait predictions are implemented using the BGLR and Sommer packages. The Multitrait function in BGLR implements Bayesian Ridge Regression, RKHS, and Spike-Slab methods. 
+              #                              The multi-trait GBLUP is implemented using the 'mmer' function in 'sommer' package."))),
+              #                                   tags$br(),
+              #                                   tags$br(),
+              #                                   tags$h4(textOutput("RankedLinesHeader")),
+              #                                   tableOutput("Ranked_Lines_for_SelectionST"),
+              #                                   tableOutput("Ranked_Lines_for_SelectionMT")
+              #                                   
+              #                                 )
+              #                               )
+              #                      ),    
+              # 
+                     
+              #   ## Tab for Results
+              # tabPanel("Visualize Predictions",
+              #          sidebarLayout(
+              #            sidebarPanel(
+              #             downloadButton("ExportOut", "Export Output Table")
+              #             ),
+              #            mainPanel(
+              #              
+              #              fluidRow(
+              #                column(3),column(width=8,tags$h3(tags$strong("Visualize and Explore Predictions"))), actionButton("VP_GP", "prev")
+              #              ),
+              #              tags$br(),
+              #              # tags$h4(textOutput("RankedLinesHeader")),
+              #              # tableOutput("Ranked_Lines_for_SelectionST"),
+              #              # tableOutput("Ranked_Lines_for_SelectionMT"),
+              #              #tags$h4("Predicted vs Observed Values"),
+              #              #plotOutput("plots")
+              #              uiOutput("scatter"),
+              #              uiOutput("scatterMT")
+              #            )   
+              #          ) 
+              # )
   
 ###
 
@@ -553,28 +677,21 @@ server <- function(input,output){
   
   phenoHead <- eventReactive(input$infileBLUEs,{ paste("Phenotype Table with ",nrow(Pheno())," lines and ",ncol(Pheno())-1," traits",sep="")})
   output$PhenoHeader <- renderText({phenoHead()})
-  #output$PhenoTable <- renderTable({as.data.frame((Pheno())[1:5,1:5])})
- 
-  output$PhenoTable <- renderDataTable({datatable(as.data.frame((Pheno()[,1:4])),filter = "top",options=list(pageLength = 5, display = "compact"))})
-    
-  
-  #output$PhenoTable <- renderDataTable({datatable(as.data.frame(Pheno()),selection=list(mode='multiple',target='row+column',selected=list(rows=5,cols=5),slectable=TRUE))})
-  #output$PhenoTable <- renderDataTable({datatable(as.data.frame((Pheno()[1:5,1:5])),filter="top",options=list(pageLength = 5, display = "compact"))})
-  #output$PhenoTable <- renderDataTable({datatable(as.data.frame(Pheno()),options=list(pageLength=5,display=)})
-  
-  
+  output$PhenoTable <- renderTable({as.data.frame((Pheno())[1:5,1:5])})
   
   genoHead <- eventReactive(input$infileVCF,{ paste("Genotype Table with ",ncol(Geno())-5," lines and ",nrow((Geno()))," markers",sep="")})
   output$GenoHeader <- renderText({genoHead()})
-  #output$GenoTable <- renderTable({as.data.frame((Geno())[1:5,1:5])})
-  output$GenoTable <- renderDataTable({datatable(as.data.frame((Geno()[,1:4])),filter = "top",options = list(pageLength = 5, display = "compact"))})
+  output$GenoTable <- renderTable({as.data.frame((Geno())[1:5,1:5])})
   
   
   TargetHead <- eventReactive(input$infileTargetTable,{ paste("Table with information on ",nrow(TargetTab())," Target lines",sep="")})
   output$TargetHeader <- renderText({TargetHead()})
-  output$TargetTable <-  renderTable({as.data.frame(TargetTab()[1:5,1:ncol(TargetTab())])})
-  #output$TargetTable <-  renderTable({as.data.frame(TargetTab()[1:5,])})
-  #  output$TargetTable <-  renderDataTable({datatable(as.data.frame(TargetTab()),options = list(pageLength = 5, display = "compact"))})
+  output$TargetTable <-  renderTable({
+    
+    TargetTableOut <- as.data.frame(TargetTab()[1:5,]) 
+    colnames(TargetTableOut) <- ""
+    TargetTableOut
+  })
   
   
   
@@ -588,7 +705,8 @@ server <- function(input,output){
   # })
   
   nTraits <- eventReactive(input$infileBLUEs,{(ncol(Pheno())-1)})
-  TargetIDs <- eventReactive(input$infileTargetTable,{as.character(TargetTab()[,1])})
+  TargetIDs <- eventReactive(input$infileTargetTable,{
+          as.character(TargetTab()[,1])})
   
 ## Trait 
   
@@ -606,8 +724,7 @@ server <- function(input,output){
   output$Summary <- renderTable({
    
      trTable <- cbind(unlist(Trait()),nSelTraits(),SummaryTxt())
-    
-    print(trTable)
+     print(trTable)
     })
   })
   
@@ -638,7 +755,7 @@ server <- function(input,output){
     req(genoFile)
     validate(need(ext == "vcf", "Please upload a vcf file"))
     getTasObj(genoFile$datapath)
-   })
+  })
 
   GenoFilt1 <- eventReactive(input$FilterSites,{
     withProgress(message = 'Filtering Sites', value = 0, {
@@ -667,12 +784,21 @@ server <- function(input,output){
    # Geno_DF <- reactive(getGenoTas_to_DF(GenoTas(),Geno()))
    # GenoFilt1_DF <- reactive(getGenoTas_to_DF(GenoFilt1(),Geno()))
    # GenoFilt2_DF <- reactive(getGenoTas_to_DF(GenoFilt2(),Geno()))
-   # 
-   Geno_DF <- reactive(getGenoTas_to_DF(GenoTas()))
-   GenoFilt1_DF <- reactive(getGenoTas_to_DF(GenoFilt1()))
-   GenoFilt2_DF <- reactive(getGenoTas_to_DF(GenoFilt2()))
+
+   # Geno_DF <- reactive(getGenoTas_to_DF(GenoTas()))
+   # GenoFilt1_DF <- reactive(getGenoTas_to_DF(GenoFilt1()))
+   # GenoFilt2_DF <- reactive(getGenoTas_to_DF(GenoFilt2()))
+
+   Geno_DF <- observeEvent(input$infileVCF, {getGenoTas_to_DF(GenoTas())})
+   GenoFilt1_DF <- eventReactive(input$FilterSites,{getGenoTas_to_DF(GenoFilt1())})
+   GenoFilt2_DF <- eventReactive(input$FilterTaxa,{getGenoTas_to_DF(GenoFilt2())})
    
-    
+   
+   # Geno_DF <- reactive(as.data.frame(as.matrix(GenoTas())))
+   # GenoFilt1_DF <- reactive(as.data.frame(as.matrix(GenoFilt1())))
+   # GenoFilt2_DF <- reactive(as.data.frame(as.matrix(GenoFilt2())))
+   # 
+
 ####  
   genoFiltHead <- eventReactive(input$FilterSites,{ paste("Filter Sites: Genotype Table with ",ncol(GenoFilt1_DF())-5," lines and ",nrow((GenoFilt1_DF()))," markers",sep="")})
   output$GenoFiltHeader <- renderText({genoFiltHead()})
@@ -695,6 +821,7 @@ server <- function(input,output){
       }else if(setTasGenoFilt2()== TRUE){
         GenoFilt2()
       }
+      
   })
    
    l<- reactive(input$l)
@@ -720,15 +847,20 @@ server <- function(input,output){
   # error in evaluating the argument 'x' in selecting a method for function 'ncol': `tasObj` must be of class `TasselGenotypePhenotype`
    
    #GenoImp_DF <- reactive(getGenoTas_to_DF(GenoImp(),Geno()))
-   GenoImp_DF <- reactive(getGenoTas_to_DF(GenoImp()))
- 
-   ### if you use only reactive, this will throw an error ncol(GenoImp_DF())-5
+   #GenoImp_DF <- reactive(getGenoTas_to_DF(GenoImp()))
+   #GenoImp_DF <- reactive(as.data.frame(as.matrix(GenoImp())))
+   
+   
+   GenoImp_DF <- eventReactive(input$Impute,{getGenoTas_to_DF(GenoImp())})
+   
+### if you use only reactive, this will throw an error ncol(GenoImp_DF())-5
+
    genoImpHead <- eventReactive(input$Impute,{paste("Genotype Table with ",ncol(GenoImp_DF())-5," lines and ",nrow((GenoImp_DF()))," markers",sep="")})
    
    
-   # genoImpHead <- reactive(paste("Genotype Table with ",ncol(GenoImp_DF())-5," lines and ",nrow((GenoImp_DF()))," markers",sep=""))
-   #GenoImp_DF <- eventReactive(input$Impute,{getGenoTas_to_DF(GenoImp(),Geno())})
-   #
+# genoImpHead <- reactive(paste("Genotype Table with ",ncol(GenoImp_DF())-5," lines and ",nrow((GenoImp_DF()))," markers",sep=""))
+# GenoImp_DF <- eventReactive(input$Impute,{getGenoTas_to_DF(GenoImp(),Geno())})
+#
    
    output$GenoImpHeader <- renderText({genoImpHead()})
    output$ImputedGenoTable <- renderTable({as.data.frame((GenoImp_DF())[1:5,1:10])})
@@ -740,7 +872,7 @@ server <- function(input,output){
    
    setTasImpGeno <- reactive(input$setGenoImpTas) 
    
-   
+### Check for which genotype matrix to set   
    
    GenoPre <- reactive({
      
@@ -757,7 +889,7 @@ server <- function(input,output){
    })
    
    
-   
+### Merge geno and pheno data    
    
    mergedData <-  reactive({
      t_Geno <- reactive(GenoPre())
@@ -766,16 +898,29 @@ server <- function(input,output){
      }) 
    })
    
-   
-   
    processedData <- reactive(getProcessedData(mergedData(),Trait()))
    
+
+###    
+     
    observeEvent(input$trait, {
      updateNumericInput(inputId = "noCandidates",value= nrow(processedData()[[1]]),min =2, max=nrow(processedData()[[1]]))}) 
    
    observeEvent(input$trait,{
      updateNumericInput(inputId = "noToSelect",value= nrow(processedData()[[1]]),min =2, max=nrow(processedData()[[1]]))})
    
+  
+   MssgTargetSet <- eventReactive(input$trait,{
+     if(nrow(processedData()[[2]])==0){
+       "The current genotypic file doesn't have target line genotypes. 
+        Load genotypic data file with Target IDs"
+     }
+   })
+   
+   output$MssgTarget <- renderUI({
+     message <- MssgTargetSet()
+     HTML(paste0("<div class='message-text'>", message, "</div>"))
+   })
    
     
      
@@ -874,12 +1019,9 @@ server <- function(input,output){
   cvrOutputListMT <- eventReactive(input$CrossValidationMT,{ withProgress(message = 'Running CrossValidations', value = 0, {
         getMTCVR(predictionData(),unlist(Trait()),nTraits(),k(),nIter()) })
   })
-  
-  
-  
-  
-  
- ###
+
+###
+
   cvrHead <- reactive(
   paste("Correlation between observed and predicted values for ",paste(Trait(),collapse=" and "),sep=""))
   
@@ -931,7 +1073,7 @@ server <- function(input,output){
   })
   
   
-#
+#### Optimized Training Sets
   
   TS <- reactive(input$TrainSet) 
   
@@ -1075,7 +1217,7 @@ server <- function(input,output){
          
         })
     
-    })
+   }) 
        
              # XLim <- c(min(c(unlist(outputListMT()[,2:3])))-2,max(c(unlist(outputListMT()[,2:3])))+2)
              # YLim <- c(min(c(unlist(outputListMT()[,4]))),max(c(unlist(outputListMT()[,4]))))

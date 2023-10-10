@@ -153,13 +153,13 @@ NUST_Test_Data_Table <- read.csv(infileTestSet)
 ### 
 ################# 
     
-  outputDF_NUST_Agp_1K <- getRankedPredictedValues(NUST_Data_Table_Num_Filt_1K,nTraits,trait[1],GPModel,optTS=NULL)
+outputDF_NUST_Agp_1K <- getRankedPredictedValues(NUST_Data_Table_Num_Filt_1K,nTraits,trait[1],GPModel,optTS=NULL)
  
  
  
   
 ####### Multiple Traits
-  source("C:/Users/ivanv/Desktop/UMN_GIT/GPSoy/SoyGen2/App/GS_Pipeline_Jan_2022_FnsApp.R")
+ source("C:/Users/ivanv/Desktop/UMN_GIT/GPSoy/SoyGen2/App/GS_Pipeline_Jan_2022_FnsApp.R")
  nTraits <- ncol(NUST_BLUEs)-1
  testIDs <- as.character(NUST_Test_Data_Table[,1])
  trait <- c("YieldBuA","Oil","Protein")
