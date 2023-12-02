@@ -614,7 +614,7 @@ ui <- fluidPage(
   
 ###
 
-server <- function(input,output){
+server <- function(input,output,session){
   
   #Geno
   
@@ -903,11 +903,18 @@ server <- function(input,output){
 
 ###    
      
+   # observeEvent(input$trait, {
+   #   updateNumericInput(inputId = "noCandidates",value= nrow(processedData()[[1]]),min =2, max=nrow(processedData()[[1]]))}) 
+   # 
+   # observeEvent(input$trait,{
+   #   updateNumericInput(inputId = "noToSelect",value= nrow(processedData()[[1]]),min =2, max=nrow(processedData()[[1]]))})
+   # 
    observeEvent(input$trait, {
-     updateNumericInput(inputId = "noCandidates",value= nrow(processedData()[[1]]),min =2, max=nrow(processedData()[[1]]))}) 
+     updateNumericInput(inputId = "noCandidates",value= 250,min =2, max=nrow(processedData()[[1]]))}) 
    
    observeEvent(input$trait,{
-     updateNumericInput(inputId = "noToSelect",value= nrow(processedData()[[1]]),min =2, max=nrow(processedData()[[1]]))})
+     updateNumericInput(inputId = "noToSelect",value= 100,min =2, max=nrow(processedData()[[1]]))})
+   
    
   
    MssgTargetSet <- eventReactive(input$trait,{
@@ -993,7 +1000,14 @@ server <- function(input,output){
   output$tsOptHeader <- renderText({tsOptHead()}) 
   output$PredAccuracyTable <- renderTable({
   TSTable <- TSOptOutputList()
-  TSTable}) 
+  #rownames(TSTable) <- c("Optimal Set","Random Set")
+  # TSTable <- rbind(c("Ridge Regression","BayesB","Bayes LASSO"),TSTable) 
+  # TSTable <- cbind(c("Prediction Model","Optimal Set","Random Set"),TSTable)
+  #colnames(TSTable) <- rep("",ncol(TSTable))
+  colnames(TSTable) <- c("Ridge Regression","BayesB","Bayes LASSO")
+  rownames(TSTable) <- c("Optimal Set","Random Set")
+  TSTable},
+  colnames=TRUE,rownames=TRUE,digits=2)
   
   
  
@@ -1021,9 +1035,9 @@ server <- function(input,output){
   })
 
 ###
-
-  cvrHead <- reactive(
-  paste("Correlation between observed and predicted values for ",paste(Trait(),collapse=" and "),sep=""))
+  
+  cvrHead <- eventReactive(input$CVEvent,{
+  paste("Correlation between observed and predicted values for ",paste(Trait(),collapse=" and "),sep="")})
   
   output$cvrHeader <- renderText({cvrHead()}) 
  
@@ -1032,11 +1046,13 @@ server <- function(input,output){
     if(nSelTraits()==1){
        PATab <- withProgress(message = 'Running CrossValidations', value = 0, {
          getemCVR(predictionData(),unlist(Trait()),nTraits(),k(),nIter())})
-       PATable <- rbind(c("Ridge Regression","BayesB","Bayes LASSO"),round(PATab[c("emRR","emBB","emBL")],digits=2)) 
-       rownames(PATable)<- c("Prediction Model","Prediction Accuracy")
-       colnames(PATable) <- rep("",ncol(PATable))
-       return(PATable)
-     }
+       PATable <- round(PATab[c("emRR","emBB","emBL")],digits=2) 
+       names(PATable)<- c("Ridge Regression","BayesB","Bayes LASSO")
+       PATable <- rbind.data.frame(names(PATable),PATable)
+       colnames(PATable) <- c("Ridge Regression","BayesB","Bayes LASSO")
+       rownames(PATable) <- c("Model","Accuracy")
+       return(PATable[2,])
+    }
     if(nSelTraits()>1){
        PATableComb <- c()
        for(nSelT in 1:nSelTraits()){
@@ -1044,11 +1060,15 @@ server <- function(input,output){
            PATab <- withProgress(message = 'Running CrossValidations', value = 0, {
                     getemCVR(predictionData(),unlist(Trait())[i()],nTraits(),k(),nIter())})
            PATable <- round(PATab[c("emRR","emBB","emBL")],digits=2)
-           PATable2 <- c(unlist(Trait())[i()],PATable)
-           PATableComb <- rbind(PATableComb,PATable2)
+           #PATable2 <- c(unlist(Trait())[i()],PATable)
+           PATableComb <- rbind(PATableComb,PATable)
+           
        }
-       PATableComb <- rbind(c("Trait","Ridge Regression","BayesB","Bayes LASSO"),PATableComb)
-       colnames(PATableComb) <- rep("",ncol(PATableComb))
+       #PATableComb <- rbind(c("Trait","Ridge Regression","BayesB","Bayes LASSO"),PATableComb)
+       
+       #colnames(PATableComb) <- rep("",ncol(PATableComb))
+       colnames(PATableComb) <- c("Ridge Regression","BayesB","Bayes LASSO")
+       rownames(PATableComb) <- unlist(Trait())
        return(PATableComb)
     }
     
@@ -1059,19 +1079,27 @@ server <- function(input,output){
    
        cvrOutputListST()
      
-   })
+   },colnames=TRUE,rownames=TRUE)
   
     
   output$emCVRMT <- renderTable({
 
     if(nSelTraits()>1){
        PATable <- cvrOutputListMT()
-       colnames(PATable) <- rep("",ncol(PATable))
+       #colnames(PATable) <- rep("",ncol(PATable))
        print.data.frame(as.data.frame(PATable))
     }
 
+  },colnames=TRUE,rownames=TRUE)
+  
+  
+  observeEvent(input$CrossValidationST, {
+    updateTextInput(session,"CVEvent", value = "ST")
   })
   
+  observeEvent(input$CrossValidationMT,{
+    updateTextInput(session,"CVEvent", value = "MT")
+  })
   
 #### Optimized Training Sets
   
