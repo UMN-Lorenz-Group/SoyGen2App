@@ -230,17 +230,37 @@ ui <- fluidPage(
                sidebarPanel(
                 tags$strong(tags$h4("Impute Genotype Table ")),
                 tags$br(),
-                selectInput(inputId="imputeMet","Select Imputation Method",choices=c("LDKNNI","Numeric"),multiple=FALSE,selected="LDKNNI"),
+                selectInput(inputId="imputeMet","Select Imputation Method",choices=c("LDKNNI","Numeric","AlphaPlantImpute"),multiple=FALSE,selected="LDKNNI"),
                 tags$br(),
+                # numericInput(inputId="l","Number of High LD Sites",value = 30,min =30,max=1000),
+                # numericInput(inputId="k","Neighboring Samples",value =10,min =10, max=100),
+                # 
+                conditionalPanel(condition="input.imputeMet == 'LDKNNI'",
                 numericInput(inputId="l","Number of High LD Sites",value = 30,min =30,max=1000),
                 numericInput(inputId="k","Neighboring Samples",value =10,min =10, max=100),
+                ),
+                conditionalPanel(condition="input.imputeMet == 'Numeric'",
+                                 numericInput(inputId="nN","Number of Nearest Neighbors",value = 5,min =2,max=100),
+                                 selectInput(inputId="Dist","Distance",choices=c("Euclidean", "Manhattan", "Cosine")),
+                ),
                 
-                #conditionalPanel(condition="input.imputeMet == LDKNNI",
-                #),
+                conditionalPanel(condition="input.imputeMet == 'Numeric' || input.imputeMet == 'LDKNNI'",
                 actionButton(inputId="Impute","Impute Genotype Scores"),
+                tags$br(),
+                tags$br(),
+                tags$br(),
+                
+                ),
+                tags$br(),
+                tags$br(),
+                downloadButton("ExportImpGenoDF", "Export Imputed Genotypes"),
+                tags$br(),
+                tags$br(),
                 tags$br()
               ),
               mainPanel(
+                
+                conditionalPanel(condition="input.imputeMet == 'LDKNNI' || input.imputeMet == 'Numeric'",
                 tags$br(),
                 tags$br(),
                   fluidRow(
@@ -262,7 +282,11 @@ ui <- fluidPage(
                 tags$br(),
                 checkboxInput("setGenoImpTas", "Use Imputed Genotypes For Next Steps", TRUE), 
                 tags$br(),
-                tags$br()
+                tags$br(),
+                ),
+                conditionalPanel(condition="input.imputeMet == 'AlphaPlantImpute'",
+                uiOutput("APIUI"),
+                )
               )
             )),
        
@@ -425,7 +449,7 @@ ui <- fluidPage(
                   ) 
               )),
               #   
-              ### GP Tab 
+      ### GP Tab 
              tabPanel("Genomic Prediction",
                       tabsetPanel(id="GPModels",
                                    
@@ -618,21 +642,39 @@ server <- function(input,output,session){
   
   #Geno
   
-  Geno <- reactive({
-    
+  # Geno <- reactive({
+  #   
+  #   genoFile <- input$infileVCF
+  #   ext <- tools::file_ext(genoFile$datapath)
+  #   req(genoFile)
+  #   validate(need(ext == "vcf", "Please upload a vcf file"))
+  #   
+  #  # withProgress(message = 'Reading Data', value = 0, {
+  #  #   NUST_Genotypes_VCF <- read.table(genoFile$datapath)})
+  #   
+  #   # withProgress(message = 'Converting VCF to Dataframe', value = 0, {
+  #   #   gt2d <- VCFtoDF(genoFile$datapath) }) 
+  #   
+  #   
+  #    gt2d
+  # })
+  
+  GenoTas <- reactive({
     genoFile <- input$infileVCF
     ext <- tools::file_ext(genoFile$datapath)
     req(genoFile)
     validate(need(ext == "vcf", "Please upload a vcf file"))
-    
-   # withProgress(message = 'Reading Data', value = 0, {
-   #   NUST_Genotypes_VCF <- read.table(genoFile$datapath)})
-    
-    withProgress(message = 'Converting VCF to Dataframe', value = 0, {
-      gt2d <- VCFtoDF(genoFile$datapath) }) 
-    
-     gt2d
+    withProgress(message = 'Reading Data', value = 0, {
+    getTasObj(genoFile$datapath)})
   })
+  
+  Geno <- eventReactive(input$infileVCF,{ 
+    withProgress(message = 'Converting VCF to Dataframe', value = 0, {
+    gt2d <- getGenoTas_to_DF(GenoTas())})
+   gt2d
+  
+  })
+  
   
   
   #markerSet <- reactive(Geno()[,"SNPID"])
@@ -749,13 +791,14 @@ server <- function(input,output,session){
   MAF <- reactive(input$MAF)
   
   
-  GenoTas <- reactive({
-    genoFile <- input$infileVCF
-    ext <- tools::file_ext(genoFile$datapath)
-    req(genoFile)
-    validate(need(ext == "vcf", "Please upload a vcf file"))
-    getTasObj(genoFile$datapath)
-  })
+  # GenoTas <- reactive({
+  #   genoFile <- input$infileVCF
+  #   ext <- tools::file_ext(genoFile$datapath)
+  #   req(genoFile)
+  #   validate(need(ext == "vcf", "Please upload a vcf file"))
+  #   getTasObj(genoFile$datapath)
+  # })
+  
 
   GenoFilt1 <- eventReactive(input$FilterSites,{
     withProgress(message = 'Filtering Sites', value = 0, {
@@ -812,7 +855,7 @@ server <- function(input,output,session){
 #####
 
 ### Imputation
-#
+
   FiltGeno <- reactive({ 
       if(setTasGenoFilt1()== FALSE  & setTasGenoFilt2()== FALSE){        
         GenoTas()
@@ -827,43 +870,393 @@ server <- function(input,output,session){
    l<- reactive(input$l)
    k <- reactive(input$k)
    
-   impMethod <- reactive(input$imputeMet)
+   nN <- reactive(input$nN)
+   Dist <- reactive(input$Dist)
    
+   
+   impMethod <- reactive(input$imputeMet)
    GenoImp <-  eventReactive(input$Impute,{
      
      withProgress(message = 'Imputing Genotypic Scores', value = 0, {
      
-      if(impMethod()=="Numeric"){ 
-         
-        getImputedData(FiltGeno(),l(),k(),impMethod())
-         
-      }else if(impMethod()=="LDKNNI"){ 
-         getImputedData(FiltGeno(),l(),k(),impMethod())
+      # if(impMethod()=="Numeric"){ 
+      #    
+      #   getImputedData(FiltGeno(),l(),k(),impMethod())
+      #    
+      # }else if(impMethod()=="LDKNNI"){ 
+      #    getImputedData(FiltGeno(),l(),k(),impMethod())
+      #  
+      # }
        
-      }
+       
+       if(impMethod()=="Numeric"){ 
+         
+         getImputedData_Num(FiltGeno(),nN(),Dist())
+         
+       }else if(impMethod()=="LDKNNI"){ 
+         getImputedData_LDKNNI(FiltGeno(),l(),k())
+         
+       } 
+       
      })
+     
    },ignoreNULL = TRUE)
    
-  # error in evaluating the argument 'x' in selecting a method for function 'ncol': `tasObj` must be of class `TasselGenotypePhenotype`
    
+   
+   GenoImp_DF <- eventReactive(input$Impute,{getGenoTas_to_DF(GenoImp())})
+  
+### if you use only reactive, this will throw an error ncol(GenoImp_DF())-5
+  
+   genoImpHead <- eventReactive(input$Impute,{paste("Genotype Table with ",ncol(GenoImp_DF())-5," lines and ",nrow((GenoImp_DF()))," markers",sep="")})
+   
+   output$GenoImpHeader <- renderText({genoImpHead()})
+   output$ImputedGenoTable <- renderTable({as.data.frame((GenoImp_DF())[1:5,1:10])})
+   
+### 
+     
+   observeEvent(input$imputeMet,{ 
+   
+     if(impMethod()=="AlphaPlantImpute"){ 
+     
+     library(reticulate)
+     reticulate::virtualenv_create("pyEnv", python = "3.10.0")
+     reticulate::virtualenv_install("pyEnv",c("numpy","pandas"))
+     reticulate::use_virtualenv("pyEnv", required = TRUE)
+     reticulate::py_run_string("import sys")
+     
+     py_module_available("alphaplantimpute2")
+   
+     output$APIUI <- renderUI({
+     # Check if AlphaPlantImpute is selected
+     
+       fluidPage(
+         
+         fluidRow(
+           #column(1),
+           column(width=4,tags$strong(tags$h3("Build Haplotype Library "))),
+           column(7),column(width=4,tags$strong(tags$h3("Impute Genotype Table ")))
+         ),
+         
+         tags$br(),
+         
+         fluidRow(
+           #column(1),
+           column(width=4,
+                            numericInput(inputId="nHap",label = "Enter number of haplotypes",value=20,min=2,max=100),
+           ),
+           column(7),column(width=5,
+                            tags$strong(("Input founders file for pedigree based imputation")))
+         ),
+         tags$br(),
+         
+         fluidRow(
+           #column(1)
+           column(width=4,
+                            numericInput(inputId="nSampRnds",label = "Enter number of sample rounds",value=5,min=2,max=100),
+           ),
+           column(7),column(width=4, 
+                            fileInput("founder_file", "Select Founder Files", multiple = FALSE,accept = ".txt")),
+         ),
+         tags$br(),
+         
+         fluidRow( 
+           #column(1),
+           column(width=3,
+                            numericInput(inputId="HDthresh",label = "Enter non-missing threshold for high density genotypes",value=0.9,min=0.5,max=1),
+           )),
+         tags$br(),
+         
+         # Build library button
+         fluidRow( 
+           column(2),column(width=3,
+                            actionButton("build_library", "Build Library"),
+           ),
+           column(7),column(width=3,
+                            actionButton("impute_APIdata", "Impute Data")
+           ),
+         ),   
+         tags$br(),
+         tags$br(),
+         
+         tags$head(
+           tags$style(HTML("
+      #message {
+        
+        /*max-height: 1200px; Set maximum height */
+        overflow-y: scroll; /* Enable vertical scrolling */
+        overflow-x: scroll;  /*Hide horizontal scrolling */
+        overflow-wrap: anywhere; /* Ensure long words do not cause horizontal scrolling */
+        width: 400px; 
+        /*max-width: 100%; */
+        padding: 6px 12px;
+        height: 300px;
+      }
+    "))
+         ),
+         
+         tags$head(
+           tags$style(HTML("
+      #message2 {
+        
+        overflow-y: scroll; /* Enable vertical scrolling */
+        overflow-x: scroll;  /*Hide horizontal scrolling */
+        overflow-wrap: anywhere; /* Ensure long words do not cause horizontal scrolling */
+        width: 400px; 
+        /*max-width: 100%; */
+        padding: 6px 12px;
+        height: 300px;
+      }
+    "))
+         ),
+         fluidRow(
+           
+           column(width = 5,
+                  verbatimTextOutput("message")
+           ),
+           column(width = 1),  # Adjust the width or remove if not needed
+           column(width = 5,
+                  verbatimTextOutput("message2")
+           )
+         ),
+         
+   
+   
+       )
+    })
+     
+  } 
+      
+  })
+      
+      
+   
+  # vcfIDTab <- eventReactive(input$imputeMet,{
+  #     if(impMethod()=="AlphaPlantImpute"){
+  #       vcfIDTab <- getGenoData_API(FiltGeno())
+  #       vcfIDTab
+  #     }else{NULL}
+  # })
+   
+  observeEvent(input$imputeMet,{
+    if(impMethod()=="AlphaPlantImpute" && (!is.null(FiltGeno()))){
+     getGenoData_API(FiltGeno())
+    }
+  })
+   
+####  
+   
+   founder <- reactive({
+     
+     # Attempt to retrieve file information
+     founderFile <- input$founder_file
+     
+     # Proceed only if a file is uploaded
+     if (!is.null(founderFile)) {
+       # Extract file extension
+       ext <- tools::file_ext(founderFile$datapath)
+       
+       # Validate file type
+       validate(need(ext == "txt", "Please upload a txt file"))
+       
+       # Return the file path if the file is valid
+       return(founderFile$datapath)
+     }
+     
+     # Return NULL if no file is uploaded
+     return(NULL)
+   })
+   
+   #### 
+   temp_file <- reactiveVal()
+   nHap <- reactive(input$nHap)
+   nSampRnds <- reactive(input$nSampRnds)
+   HDthresh <- reactive(input$HDthresh)
+   
+   observeEvent(input$build_library,{
+     
+     # Extract necessary input values
+     
+     # Path for the temporary file
+     temp_file(tempfile())
+     
+     # Start the process in a separate R process
+     rProcess <- callr::r_bg(function(nHap, nSampRnds, HDthresh, temp_file) {
+       library(reticulate)
+       sys <- import("sys")
+       api2 <- import("alphaplantimpute2.alphaplantimpute2")
+       
+       sys$argv <- c('alphaplantimpute2', '-createlib', '-out', 'lib',
+                     '-genotypes', 'current_GenoTable.genotypes',
+                     '-n_haplotypes', as.character(nHap),
+                     '-n_sample_rounds', as.character(nSampRnds),
+                     '-hd_threshold', as.character(HDthresh),
+                     '-seed', '42')
+       
+       
+       sink(temp_file)
+       api2$main()
+       sink()
+     }, args = list(nHap(), nSampRnds(), HDthresh(), temp_file()), stdout = temp_file(), stderr = temp_file())
+     
+     ### Test output 
+     
+     processAlive <- reactive(rProcess$is_alive())
+     # Periodically read the file and update the UI
+     output$message <- renderText({
+       
+       invalidateLater(1000, session) # Update every second
+       
+       if(file.exists(temp_file())){
+         lines <- readLines(temp_file(), warn = FALSE)
+         return(paste(lines, collapse = "\n"))
+       }else {
+         return("Waiting for output...")
+       }
+       
+       if(!processAlive()){
+         
+         if (file.exists(temp_file())) {
+           lines <- readLines(temp_file(), warn = FALSE)
+           txt <- paste(lines,collapse="\n")
+           return(paste0(txt,"\n","Build Completed"))
+         }else {
+           return("Waiting for output...")
+         }
+       }
+     })
+     
+   })
+   
+##
+   
+   temp_file2 <- reactiveVal()
+   processComplete2 <- reactiveVal(FALSE)
+   ouputRead <- reactiveVal(FALSE)
+   
+   
+   # Start the background process and return rProcess
+   rProcess2 <- eventReactive(input$impute_APIdata,{
+     
+     library(reticulate)
+     sys <- import("sys")
+     api2 <- import("alphaplantimpute2.alphaplantimpute2")
+     
+     ## Extract necessary input values
+     
+     founder_file <- founder()
+     
+     # Path for the temporary file
+     
+     temp_file2(tempfile())
+     
+     # Start the process in a separate R process
+     callr::r_bg(function(founder_file,temp_file){
+       library(reticulate)
+       sys <- import("sys")
+       api2 <- import("alphaplantimpute2.alphaplantimpute2")
+       
+       if(is.null(founder_file)){
+         sys$argv <- c('alphaplantimpute2', '-impute', '-out', 'imputed_out',
+                       '-genotypes', 'current_GenoTable.genotypes',
+                       '-libphase','lib.phase'
+         )
+       }else {
+         sys$argv <- c('alphaplantimpute2', '-impute', '-out', 'imputed_out',
+                       '-genotypes', 'current_GenoTable.genotypes',
+                       '-founders', as.character(founder_file),
+                       '-libphase','lib.phase'
+         )
+       }
+       
+       sink(temp_file)
+       api2$main()
+       # print("Imputing")
+       # Sys.sleep(2)
+       sink()
+     }, args = list(founder_file,temp_file2()), stdout = temp_file2(), stderr = temp_file2())
+     
+   })
+   
+   
+   # Reactive expression to check process status and read temp file
+   processStatus2 <- reactive({
+     invalidateLater(1000,session) # Update every second
+     
+     if (!is.null(rProcess2()) && rProcess2()$is_alive() && !ouputRead()){
+       if (file.exists(temp_file2())) {
+         lines <- readLines(temp_file2(), warn = FALSE)
+         return(paste(lines,collapse = "\n"))
+       }else {
+         return("Waiting for output...")
+       }
+     }else if(!is.null(rProcess2()) && !rProcess2()$is_alive() && !ouputRead()){
+       
+       if (file.exists(temp_file2())) {
+         lines <- readLines(temp_file2(), warn = FALSE)
+         txt <- paste(lines, collapse = "\n")
+         processComplete2(TRUE)
+         return(paste(txt,"Imputation Completed",collapse="\n"))
+         
+       }else {
+         return("Waiting for output...")
+       }
+      
+     }else if(!is.null(rProcess2()) && !rProcess2()$is_alive() && ouputRead()){
+       
+       if (file.exists(temp_file2())) {
+         lines <- readLines(temp_file2(), warn = FALSE)
+         txt <- paste(lines, collapse = "\n") 
+         
+         return(paste0(txt,"\n","Imputation Completed","\n", "Imputed Geno Table has Dim:",paste(dim(GenoImp_DF()),collapse=" ")))
+       }else{
+         return("Output not read")
+       }
+     }else{return("Var Error")}
+   })
+   
+   # Update the UI with process status
+   output$message2 <- renderText({
+     processStatus2()
+   })
+   
+   
+   # Process and return the output once the background process is complete
+   observe({
+     # Ensure the background process is completed
+     
+     req(processComplete2())
+     ouputRead(TRUE)
+   })
+   
+   ### Read Imputed genotypic data and prepare output 
+   
+   # #impGeno <- reactive({
+   GenoImp_DF <- reactive({
+     # Ensure outputRead is set to TRUE
+     req(ouputRead())
+     # ... Your existing code to process and return the output ...
+     #ImpGeno <- getImputedData()
+     #if(!is.null(vcfIDTab())){
+     #   ImpGeno <- getImpGenoData_API(vcfIDTab())
+     #   ImpGeno
+     # }
+
+     ImpGeno <- getImpGenoData_API()
+     ImpGeno
+   })
+
+  
+   
+   # genoImpHead <- reactive(paste("Genotype Table with ",ncol(GenoImp_DF())-5," lines and ",nrow((GenoImp_DF()))," markers",sep=""))
+   # GenoImp_DF <- eventReactive(input$Impute,{getGenoTas_to_DF(GenoImp(),Geno())})
+   #
+   
+
    #GenoImp_DF <- reactive(getGenoTas_to_DF(GenoImp(),Geno()))
    #GenoImp_DF <- reactive(getGenoTas_to_DF(GenoImp()))
    #GenoImp_DF <- reactive(as.data.frame(as.matrix(GenoImp())))
    
-   
-   GenoImp_DF <- eventReactive(input$Impute,{getGenoTas_to_DF(GenoImp())})
-   
-### if you use only reactive, this will throw an error ncol(GenoImp_DF())-5
-
-   genoImpHead <- eventReactive(input$Impute,{paste("Genotype Table with ",ncol(GenoImp_DF())-5," lines and ",nrow((GenoImp_DF()))," markers",sep="")})
-   
-   
-# genoImpHead <- reactive(paste("Genotype Table with ",ncol(GenoImp_DF())-5," lines and ",nrow((GenoImp_DF()))," markers",sep=""))
-# GenoImp_DF <- eventReactive(input$Impute,{getGenoTas_to_DF(GenoImp(),Geno())})
-#
-   
-   output$GenoImpHeader <- renderText({genoImpHead()})
-   output$ImputedGenoTable <- renderTable({as.data.frame((GenoImp_DF())[1:5,1:10])})
    
    
 ### Merge and Process Data
@@ -1264,6 +1657,17 @@ server <- function(input,output,session){
   
   
 ########
+  output$ExportImpGenoDF <- downloadHandler(
+    filename = function() {
+      "ImputedGenotypesDF.txt"
+    },
+    content = function(file) {
+      
+      write.table(as.data.frame(GenoImp_DF()), file, row.names = FALSE)
+    }
+  )
+  
+  
   output$ExportOptTS <- downloadHandler(
     filename = function() {
       "OptimalTS.csv"

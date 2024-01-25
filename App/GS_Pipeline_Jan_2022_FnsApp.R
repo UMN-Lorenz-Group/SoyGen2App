@@ -429,16 +429,7 @@ return(NUST_Data_Table_Num_Filt)
 
 getMergedData <- function(gt2d,Pheno,testIDs){
 
-   # fixCols <- grep("CHROM |POS|REF|ALT|QUAL|FILTER|INFO|FORMAT",colnames(gt2d))
-
-	# NAIndices <- apply(gt2d[,6:ncol(gt2d)],2,function(x) which(is.na(x)))
-	# b <- unlist(lapply(NAIndices,length))
-	# Non_ZeroIndices <- which(b!=0)
-	
-    #markerID_Filt <- markerID[-Non_ZeroIndices]
-    #Genotypes_VCF_gt2d <- gt2d[,-c(1:5)]
-	
-	
+   	
 	Non_ZeroIndices <- NULL
 	Genotypes_VCF <-   gt2d[,-c(1:5,Non_ZeroIndices)]
 		
@@ -728,7 +719,8 @@ getProcessedData <- function(Data_Table_Num_List,trait){
 
 getTasObj <- function(infileVCF){
     tasGeno <- rTASSEL::readGenotypeTableFromPath(
-		path = infileVCF
+		path = infileVCF,
+		sortPositions=TRUE
 	)
     return(tasGeno)
 }
@@ -767,6 +759,9 @@ getFilteredTaxaGenoData <- function(tasGeno,MinNotMissing){
 }
 
 
+
+
+
 getImputedData <- function(FiltGeno,l,k,impMethod){ 
 
   if(impMethod=="LDKNNI"){
@@ -775,10 +770,76 @@ getImputedData <- function(FiltGeno,l,k,impMethod){
   if(impMethod=="Numeric"){
    tasGenoImp <- imputeNumeric(FiltGeno,byMean = TRUE,nearestNeighbors = 5, distance = c("Euclidean", "Manhattan", "Cosine")[1])
   }
-
+  
   return(tasGenoImp)
 } 
 
+getImputedData_LDKNNI <- function(FiltGeno,l,k){ 
+
+   tasGenoImp <- imputeLDKNNi(FiltGeno, highLDSSites = l, knnTaxa = k, maxDistance = 1e+07)
+  
+  return(tasGenoImp)
+} 
+
+getImputedData_Num <- function(FiltGeno,nN,Dist){
+  
+  
+   tasGenoImp <- imputeNumeric(FiltGeno,byMean = TRUE,nearestNeighbors = nN, distance = Dist)
+  
+  return(tasGenoImp)
+}
+
+
+getGenoData_API <- function(FiltGeno){
+  
+    filtGenoMat <- as.matrix(FiltGeno)
+    filtGenoMat[is.na(filtGenoMat)] <- 9
+    currentGenoMat <- cbind.data.frame(rownames(filtGenoMat),filtGenoMat)
+
+    tableReport <- rJava::new(
+    rJava::J("net.maizegenetics.dna.map.PositionListTableReport"),
+    FiltGeno %>% rTASSEL:::getPositionList()) %>% 
+    rTASSEL:::tableReportToDF() %>% as.data.frame()
+      	
+	varSplit <- strsplit(tableReport[,"VARIANT"],"/")
+	varSplitTab <- cbind.data.frame(unlist(lapply(varSplit,function(x) x[1])),unlist(lapply(varSplit,function(x) x[2])))
+
+    vcfIDTab <- cbind.data.frame(tableReport[,c("Name","Chromosome","Position")],varSplitTab)
+	colnames(vcfIDTab) <- c("SNPID","Chrom","Position","REF","ALT")
+		
+
+    # print(dim(vcfIDTab))
+	# print(is.data.frame(vcfIDTab))
+   write.table(vcfIDTab,"currentVCFIDTab.txt",quote=FALSE,sep="\t",row.names=FALSE,col.names=TRUE)
+	
+   write.table(currentGenoMat,"current_GenoTable.genotypes",quote=FALSE,sep=" ",row.names=FALSE,col.names=FALSE)
+ 
+   return(vcfIDTab)
+}
+
+
+getImpGenoData_API <- function(vcfIDTab){
+    
+	# vcfIDTab_DF <- as.data.frame(vcfIDTab)
+    genoImp <-  read.table("imputed_out.genotypes",sep=" ",header=FALSE)
+	vcfIDTab_DF <- as.data.frame(read.table("currentVCFIDTab.txt",sep="\t",header=TRUE))
+	
+	## Add check to verify that the dimensions match and send a message to the app.   
+	genoImpDF <- as.data.frame(genoImp[,-1])
+    rownames(genoImpDF) <- genoImp[,1]
+	colnames(genoImpDF) <- as.vector(unlist(vcfIDTab_DF[,"SNPID"]))
+    genoImpDFT <- as.data.frame(t(genoImpDF))
+	genoImpDFT$SNPID <- as.vector(unlist(vcfIDTab_DF[,"SNPID"]))
+	# print(dim(genoImpDFT))
+    genoImpDFOut <- merge(vcfIDTab_DF,genoImpDFT,by="SNPID")
+	genoImpDFOut_Sort <- genoImpDFOut[order(genoImpDFOut$Chrom,genoImpDFOut$Position),]
+	
+	
+	# print(dim(genoImpDFOut))
+    return(as_tibble(genoImpDFOut_Sort))
+}
+
+####
 
 
 getGenoTas_to_DF_Old <- function(tasGeno){
