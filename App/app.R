@@ -232,16 +232,15 @@ ui <- fluidPage(
                 tags$br(),
                 selectInput(inputId="imputeMet","Select Imputation Method",choices=c("LDKNNI","Numeric","AlphaPlantImpute"),multiple=FALSE,selected="LDKNNI"),
                 tags$br(),
-                # numericInput(inputId="l","Number of High LD Sites",value = 30,min =30,max=1000),
-                # numericInput(inputId="k","Neighboring Samples",value =10,min =10, max=100),
+                
                 # 
                 conditionalPanel(condition="input.imputeMet == 'LDKNNI'",
-                numericInput(inputId="l","Number of High LD Sites",value = 30,min =30,max=1000),
-                numericInput(inputId="k","Neighboring Samples",value =10,min =10, max=100),
+                           numericInput(inputId="l","Number of High LD Sites",value = 30,min =30,max=1000),
+                           numericInput(inputId="k","Neighboring Samples",value =10,min =10, max=100),
                 ),
                 conditionalPanel(condition="input.imputeMet == 'Numeric'",
                                  numericInput(inputId="nN","Number of Nearest Neighbors",value = 5,min =2,max=100),
-                                 selectInput(inputId="Dist","Distance",choices=c("Euclidean", "Manhattan", "Cosine")),
+                                 selectInput(inputId="Dist","Distance",choices=c("Euclidean", "Manhattan", "Cosine"),multiple=FALSE,selected="Euclidean"),
                 ),
                 
                 conditionalPanel(condition="input.imputeMet == 'Numeric' || input.imputeMet == 'LDKNNI'",
@@ -872,47 +871,79 @@ server <- function(input,output,session){
    
    nN <- reactive(input$nN)
    Dist <- reactive(input$Dist)
-   
-   
    impMethod <- reactive(input$imputeMet)
-   GenoImp <-  eventReactive(input$Impute,{
-     
-     withProgress(message = 'Imputing Genotypic Scores', value = 0, {
-     
-      # if(impMethod()=="Numeric"){ 
-      #    
-      #   getImputedData(FiltGeno(),l(),k(),impMethod())
-      #    
-      # }else if(impMethod()=="LDKNNI"){ 
-      #    getImputedData(FiltGeno(),l(),k(),impMethod())
-      #  
-      # }
-       
-       
-       if(impMethod()=="Numeric"){ 
-         
-         getImputedData_Num(FiltGeno(),nN(),Dist())
-         
-       }else if(impMethod()=="LDKNNI"){ 
-         getImputedData_LDKNNI(FiltGeno(),l(),k())
-         
-       } 
-       
-     })
-     
-   },ignoreNULL = TRUE)
+  
    
+  GenoImp <-  eventReactive(input$Impute,{
+    
+    withProgress(message = 'Imputing Genotypic Scores', value = 0, {
+     
+       print(impMethod())
+       if(impMethod()=='Numeric'){ 
+       
+        df<- getImputedData_Num(FiltGeno(),nN(),Dist())
+         
+       }else if(impMethod()=='LDKNNI'){ 
+        df <-  getImputedData_LDKNNI(FiltGeno(),l(),k())
+         
+       }
+       #getGenoTas_to_DF(df)
+       df
+    })
+     
+   }) #,ignoreNULL = TRUE)
    
+   # GenoImp_DF <- reactive({
+   #   GenoImp()
+   # })
+   GenoImp_DF1 <- eventReactive(input$Impute,{
+                getGenoTas_to_DF(GenoImp())
+    })
    
-   GenoImp_DF <- eventReactive(input$Impute,{getGenoTas_to_DF(GenoImp())})
+   # GenoImp_DF <- reactive({
+   #   Sys.sleep(10)
+   #   getGenoTas_to_DF(GenoImp())
+   #   })
+   
   
 ### if you use only reactive, this will throw an error ncol(GenoImp_DF())-5
   
-   genoImpHead <- eventReactive(input$Impute,{paste("Genotype Table with ",ncol(GenoImp_DF())-5," lines and ",nrow((GenoImp_DF()))," markers",sep="")})
+   #genoImpHead <- eventReactive(input$Impute,{paste("Genotype Table with ",ncol(GenoImp_DF())-5," lines and ",nrow((GenoImp_DF()))," markers",sep="")})
    
-   output$GenoImpHeader <- renderText({genoImpHead()})
-   output$ImputedGenoTable <- renderTable({as.data.frame((GenoImp_DF())[1:5,1:10])})
+  # genoImpHead <- reactive({paste("Genotype Table with ",ncol(GenoImp_DF())-5," lines and ",nrow((GenoImp_DF()))," markers",sep="")})
    
+   
+   genoImpHead <- reactive({
+     # Ensure GenoImp_DF is only called when it has updated data
+     df <- as.data.frame(GenoImp_DF1()) # This call ensures dependency
+     
+     if(is.data.frame(df) && ncol(df) > 5) {
+   #     # Successful case
+       paste("Genotype Table with ", ncol(df) - 5, " lines and ", nrow(df), " markers", sep = "")
+     } else {
+   #     # Fallback or error message
+       "Waiting for data"
+     }
+    })
+   # 
+   # UI and server logic to render the header text and imputed genotype table
+   output$GenoImpHeader <- renderText({
+     genoImpHead()  # This will now wait for GenoImp_DF to complete
+   })
+   
+   # output$ImputedGenoTable <- renderTable({
+   #   df <- GenoImp_DF()  # Ensure dependency
+   #   if(is.data.frame(df) && nrow(df) > 0 && ncol(df) > 0) {
+   #     as.data.frame(df[1:5, 1:10])
+   #   } else {
+   #     data.frame(Message = "No data available or still processing")
+   #   }
+   # })
+   
+   
+   # output$GenoImpHeader <- renderText({genoImpHead()})
+    output$ImputedGenoTable <- renderTable({as.data.frame((GenoImp_DF1())[1:5,1:10])})
+   # 
 ### 
      
    observeEvent(input$imputeMet,{ 
@@ -1029,14 +1060,7 @@ server <- function(input,output,session){
       
   })
       
-      
-   
-  # vcfIDTab <- eventReactive(input$imputeMet,{
-  #     if(impMethod()=="AlphaPlantImpute"){
-  #       vcfIDTab <- getGenoData_API(FiltGeno())
-  #       vcfIDTab
-  #     }else{NULL}
-  # })
+ 
    
   observeEvent(input$imputeMet,{
     if(impMethod()=="AlphaPlantImpute" && (!is.null(FiltGeno()))){
@@ -1232,7 +1256,7 @@ server <- function(input,output,session){
    ### Read Imputed genotypic data and prepare output 
    
    # #impGeno <- reactive({
-   GenoImp_DF <- reactive({
+   GenoImp_DF2 <- reactive({
      # Ensure outputRead is set to TRUE
      req(ouputRead())
      # ... Your existing code to process and return the output ...
@@ -1246,6 +1270,18 @@ server <- function(input,output,session){
      ImpGeno
    })
 
+   GenoImp_DF <- reactive({
+     if (!is.null(GenoImp_DF1()) && nrow(GenoImp_DF1()) > 0) {
+       # GenoImp_DF1 is not NULL and has data
+       return(GenoImp_DF1())
+     } else if (!is.null(GenoImp_DF2()) && nrow(GenoImp_DF2()) > 0) {
+       # GenoImp_DF2 is not NULL and has data, and GenoImp_DF1 was NULL or had no data
+       return(GenoImp_DF2())
+     } else {
+       # Both are NULL or have no data, return NULL or a default value/data frame
+       return(NULL)  # Or any default value you deem appropriate
+     }
+   })
   
    
    # genoImpHead <- reactive(paste("Genotype Table with ",ncol(GenoImp_DF())-5," lines and ",nrow((GenoImp_DF()))," markers",sep=""))
