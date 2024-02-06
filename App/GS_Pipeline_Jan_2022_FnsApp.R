@@ -717,6 +717,7 @@ getProcessedData <- function(Data_Table_Num_List,trait){
 } 
 
 
+
 getTasObj <- function(infileVCF){
     tasGeno <- rTASSEL::readGenotypeTableFromPath(
 		path = infileVCF,
@@ -761,22 +762,22 @@ getFilteredTaxaGenoData <- function(tasGeno,MinNotMissing){
 
 
 
+# getImputedData <- function(FiltGeno,l,k,impMethod){ 
 
-getImputedData <- function(FiltGeno,l,k,impMethod){ 
-
-  if(impMethod=="LDKNNI"){
-   tasGenoImp <- imputeLDKNNi(FiltGeno, highLDSSites = l, knnTaxa = k, maxDistance = 1e+07)
-  } 
-  if(impMethod=="Numeric"){
-   tasGenoImp <- imputeNumeric(FiltGeno,byMean = TRUE,nearestNeighbors = 5, distance = c("Euclidean", "Manhattan", "Cosine")[1])
-  }
+  # if(impMethod=="LDKNNI"){
+   # tasGenoImp <- imputeLDKNNi(FiltGeno, highLDSSites = l, knnTaxa = k, maxDistance = 1e+07)
+  # } 
+  # if(impMethod=="Numeric"){
+   # tasGenoImp <- imputeNumeric(FiltGeno,byMean = TRUE,nearestNeighbors = 5, distance = c("Euclidean", "Manhattan", "Cosine")[1])
+  # }
   
-  return(tasGenoImp)
-} 
+  # return(tasGenoImp)
+# } 
+
 
 getImputedData_LDKNNI <- function(FiltGeno,l,k){ 
 
-   tasGenoImp <- imputeLDKNNi(FiltGeno, highLDSSites = l, knnTaxa = k, maxDistance = 1e+07)
+   tasGenoImp <- rTASSEL::imputeLDKNNi(FiltGeno, highLDSSites = l, knnTaxa = k, maxDistance = 1e+07)
   
   return(tasGenoImp)
 } 
@@ -784,7 +785,7 @@ getImputedData_LDKNNI <- function(FiltGeno,l,k){
 getImputedData_Num <- function(FiltGeno,nN,Dist){
   
   
-   tasGenoImp <- imputeNumeric(FiltGeno,byMean = TRUE,nearestNeighbors = nN, distance = Dist)
+   tasGenoImp <- rTASSEL::imputeNumeric(FiltGeno,byMean = TRUE,nearestNeighbors = nN, distance = Dist)
   
   return(tasGenoImp)
 }
@@ -806,17 +807,18 @@ getGenoData_API <- function(FiltGeno){
 
     vcfIDTab <- cbind.data.frame(tableReport[,c("Name","Chromosome","Position")],varSplitTab)
 	colnames(vcfIDTab) <- c("SNPID","Chrom","Position","REF","ALT")
-		
+	
 
     # print(dim(vcfIDTab))
 	# print(is.data.frame(vcfIDTab))
-   write.table(vcfIDTab,"currentVCFIDTab.txt",quote=FALSE,sep="\t",row.names=FALSE,col.names=TRUE)
+    write.table(vcfIDTab,"currentVCFIDTab.txt",quote=FALSE,sep="\t",row.names=FALSE,col.names=TRUE)
 	
-   write.table(currentGenoMat,"current_GenoTable.genotypes",quote=FALSE,sep=" ",row.names=FALSE,col.names=FALSE)
+    write.table(currentGenoMat,"current_GenoTable.genotypes",quote=FALSE,sep=" ",row.names=FALSE,col.names=FALSE)
  
    return(vcfIDTab)
 }
 
+#####
 
 getImpGenoData_API <- function(vcfIDTab){
     
@@ -839,7 +841,7 @@ getImpGenoData_API <- function(vcfIDTab){
     return(as_tibble(genoImpDFOut_Sort))
 }
 
-####
+######
 
 
 getGenoTas_to_DF_Old <- function(tasGeno){
@@ -871,16 +873,9 @@ getGenoTas_to_DF_Old <- function(tasGeno){
 }
 
 
-
-
 getGenoTas_to_DF <- function(tasGeno){
 
     tasGenoMat <- as.matrix(tasGeno)
-	
-	# tasSumExp <- rTASSEL::getSumExpFromGenotypeTable(
-    # tasObj = tasGeno)
-	# tasGenoDF <- (SummarizedExperiment::assays(tasSumExp)[[1]])
-	# colnames(tasGenoDF) <- SummarizedExperiment::colData(tasSumExp)[,"Sample"]
 	
 	tasGenoDF <- as.data.frame(t(tasGenoMat))
    	tasGenoDF$SNPID <- rownames(tasGenoDF)
@@ -899,7 +894,7 @@ getGenoTas_to_DF <- function(tasGeno){
 	colnames(vcfIDTab) <- c("SNPID","Chrom","Position","REF","ALT")
 		
 	# gt2d_tasGeno <-as_tibble(cbind.data.frame(vcfIDTab,tasGenoDF))
-	gt2d_tasGeno <-as_tibble(merge(vcfIDTab,tasGenoDF,by="SNPID"))
+	gt2d_tasGeno <- as_tibble(merge(vcfIDTab,tasGenoDF,by="SNPID"))
 	return(gt2d_tasGeno)
   
 }
