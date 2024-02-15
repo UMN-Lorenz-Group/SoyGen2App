@@ -1,4 +1,4 @@
-# SoyGen2 (Science Optimized Yield Gains Across Environments - V2) App
+# SoyGen2 (Science Optimized Yield Gains Across Environments - V2) 
 ## An R shiny application to implement a genomic selection pipeline from quality control of genotypic data to making genomic predictions 
 
 ### I) To install and run the application in Rstudio, 
