@@ -4,6 +4,7 @@
 ### I) To install and run the application in Rstudio, 
 #### 1) git clone https://github.com/UMN-Lorenz-Group/SoyGen2App.git from git bash or terminal 
 #### 2) Open App/app.R in Rstudio and run app 
+#### 3) Follow the easy-to-follow instructions on the app pages and move through the tabs for sequential implementation of steps in the pipeline
 
 
 
