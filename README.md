@@ -7,7 +7,6 @@
 
 
 
-
 ### II) Test it on gesis notebook binder by clicking the following link 
 #### (Since this is a public notebook binder meant for demos, it is not updated frequently and may take a long time to start)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://notebooks.gesis.org/binder/v2/gh/UMN-Lorenz-Group/SoyGen2App/main?urlpath=rstudio)
