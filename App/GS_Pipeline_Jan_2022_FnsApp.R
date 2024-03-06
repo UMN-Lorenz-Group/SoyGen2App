@@ -444,13 +444,17 @@ getMergedData <- function(gt2d,Pheno,testIDs){
 	Genotypes_VCF_ID3 <- gsub("\\)","",Genotypes_VCF_ID2) 
 	Genotypes_VCF_ID4 <- gsub("\\_","",Genotypes_VCF_ID3)
 
+
+    if(!is.null(testIDs)){ TestIDs <- gsub("[_-]","",testIDs)
+	}else if(is.null(testIDs)){TestIDs <- testIDs}
+	
 ### Checks 1
 
-# TestIDs <- testIDs # TestIDsMod <- gsub("[_-]","",TestIDs)
-   
-	TestIDs <- gsub("[_-]","",testIDs)
+
 	length(Genotypes_VCF_ID4)
 	length(unique(Genotypes_VCF_ID4))
+	
+	markerID <- paste("ss",markerID,sep="-")
 
 ### Remove duplicated IDs from genotype table
 	Genotypes_Table_Mod <- cbind(Genotypes_VCF_ID4,t(Genotypes_VCF)) 
@@ -514,9 +518,10 @@ getMergedData <- function(gt2d,Pheno,testIDs){
 
 ### Filtered Genotype Table 
 	
-	
+	Test_Genotypes_Table_Mod_Num_Filt <- NULL
 #### 
     if(!is.null(TestIDs)){
+	 
 	  testIndices <- which(as.character(Genotypes_Table_Mod_Num_Filt[,1]) %in% TestIDs)
 	  StrainIDs <- as.character(Genotypes_Table_Mod_Num_Filt[,1])
 	  TrainIDs <- setdiff(StrainIDs,TestIDs)
@@ -525,7 +530,7 @@ getMergedData <- function(gt2d,Pheno,testIDs){
       Train_Genotypes_Table_Mod_Num_Filt <- Genotypes_Table_Mod_Num_Filt[trainIndices,]
     }
   
-   if(is.null(TestIDs) | nrow(Test_Genotypes_Table_Mod_Num_Filt)==0){ 
+   if(is.null(TestIDs) | is.null(Test_Genotypes_Table_Mod_Num_Filt)){ 
      
 	  print("Load Target File")
    }
@@ -725,6 +730,7 @@ getTasObj <- function(infileVCF){
 	)
     return(tasGeno)
 }
+
 
 
 
