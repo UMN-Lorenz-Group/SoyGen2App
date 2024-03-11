@@ -682,7 +682,8 @@ server <- function(input,output,session){
   output$TargetHeader <- renderText({
     req(TargetHead()) # Ensure that TargetHead has a value before proceeding
     TargetHead()
-
+  })
+  
   #### Target Table 
   
   TargetIDs <- reactive(NULL)
