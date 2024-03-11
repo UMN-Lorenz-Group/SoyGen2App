@@ -206,7 +206,6 @@ VCFtoDF_NAM <- function(infile){
   
   return(gt.simple)
 }
- 
 
 
 
@@ -426,31 +425,322 @@ return(NUST_Data_Table_Num_Filt)
 
 
 
+##WorkVersion
+# getMergedData <- function(gt2d,Pheno,testIDs){
+
+   	
+	# Non_ZeroIndices <- NULL
+	
+	# Genotypes_VCF <-   gt2d[,-c(1:5,Non_ZeroIndices)]
+	# Genotypes_VCF_ID <- colnames(Genotypes_VCF)
+	
+	# ## is marker ID always in column 1 / not CHROM
+    # markerID <- as.vector(unlist(gt2d[,"SNPID"]))
+  
+# ### Remove special characters from strain ID in meta table and genotype table
+
+	# Genotypes_VCF_ID <- gsub("-","",Genotypes_VCF_ID)
+	# Genotypes_VCF_ID1 <- gsub("\\.","",Genotypes_VCF_ID) 
+	# Genotypes_VCF_ID2 <- gsub("\\(","",Genotypes_VCF_ID1) 
+	# Genotypes_VCF_ID3 <- gsub("\\)","",Genotypes_VCF_ID2) 
+	# Genotypes_VCF_ID4 <- gsub("\\_","",Genotypes_VCF_ID3)
+
+    # if(!is.null(testIDs)){ TestIDs <- gsub("[_-]","",testIDs)
+	# }else if(is.null(testIDs)){TestIDs <- testIDs}
+	
+# ### Checks 1
+
+	
+	# markerID <- paste("ss",markerID,sep="-")
+
+# ### Remove duplicated IDs from genotype table
+	# Genotypes_Table_Mod <- cbind(Genotypes_VCF_ID4,t(Genotypes_VCF)) 
+	# colnames(Genotypes_Table_Mod) <- c("Strain",markerID)
+
+# ### Numeric coded genotype table from merged data table 
+
+	# Genotypes_Table_Mod_Merged <- Genotypes_Table_Mod
+	# Genotypes_Table_Mod_Num1 <- apply(Genotypes_Table_Mod_Merged[,-1],2,function(x) gsub("BB","-1",x)) 
+	# Genotypes_Table_Mod_Num2 <- apply(Genotypes_Table_Mod_Num1,2,function(x) gsub("AB","0",x)) 
+	# Genotypes_Table_Mod_Num3 <- apply(Genotypes_Table_Mod_Num2,2,function(x) gsub("AA","1",x)) 
+	
+	# if(length(which(rownames(Genotypes_Table_Mod_Num3) %in% "SNPID")) >=1){
+	  # Genotypes_Table_Mod_Num3A <- Genotypes_Table_Mod_Num3[-which(rownames(Genotypes_Table_Mod_Num3) %in% "SNPID"),]
+    # }else if(length(which(rownames(Genotypes_Table_Mod_Num3) %in% "SNPID")) <1){
+	  # Genotypes_Table_Mod_Num3A <- Genotypes_Table_Mod_Num3
+    # }
+	
+
+# ### IF genotype table coding is -1,0,1 change it o 0,1,2 
+	
+	# if(sum(table(Genotypes_Table_Mod_Num3A))==0){
+	  # Genotypes_Table_Mod_Num <- apply(Genotypes_Table_Mod_Num3A,2,function(x) as.numeric(x)+1)
+    # }else{ 
+	  # Genotypes_Table_Mod_Num <- apply(Genotypes_Table_Mod_Num3A,2,function(x) as.numeric(x))
+    # }
+	
+	# Genotypes_Table_Mod_Num_Comb <- cbind(Genotypes_Table_Mod_Merged[,1],Genotypes_Table_Mod_Num)
+	# colnames(Genotypes_Table_Mod_Num_Comb)[1] <- "Strain" 
+
+	
+	
+	# Genotype_Table_Num <- Genotypes_Table_Mod_Num_Comb
+	# dim(Genotype_Table_Num)
+	# colnames(Genotype_Table_Num)
+	
+# # Filter Genotype Table and remove duplicate IDs
+	
+	# dupIndices_Num <- which(duplicated(as.character(Genotype_Table_Num[,1])))
+	# dupStrain_Num <- as.character(Genotype_Table_Num[dupIndices_Num,1])
+	# dupIndices_in_Table_Num <- which(as.character(Genotype_Table_Num[,1]) %in% dupStrain_Num)
+
+   # if(length(dupIndices_Num) >=1) {
+	# Genotype_Table_Num_noDup <- Genotype_Table_Num[-dupIndices_Num,]
+	# rownames(Genotype_Table_Num_noDup) <- Genotype_Table_Num_noDup[,1]
+	# Genotype_Table_Num_Filt1 <- Genotype_Table_Num_noDup
+	
+	
+	# Genotypes_Table_Mod_Num_Filt0 <- apply(as.matrix(Genotype_Table_Num_Filt1[,-1]),2,as.numeric)
+	# rownames(Genotypes_Table_Mod_Num_Filt0) <- rownames(Genotype_Table_Num_Filt1)
+	# #dim(Genotypes_Table_Mod_Num_Filt0)
+	# Genotypes_Table_Mod_Num_Filt <- cbind(rownames(Genotypes_Table_Mod_Num_Filt0),Genotypes_Table_Mod_Num_Filt0)
+	
+   # }
+   # if(length(dupIndices_Num) <1) {
+	# Genotype_Table_Num_noDup <- Genotype_Table_Num
+	# rownames(Genotype_Table_Num_noDup) <- Genotype_Table_Num_noDup[,1]
+	# Genotype_Table_Num_Filt1 <- Genotype_Table_Num_noDup
+		
+	# Genotypes_Table_Mod_Num_Filt0 <- apply(as.matrix(Genotype_Table_Num_Filt1[,-1]),2,as.numeric)
+	# rownames(Genotypes_Table_Mod_Num_Filt0) <- rownames(Genotype_Table_Num_Filt1)
+	# #dim(Genotypes_Table_Mod_Num_Filt0)
+	# Genotypes_Table_Mod_Num_Filt<- cbind(rownames(Genotypes_Table_Mod_Num_Filt0),Genotypes_Table_Mod_Num_Filt0)
+   # }
+
+# ### Filtered Genotype Table  
+# ### Separate train and test sets
+	
+	# Test_Genotypes_Table_Mod_Num_Filt <- NULL
+# #### 
+    # if(!is.null(TestIDs)){
+	 
+	  # testIndices <- which(as.character(Genotypes_Table_Mod_Num_Filt[,1]) %in% TestIDs)
+	  # StrainIDs <- as.character(Genotypes_Table_Mod_Num_Filt[,1])
+	  # TrainIDs <- setdiff(StrainIDs,TestIDs)
+	  # trainIndices <- which(as.character(Genotypes_Table_Mod_Num_Filt[,1]) %in% TrainIDs)
+	  # Test_Genotypes_Table_Mod_Num_Filt <- Genotypes_Table_Mod_Num_Filt[testIndices,]
+      # Train_Genotypes_Table_Mod_Num_Filt <- Genotypes_Table_Mod_Num_Filt[trainIndices,]
+    # }else if(is.null(TestIDs)){ 
+     
+	  # StrainIDs <- as.character(Genotypes_Table_Mod_Num_Filt[,1])
+	  # TrainIDs <- StrainIDs
+	  # trainIndices <- which(as.character(Genotypes_Table_Mod_Num_Filt[,1]) %in% TrainIDs)
+	  # Train_Genotypes_Table_Mod_Num_Filt <- Genotypes_Table_Mod_Num_Filt[trainIndices,]
+	# }
+  
+# ######### Data Prep for GP model training
+# ############# Process IDs
+# ### PhenoIDs  
+
+	# StrainID_List <- strsplit(as.character(Pheno[,1]),"[-_.()]")
+	# StrainID <- unlist(lapply(StrainID_List,function(x) paste(x,collapse="")))
+
+# ## Remove MG from PhenoIDs
+	# if(length(grep("MG",as.character(StrainID))) >1){
+		# StrainIDMod <- gsub("MG.*","",as.character(StrainID))
+	# }else if(length(grep("MG",as.character(StrainID))) <1){
+		# StrainIDMod <- as.character(StrainID)
+    # }	
+
+
+   
+    # Pheno1 <- cbind(Pheno,StrainIDMod)
+	# Pheno1[,1] <- StrainID
+	# colnames(Pheno1)[ncol(Pheno1)] <- "StrainID"
+	
+
+# ## Aggregate by StrainID (w/o MG) and take mean of all trait values 
+
+    # traitcols <- setdiff(colnames(Pheno1),c("GermplasmId","StrainID","MG"))
+    # PhAvg <-  Pheno1 %>%
+    # as_tibble() %>%
+    # group_by(StrainID) %>%
+    # summarize(across(all_of(traitcols), ~mean(.x, na.rm = TRUE))) %>%
+    # rowwise() 
+	
+    # Pheno1_Avg <- as.data.frame(PhAvg) 
+	
+	
+	
+	
+# ##Pheno1_Avg <- as_tibble(Pheno1) %>% group_by("StrainID") %>% summarise(AvgPheno=mean(traits,na.rm=TRUE))
+	
+# ### GenoIDs  
+	
+	# # length(which(StrainIDMod %in% trainStrainID))
+  
+    # # if(length(grep("MG",as.character(StrainID))) >1 & Train_Genotypes_Table_Mod_Num_Filt)[,"MG"] )  {
+		  
+		  # # trainStrainIDMG <- paste(trainStrainID,"MG",
+		  # # length(which(StrainIDMod %in% rownames(Train_Genotypes_Table_Mod_Num_Filt)))
+	# # }
+
+    # # if(length(grep("MG",as.character(StrainID))) <1){
+			# # StrainIDMod <- as.character(StrainID)
+    # # }	
+  
+  
+  # trainStrainID <- gsub("[-_.()]","",(Train_Genotypes_Table_Mod_Num_Filt)[,1])
+  # commonStrainID <- Pheno1_Avg[(which(as.character(Pheno1_Avg[,"StrainID"]) %in% trainStrainID)),"StrainID"]
+  # Diff_StrainID <- setdiff(trainStrainID,commonStrainID)
+
+  # GenoTable_Filtered <- cbind(trainStrainID,Train_Genotypes_Table_Mod_Num_Filt)
+  # colnames(GenoTable_Filtered)[1] <- "StrainID" 
+            
+  # PhenoTable_Filtered <- Pheno1_Avg[which(as.character(Pheno1_Avg[,"StrainID"]) %in% trainStrainID),]
+	
+  
+# ### merge geno and pheno tables  
+  
+ # # Data_Table1_Num <- merge(GenoTable_Filtered,PhenoTable_Filtered,by="StrainID",all=TRUE)
+   
+   # Data_Table1_Num <- merge(GenoTable_Filtered,PhenoTable_Filtered,by="StrainID")
+   
+ 
+   # # if(length(grep("MG",colnames(Data_Table1_Num)))>0){ 
+      
+	   # # positiveIndices <- which(as.numeric(as.character(Data_Table1_Num[,"MG"])) >0) 
+	   # # zeroIndices <-  which(as.numeric(as.character(Data_Table1_Num[,"MG"])) == 0) 
+	   # # negativeIndices <- which(as.numeric(as.character(Data_Table1_Num[,"MG"])) < 0)
+	   # # StrainIDModPhenoMG <- rep(0,nrow(Data_Table1_Num))
+	   
+       # # StrainIDModPhenoMG[positiveIndices] <- paste(as.character(Data_Table1_Num[positiveIndices,"StrainID"]),"MG",as.roman(as.numeric(as.character(Data_Table1_Num[positiveIndices,"MG"]))),sep="")
+	   # # StrainIDModPhenoMG[zeroIndices] <- paste(as.character(Data_Table1_Num[zeroIndices,"StrainID"]),"MG",as.numeric(as.character(Data_Table1_Num[zeroIndices,"MG"])),sep="")
+	   # # StrainIDModPhenoMG[negativeIndices] <- paste(as.character(Data_Table1_Num[negativeIndices,"StrainID"]),"MG00",sep="")
+  
+       # # Data_Table1_Num_Mod <- cbind(Data_Table1_Num,StrainIDModPhenoMG)
+	   # # colnames(Data_Table1_Num_Mod)[ncol(Data_Table1_Num_Mod)] <- "StrainIDModPheno"
+   
+	# # }else if(length(grep("MG",colnames(Data_Table1_Num)))==0 ){ 
+ 
+        # # Data_Table1_Num_Mod <- cbind(Data_Table1_Num,Data_Table1_Num[,"StrainID"])
+		# # colnames(Data_Table1_Num_Mod)[ncol(Data_Table1_Num_Mod)] <- "StrainIDModPheno"
+	# # }
+		 
+ 
+# ### Dealing with duplicated data 
+ 
+  # # dupId_Data <- Data_Table1_Num[which(duplicated(Data_Table1_Num[,"StrainID"])),"StrainID"]
+  # # dupId_Indices <- lapply(dupId_Data,function(x) which(as.character(Data_Table1_Num[,"StrainID"]) %in% as.character(x)))
+  # # dupId_Indices_Len <- lapply(dupId_Indices,length)
+  
+  # # table(unlist(dupId_Indices_Len)) 
+  # # dupData_List <- lapply(dupId_Indices,function(x) Data_Table1_Num[as.vector(x),])
+  # # dupData_NA_List <- lapply(dupData_List,function(x) apply(x,1,function(y) length(which(is.na(y)))))
+  
+  # # StrainID_Table <- cbind(StrainIDMod,StrainID)  
+  # # colnames(StrainID_Table) <- c("StrainID","StrainIDPheno")
+  # # Data_Table1_Num_Mod <- merge(StrainID_Table,Data_Table1_Num,by="StrainID",all.y=TRUE)
+
+
+  # # dupIDIndices <- which(duplicated(Data_Table1_Num_Mod[,"StrainIDModPheno"]))
+
+    
+  # # if(length(dupIDIndices) >0){
+ 
+    # # Data_Table_Num <- Data_Table1_Num_Mod[-dupIDIndices,]
+	# # rownames(Data_Table_Num) <- Data_Table_Num[,"StrainIDModPheno"]
+  # # }else if(length(dupIDIndices) ==0){
+     # # Data_Table_Num <- Data_Table1_Num_Mod
+	 # # rownames(Data_Table_Num) <- Data_Table_Num[,"StrainIDModPheno"]
+  # # }
+  
+  
+  # Data_Table1_Num_Mod <- Data_Table1_Num
+  
+  # dupIDIndices <- which(duplicated(Data_Table1_Num_Mod[,"StrainID"]))
+
+    
+  # if(length(dupIDIndices) >0){
+ 
+    # Data_Table_Num <- Data_Table1_Num_Mod[-dupIDIndices,]
+	# rownames(Data_Table_Num) <- Data_Table_Num[,"StrainID"]
+  # }else if(length(dupIDIndices) ==0){
+     # Data_Table_Num <- Data_Table1_Num_Mod
+	 # rownames(Data_Table_Num) <- Data_Table_Num[,"StrainID"]
+  # }
+  
+  # Train_Data_Table_Num_Filt <- Data_Table_Num 
+  # return(list(Train_Data_Table_Num_Filt,Test_Genotypes_Table_Mod_Num_Filt))
+   
+# ## Check difference of genotypic scores 
+ 
+  # #Data_Table_Num[which(duplicated(Data_Table_Num[,"StrainID"])),1:10]
+  # # findDiff <- function(x){
+      # # d <- matrix(0,nrow=nrow(x),ncol=ncol(x))
+	  # # for(i in 2:nrow(x)){
+	     # # ind <- which(!is.na(x[1,1:1205]))
+	     # # d[i-1,ind] <- (as.numeric(as.character(x[1,ind]))-as.numeric(as.character(x[i,ind])))
+	  # # }
+	  # # return(d)
+  # # }
+  # # dupData_Diff_List <- lapply(dupData_List,function(x) findDiff(x))
+ 
+# ### Checks  
+ # # StrainIDMod_Data <- StrainID_Table[which(as.character(StrainID_Table[,1]) %in% Data_Table1_Num[,"StrainID"]),2]
+	# # StrainIDMod_Data <- StrainIDMod[match(Data_Table1_Num[,"StrainID"],StrainIDMod)])
+	
+# ### Simple remove 
+ 
+     # # dupIndices_Data <- unlist(dupId_Indices)
+     # # Data_Table_Num <- Data_Table1_Num[-dupIndices_Data,]
+     # # rownames(Data_Table_Num) <- Data_Table1_Num[-dupIndices_Data,"StrainID"]
+  
+# ## Checks 
+   # # CommonSampleID_Mod <- (which(as.character(Data_Table1_Num[,1]) %in% trainStrainID))
+   # # length(unique(Data_Table1_Num[CommonSampleID_Mod,1]))
+   # # length(which(duplicated(Data_Table1_Num[CommonSampleID_Mod,1])))
+   # # commonGenoMod <- (Data_Table1_Num[(which(duplicated(Data_Table1_Num[CommonSampleID_Mod,1]))),])
+   # # apply(commonGenoMod,1,function(x) length(which(is.na(as.character(x)))))
+   
+# ####### Filtered Table in Numeric Format 
+# ####################################################################################
+   # #Data_Table_Num <- Data_Table1_Num
+   # #rownames(Data_Table_Num) <- Data_Table1_Num[,"StrainID"]
+  
+ 
+
+# }
+
+
+
 
 getMergedData <- function(gt2d,Pheno,testIDs){
 
    	
 	Non_ZeroIndices <- NULL
+	
 	Genotypes_VCF <-   gt2d[,-c(1:5,Non_ZeroIndices)]
-		
 	Genotypes_VCF_ID <- colnames(Genotypes_VCF)
-    markerID <- as.vector(unlist(gt2d[,1]))
+	
+	## is marker ID always in column 1 / not CHROM
+    markerID <- as.vector(unlist(gt2d[,"SNPID"]))
   
 ### Remove special characters from strain ID in meta table and genotype table
 
-	Genotypes_VCF_ID <- gsub("-","",Genotypes_VCF_ID) 
+	Genotypes_VCF_ID <- gsub("-","",Genotypes_VCF_ID)
 	Genotypes_VCF_ID1 <- gsub("\\.","",Genotypes_VCF_ID) 
 	Genotypes_VCF_ID2 <- gsub("\\(","",Genotypes_VCF_ID1) 
 	Genotypes_VCF_ID3 <- gsub("\\)","",Genotypes_VCF_ID2) 
 	Genotypes_VCF_ID4 <- gsub("\\_","",Genotypes_VCF_ID3)
 
+    if(!is.null(testIDs)){ TestIDs <- gsub("[_-]","",testIDs)
+	}else if(is.null(testIDs)){TestIDs <- testIDs}
+	
 ### Checks 1
 
-# TestIDs <- testIDs # TestIDsMod <- gsub("[_-]","",TestIDs)
-   
-	TestIDs <- gsub("[_-]","",testIDs)
-	length(Genotypes_VCF_ID4)
-	length(unique(Genotypes_VCF_ID4))
+	
+	markerID <- paste("ss",markerID,sep="-")
 
 ### Remove duplicated IDs from genotype table
 	Genotypes_Table_Mod <- cbind(Genotypes_VCF_ID4,t(Genotypes_VCF)) 
@@ -463,17 +753,21 @@ getMergedData <- function(gt2d,Pheno,testIDs){
 	Genotypes_Table_Mod_Num2 <- apply(Genotypes_Table_Mod_Num1,2,function(x) gsub("AB","0",x)) 
 	Genotypes_Table_Mod_Num3 <- apply(Genotypes_Table_Mod_Num2,2,function(x) gsub("AA","1",x)) 
 	
-	
 	if(length(which(rownames(Genotypes_Table_Mod_Num3) %in% "SNPID")) >=1){
-	Genotypes_Table_Mod_Num3A <- Genotypes_Table_Mod_Num3[-which(rownames(Genotypes_Table_Mod_Num3) %in% "SNPID"),]
-    }
-	if(length(which(rownames(Genotypes_Table_Mod_Num3) %in% "SNPID")) <1){
-	Genotypes_Table_Mod_Num3A <- Genotypes_Table_Mod_Num3
+	  Genotypes_Table_Mod_Num3A <- Genotypes_Table_Mod_Num3[-which(rownames(Genotypes_Table_Mod_Num3) %in% "SNPID"),]
+    }else if(length(which(rownames(Genotypes_Table_Mod_Num3) %in% "SNPID")) <1){
+	  Genotypes_Table_Mod_Num3A <- Genotypes_Table_Mod_Num3
     }
 	
-	Genotypes_Table_Mod_Num <- apply(Genotypes_Table_Mod_Num3A,2,function(x) as.numeric(x)+1)
 
-
+### IF genotype table coding is -1,0,1 change it o 0,1,2 
+	
+	if(sum(table(Genotypes_Table_Mod_Num3A))==0){
+	  Genotypes_Table_Mod_Num <- apply(Genotypes_Table_Mod_Num3A,2,function(x) as.numeric(x)+1)
+    }else{ 
+	  Genotypes_Table_Mod_Num <- apply(Genotypes_Table_Mod_Num3A,2,function(x) as.numeric(x))
+    }
+	
 	Genotypes_Table_Mod_Num_Comb <- cbind(Genotypes_Table_Mod_Merged[,1],Genotypes_Table_Mod_Num)
 	colnames(Genotypes_Table_Mod_Num_Comb)[1] <- "Strain" 
 
@@ -497,7 +791,7 @@ getMergedData <- function(gt2d,Pheno,testIDs){
 	
 	Genotypes_Table_Mod_Num_Filt0 <- apply(as.matrix(Genotype_Table_Num_Filt1[,-1]),2,as.numeric)
 	rownames(Genotypes_Table_Mod_Num_Filt0) <- rownames(Genotype_Table_Num_Filt1)
-	dim(Genotypes_Table_Mod_Num_Filt0)
+	#dim(Genotypes_Table_Mod_Num_Filt0)
 	Genotypes_Table_Mod_Num_Filt <- cbind(rownames(Genotypes_Table_Mod_Num_Filt0),Genotypes_Table_Mod_Num_Filt0)
 	
    }
@@ -508,30 +802,32 @@ getMergedData <- function(gt2d,Pheno,testIDs){
 		
 	Genotypes_Table_Mod_Num_Filt0 <- apply(as.matrix(Genotype_Table_Num_Filt1[,-1]),2,as.numeric)
 	rownames(Genotypes_Table_Mod_Num_Filt0) <- rownames(Genotype_Table_Num_Filt1)
-	dim(Genotypes_Table_Mod_Num_Filt0)
+	#dim(Genotypes_Table_Mod_Num_Filt0)
 	Genotypes_Table_Mod_Num_Filt<- cbind(rownames(Genotypes_Table_Mod_Num_Filt0),Genotypes_Table_Mod_Num_Filt0)
    }
 
-### Filtered Genotype Table 
+### Filtered Genotype Table  
+### Separate train and test sets
 	
-	
+	Test_Genotypes_Table_Mod_Num_Filt <- NULL
 #### 
     if(!is.null(TestIDs)){
+	 
 	  testIndices <- which(as.character(Genotypes_Table_Mod_Num_Filt[,1]) %in% TestIDs)
 	  StrainIDs <- as.character(Genotypes_Table_Mod_Num_Filt[,1])
 	  TrainIDs <- setdiff(StrainIDs,TestIDs)
 	  trainIndices <- which(as.character(Genotypes_Table_Mod_Num_Filt[,1]) %in% TrainIDs)
 	  Test_Genotypes_Table_Mod_Num_Filt <- Genotypes_Table_Mod_Num_Filt[testIndices,]
       Train_Genotypes_Table_Mod_Num_Filt <- Genotypes_Table_Mod_Num_Filt[trainIndices,]
-    }
-  
-   if(is.null(TestIDs) | nrow(Test_Genotypes_Table_Mod_Num_Filt)==0){ 
+    }else if(is.null(TestIDs)){ 
      
-	  print("Load Target File")
-   }
+	  StrainIDs <- as.character(Genotypes_Table_Mod_Num_Filt[,1])
+	  TrainIDs <- StrainIDs
+	  trainIndices <- which(as.character(Genotypes_Table_Mod_Num_Filt[,1]) %in% TrainIDs)
+	  Train_Genotypes_Table_Mod_Num_Filt <- Genotypes_Table_Mod_Num_Filt[trainIndices,]
+	}
   
 ######### Data Prep for GP model training
-
 ############# Process IDs
 ### PhenoIDs  
 
@@ -540,146 +836,143 @@ getMergedData <- function(gt2d,Pheno,testIDs){
 
 ## Remove MG from PhenoIDs
 	if(length(grep("MG",as.character(StrainID))) >1){
-		  
-		  StrainIDMod <- gsub("MG.*","",as.character(StrainID))
-		 
-	}
-
-    if(length(grep("MG",as.character(StrainID))) <1){
-			StrainIDMod <- as.character(StrainID)
+		StrainIDMod <- gsub("MG.*","",as.character(StrainID))
+	}else if(length(grep("MG",as.character(StrainID))) <1){
+		StrainIDMod <- as.character(StrainID)
     }	
 
+
+   
     Pheno1 <- cbind(Pheno,StrainIDMod)
 	Pheno1[,1] <- StrainID
 	colnames(Pheno1)[ncol(Pheno1)] <- "StrainID"
-				
+	
+
+## Aggregate by StrainID (w/o MG) and take mean of all trait values 
+
+    traitcols <- setdiff(colnames(Pheno1),c("GermplasmId","StrainID","MG"))
+    PhAvg <-  Pheno1 %>%
+    as_tibble() %>%
+    group_by(StrainID) %>%
+    summarize(across(all_of(traitcols), ~mean(.x, na.rm = TRUE))) %>%
+    rowwise() 
+	
+    Pheno1_Avg <- as.data.frame(PhAvg) 
+	
+	
+	
+	
+##Pheno1_Avg <- as_tibble(Pheno1) %>% group_by("StrainID") %>% summarise(AvgPheno=mean(traits,na.rm=TRUE))
+	
 ### GenoIDs  
 	
-	# length(which(StrainIDMod %in% trainStrainID))
-  
-    # if(length(grep("MG",as.character(StrainID))) >1 & Train_Genotypes_Table_Mod_Num_Filt)[,"MG"] )  {
-		  
-		  # trainStrainIDMG <- paste(trainStrainID,"MG",
-		  # length(which(StrainIDMod %in% rownames(Train_Genotypes_Table_Mod_Num_Filt)))
-	# }
-
-    # if(length(grep("MG",as.character(StrainID))) <1){
-			# StrainIDMod <- as.character(StrainID)
-    # }	
-  
+	
   
   trainStrainID <- gsub("[-_.()]","",(Train_Genotypes_Table_Mod_Num_Filt)[,1])
-  commonStrainID <- Pheno1[(which(as.character(Pheno1[,"StrainID"]) %in% trainStrainID)),"StrainID"]
+  commonStrainID <- Pheno1_Avg[(which(as.character(Pheno1_Avg[,"StrainID"]) %in% trainStrainID)),"StrainID"]
   Diff_StrainID <- setdiff(trainStrainID,commonStrainID)
 
   GenoTable_Filtered <- cbind(trainStrainID,Train_Genotypes_Table_Mod_Num_Filt)
   colnames(GenoTable_Filtered)[1] <- "StrainID" 
             
-  PhenoTable_Filtered <- Pheno1[which(as.character(Pheno1[,"StrainID"]) %in% trainStrainID),]
+  PhenoTable_Filtered <- Pheno1_Avg[which(as.character(Pheno1_Avg[,"StrainID"]) %in% trainStrainID),]
 	
   
 ### merge geno and pheno tables  
- # Data_Table1_Num <- merge(GenoTable_Filtered,PhenoTable_Filtered,by="StrainID")
   
-  Data_Table1_Num <- merge(GenoTable_Filtered,PhenoTable_Filtered,by="StrainID",all=TRUE)
- 
-    
- 
-   if( length(grep("MG",colnames(Data_Table1_Num)))>0 ){ 
-      
-	   positiveIndices <- which(as.numeric(as.character(Data_Table1_Num[,"MG"])) >0) 
-	   zeroIndices <-  which(as.numeric(as.character(Data_Table1_Num[,"MG"])) == 0) 
-	   negativeIndices <- which(as.numeric(as.character(Data_Table1_Num[,"MG"])) < 0)
-	   StrainIDModPhenoMG <- rep(0,nrow(Data_Table1_Num))
-	   
-       StrainIDModPhenoMG[positiveIndices] <- paste(as.character(Data_Table1_Num[positiveIndices,"StrainID"]),"MG",as.roman(as.numeric(as.character(Data_Table1_Num[positiveIndices,"MG"]))),sep="")
-	   StrainIDModPhenoMG[zeroIndices] <- paste(as.character(Data_Table1_Num[zeroIndices,"StrainID"]),"MG",as.numeric(as.character(Data_Table1_Num[zeroIndices,"MG"])),sep="")
-	   StrainIDModPhenoMG[negativeIndices] <- paste(as.character(Data_Table1_Num[negativeIndices,"StrainID"]),"MG00",sep="")
-  
-       Data_Table1_Num_Mod <- cbind(Data_Table1_Num,StrainIDModPhenoMG)
-	   colnames(Data_Table1_Num_Mod)[ncol(Data_Table1_Num_Mod)] <- "StrainIDModPheno"
+ # Data_Table1_Num <- merge(GenoTable_Filtered,PhenoTable_Filtered,by="StrainID",all=TRUE)
    
-	}
-    if(length(grep("MG",colnames(Data_Table1_Num)))==0 ){ 
+   Data_Table1_Num <- merge(GenoTable_Filtered,PhenoTable_Filtered,by="StrainID")
+   
  
-        Data_Table1_Num_Mod <- cbind(Data_Table1_Num,Data_Table1_Num[,"StrainID"])
-		colnames(Data_Table1_Num_Mod)[ncol(Data_Table1_Num_Mod)] <- "StrainIDModPheno"
-	}
-		 
  
-### Dealing with duplicated data 
- 
-  # dupId_Data <- Data_Table1_Num[which(duplicated(Data_Table1_Num[,"StrainID"])),"StrainID"]
-  # dupId_Indices <- lapply(dupId_Data,function(x) which(as.character(Data_Table1_Num[,"StrainID"]) %in% as.character(x)))
-  # dupId_Indices_Len <- lapply(dupId_Indices,length)
   
-  # table(unlist(dupId_Indices_Len)) 
-  # dupData_List <- lapply(dupId_Indices,function(x) Data_Table1_Num[as.vector(x),])
-  # dupData_NA_List <- lapply(dupData_List,function(x) apply(x,1,function(y) length(which(is.na(y)))))
   
-  # StrainID_Table <- cbind(StrainIDMod,StrainID)  
-  # colnames(StrainID_Table) <- c("StrainID","StrainIDPheno")
-  # Data_Table1_Num_Mod <- merge(StrainID_Table,Data_Table1_Num,by="StrainID",all.y=TRUE)
-
-
-  dupIDIndices <- which(duplicated(Data_Table1_Num_Mod[,"StrainIDModPheno"]))
+  Data_Table1_Num_Mod <- Data_Table1_Num
+  
+  dupIDIndices <- which(duplicated(Data_Table1_Num_Mod[,"StrainID"]))
 
     
- if(length(dupIDIndices) >0){
+  if(length(dupIDIndices) >0){
  
     Data_Table_Num <- Data_Table1_Num_Mod[-dupIDIndices,]
-	rownames(Data_Table_Num) <- Data_Table_Num[,"StrainIDModPheno"]
-  }
-  
-  if(length(dupIDIndices) ==0){
+	rownames(Data_Table_Num) <- Data_Table_Num[,"StrainID"]
+  }else if(length(dupIDIndices) ==0){
      Data_Table_Num <- Data_Table1_Num_Mod
-	 rownames(Data_Table_Num) <- Data_Table_Num[,"StrainIDModPheno"]
+	 rownames(Data_Table_Num) <- Data_Table_Num[,"StrainID"]
   }
-     
-## Check difference of genotypic scores 
- 
-#Data_Table_Num[which(duplicated(Data_Table_Num[,"StrainID"])),1:10]
-  # findDiff <- function(x){
-      # d <- matrix(0,nrow=nrow(x),ncol=ncol(x))
-	  # for(i in 2:nrow(x)){
-	     # ind <- which(!is.na(x[1,1:1205]))
-	     # d[i-1,ind] <- (as.numeric(as.character(x[1,ind]))-as.numeric(as.character(x[i,ind])))
-	  # }
-	  # return(d)
-  # }
   
-  # dupData_Diff_List <- lapply(dupData_List,function(x) findDiff(x))
- 
-### Checks  
- # StrainIDMod_Data <- StrainID_Table[which(as.character(StrainID_Table[,1]) %in% Data_Table1_Num[,"StrainID"]),2]
-	# StrainIDMod_Data <- StrainIDMod[match(Data_Table1_Num[,"StrainID"],StrainIDMod)])
-	
-### Simple remove 
- 
-     # dupIndices_Data <- unlist(dupId_Indices)
-     # Data_Table_Num <- Data_Table1_Num[-dupIndices_Data,]
-     # rownames(Data_Table_Num) <- Data_Table1_Num[-dupIndices_Data,"StrainID"]
-  
-## Checks 
-   # CommonSampleID_Mod <- (which(as.character(Data_Table1_Num[,1]) %in% trainStrainID))
-   # length(unique(Data_Table1_Num[CommonSampleID_Mod,1]))
-   # length(which(duplicated(Data_Table1_Num[CommonSampleID_Mod,1])))
-   # commonGenoMod <- (Data_Table1_Num[(which(duplicated(Data_Table1_Num[CommonSampleID_Mod,1]))),])
-   # apply(commonGenoMod,1,function(x) length(which(is.na(as.character(x)))))
+  Train_Data_Table_Num_Filt <- Data_Table_Num 
+  return(list(Train_Data_Table_Num_Filt,Test_Genotypes_Table_Mod_Num_Filt))
    
-  
-  
-  
-####### Filtered Table in Numeric Format 
-####################################################################################
-   #Data_Table_Num <- Data_Table1_Num
-   #rownames(Data_Table_Num) <- Data_Table1_Num[,"StrainID"]
-  
-   Train_Data_Table_Num_Filt <- Data_Table_Num 
-  	
-   return(list(Train_Data_Table_Num_Filt,Test_Genotypes_Table_Mod_Num_Filt))
+
 
 }
+
+
+### 
+
+library(dplyr)
+
+getMergedData_V2 <- function(gt2d, Pheno, testIDs) {
+  # Prepare genotype IDs
+  Genotypes_VCF <- gt2d[, -c(1:5)]
+  Genotypes_VCF_ID <- colnames(Genotypes_VCF) %>%
+    gsub("[-.()_]", "", .) # Simplify ID cleaning
+  
+  markerID <- as.vector(unlist(gt2d[,"SNPID"])) %>%
+    paste("ss", ., sep = "-") # Prefix marker ID
+  
+  # Clean and prepare TestIDs
+  TestIDs <- if (!is.null(testIDs)) gsub("[_-]", "", testIDs) else testIDs
+  
+  # Prepare Genotypes Table
+  Genotypes_Table_Mod <- cbind("Strain" = Genotypes_VCF_ID, t(Genotypes_VCF))
+  colnames(Genotypes_Table_Mod)[-1] <- markerID
+  
+  # Convert genotype codes
+  Genotypes_Table_Mod_Num <- apply(Genotypes_Table_Mod[,-1], 2, function(x) {
+    x <- gsub("BB", "-1", x)
+    x <- gsub("AB", "0", x)
+    x <- as.numeric(gsub("AA", "1", x))
+    if(sum(x == 0, na.rm = TRUE) == 0) x + 1 else x
+  })
+  
+  Genotypes_Table_Mod_Num_Comb <- cbind("Strain" = Genotypes_Table_Mod[, "Strain"], Genotypes_Table_Mod_Num)
+  
+  # Remove duplicate IDs
+  Genotypes_Table_Mod_Num_Filt <- Genotypes_Table_Mod_Num_Comb %>%
+    distinct(Strain, .keep_all = TRUE)
+  
+  # Split into train and test sets
+  if (!is.null(TestIDs)) {
+    Test_Genotypes_Table_Mod_Num_Filt <- Genotypes_Table_Mod_Num_Filt %>%
+      filter(Strain %in% TestIDs)
+    Train_Genotypes_Table_Mod_Num_Filt <- Genotypes_Table_Mod_Num_Filt %>%
+      filter(!Strain %in% TestIDs)
+  } else {
+    Train_Genotypes_Table_Mod_Num_Filt <- Genotypes_Table_Mod_Num_Filt
+    Test_Genotypes_Table_Mod_Num_Filt <- NULL
+  }
+  
+  # Prepare Phenotype Data
+  Pheno$StrainID <- gsub("[-_.()]", "", Pheno[,1])
+  Pheno$StrainID <- ifelse(grepl("MG", Pheno$StrainID), gsub("MG.*", "", Pheno$StrainID), Pheno$StrainID)
+  
+  # Aggregate phenotype data by StrainID
+  Pheno1_Avg <- Pheno %>%
+    group_by(StrainID) %>%
+    summarise(across(where(is.numeric), mean, na.rm = TRUE), .groups = "drop")
+  
+  # Merge genotype and phenotype data
+  Data_Table_Num <- merge(Train_Genotypes_Table_Mod_Num_Filt, Pheno1_Avg, by = "StrainID")
+  
+  # Return filtered training and test data
+  list(Train_Data = Data_Table_Num, Test_Data = Test_Genotypes_Table_Mod_Num_Filt)
+}
+
+##
+
 
 
 getProcessedData <- function(Data_Table_Num_List,trait){
@@ -688,30 +981,26 @@ getProcessedData <- function(Data_Table_Num_List,trait){
 	 TestData_Table_Num_Filt<- Data_Table_Num_List[[2]]
 	 
 	 ### Remove lines with 'NA' for trait values
-	 if(length(trait)==1){
+	
+     if(length(trait)==1){
 	  NAIndices <-  which(is.na(TrainData_Table_Num[,trait]))
-	  if(length(NAIndices)>1){
-	  
+	  if(length(NAIndices)>1){	  
         Train_Data_Table_Num_Filt <- TrainData_Table_Num[-NAIndices,]
-	  }
-	  if(length(NAIndices)<1){
-	  
-        Train_Data_Table_Num_Filt <- TrainData_Table_Num
+	  }else if(length(NAIndices)<1){
+	    Train_Data_Table_Num_Filt <- TrainData_Table_Num
 	  }
 	 }
 	 
 	 if(length(trait)>1){
 	   NAIndices <- c(unlist(apply(TrainData_Table_Num[,trait],2,function(x)which(is.na(x)))))
+	   
 	   if(length(NAIndices)>1){
-	  
-        Train_Data_Table_Num_Filt <- TrainData_Table_Num[-NAIndices,]
+	    Train_Data_Table_Num_Filt <- TrainData_Table_Num[-NAIndices,]
+	   }else if(length(NAIndices)<1){
+	    Train_Data_Table_Num_Filt <- TrainData_Table_Num
 	   }
-	   if(length(NAIndices)<1){
-	  
-        Train_Data_Table_Num_Filt <- TrainData_Table_Num
-	   }
-      
-	  }
+     }
+	 
      return(list(Train_Data_Table_Num_Filt,TestData_Table_Num_Filt)) 
 	 
 } 
@@ -725,6 +1014,7 @@ getTasObj <- function(infileVCF){
 	)
     return(tasGeno)
 }
+
 
 
 
@@ -1156,11 +1446,7 @@ getRankedPredictedValues_V2 <- function(Data_Table_Num_Filt_List,nTraits,trait,G
 	   return(U)
     }
 	
-	# if(length(testNAIndices)>0){
-      # U <- apply(testGeno_Imp[,-testNAIndices],1,function(x) getU(M.Pdt,x)) 
-	# }
-	
-	  U <- apply(testGeno_Imp,1,function(x) getU(M.Pdt,x)) 
+	U <- apply(testGeno_Imp,1,function(x) getU(M.Pdt,x)) 
 	
 	
 	Test_SortedIndices <- Test_SortedPredictedValues[[2]]
@@ -1175,11 +1461,9 @@ getRankedPredictedValues_V2 <- function(Data_Table_Num_Filt_List,nTraits,trait,G
 	
  }
 
-
-
 ### Step 2 : Get predicted genetic values usin kin.blup 
 
- getRankedPredictedValues_Old <- function(Data_Table_Num_Filt_List,nTraits,trait,GPModel,fixedX=NULL,optTS=NULL){ 
+getRankedPredictedValues_Old <- function(Data_Table_Num_Filt_List,nTraits,trait,GPModel,fixedX=NULL,optTS=NULL){ 
     
      if(!is.null(fixedX) & fixedX !="NULL"){ 
 	   GPModel <- "rrBLUP (rrBLUP)"
@@ -1428,6 +1712,7 @@ getRankedPredictedValues_V2 <- function(Data_Table_Num_Filt_List,nTraits,trait,G
 	#print(anyNA(trainPheno))
 	#write.table(trainPheno,"trainPhenoCRep.csv")
 	#write.table(trainGeno_Imp2,"trainGenoTab.txt",sep="\t",quote=FALSE,row.names=FALSE)
+	
    	trainGeno_Imp2 <- apply(trainGeno_Imp,2,function(x) x+1) 
 	cleanData <- cleanREPV2(trainPheno,trainGeno_Imp2)
     M <-  cleanData[[2]]
@@ -1464,7 +1749,7 @@ getRankedPredictedValues_V2 <- function(Data_Table_Num_Filt_List,nTraits,trait,G
 ### 
 
 
- getRankedPredictedValues <- function(Data_Table_Num_Filt_List,nTraits,trait,GPModel,fixedX=NULL,fixedData=NULL,optTS=NULL){ 
+getRankedPredictedValues <- function(Data_Table_Num_Filt_List,nTraits,trait,GPModel,fixedX=NULL,fixedData=NULL,optTS=NULL){ 
     
      if(!is.null(fixedX) & fixedX != "NULL" & fixedData !="NULL"){ 
 	   GPModel <- "rrBLUP (rrBLUP)"
@@ -1712,7 +1997,7 @@ getRankedPredictedValues_V2 <- function(Data_Table_Num_Filt_List,nTraits,trait,G
 	rownames(trainGeno_Imp2) <- rownames(trainGeno_Imp)
 	print(dim(trainGeno_Imp2))
 	print(length(trainPheno))
-	cleanData <- cleanREPV2(trainPheno,trainGeno_Imp)
+	cleanData <- cleanREPV2(trainPheno,trainGeno_Imp2)
 	
 	#cleanData <- cleanREP(trainPheno,trainGeno_Imp2)
     

@@ -289,16 +289,32 @@ ui <- fluidPage(
               )
             )),
        
-  ## Tab for Trait Selection 
+## Tab for Trait Selection 
+## 
               
-              tabPanel("Set Target & Trait",
-                       ####  
+            tabPanel("Set Target & Trait",
+                   sidebarLayout(
+                       sidebarPanel(
+                         tags$br(),
+                         tags$strong(tags$h4("Export merged training table & target genotypes table after selecting trait")),
+                         tags$br(),
+                         tags$strong(tags$h5("Download Merged Geno-Pheno Training Table")),
+                         tags$br(),
+                         downloadButton("ExportMerged_CompTS_DF", "Export Merged Training Data"),
+                         tags$br(),
+                         tags$br(),
+                         tags$strong(tags$h5("Download Filtered Target Genotype Table")),
+                         tags$br(),
+                         downloadButton("ExportTargetGeno_DF", "Export Target Geno Data"),
+                         tags$br(),
+                         tags$br()
+                       ),
+                    
+                      mainPanel(
                        tags$br(),
                        fluidRow(
                          column(2),column(width=4,tags$h4(tags$strong("Set Target Population"))),
                          column(6),column(width=4,tags$h4(tags$strong("Select Trait"))),
-                         #actionButton("Trait_Data", "prev"),
-                         #actionButton("Trait_TS", "next")
                        ),
                        tags$br(),
                        fluidRow(
@@ -322,12 +338,14 @@ ui <- fluidPage(
                        
                        # Define a CSS class for text color
                      
-                       fluidRow(
-                         column(4),column(width=5,div(
-                           tags$h4(tags$strong(uiOutput("MssgTarget")))))),
+                       # fluidRow(
+                       #   column(4),column(width=5,div(
+                       #     tags$h4(tags$strong(uiOutput("MssgTarget")))))),
                            #tags$h6(tableOutput("TargetTable"))))
                        tags$br()
-                ),
+                    )
+                   )
+                 ),
               
 ### TS optimization tab
               tabPanel("Optimize Training Population",
@@ -639,6 +657,8 @@ ui <- fluidPage(
 
 server <- function(input,output,session){
   
+  options(shiny.silent.errors=FALSE)
+ 
   #Geno
   
   # Geno <- reactive({
@@ -699,22 +719,47 @@ server <- function(input,output,session){
   
   
 #Target
-  TargetTab <- reactive({
+  TargetTab <- reactiveVal(NULL)
+  
+ 
+  # eventReactive(input$infileTargetTable,{
+  #  
+  #   TargetFile <- inTarget()
+  #   
+  #   ext <- tools::file_ext(TargetFile$datapath)
+  #   req(TargetFile)
+  #   validate(need(ext == "csv", "Please upload a csv file"))
+  #   
+  #   TargetTab(read.csv(TargetFile$datapath, header = input$header))
+  # 
+  #  })
+  
+  observeEvent(input$infileTargetTable, {
+    # Triggered when a file is uploaded
+    req(input$infileTargetTable) # Ensure a file is uploaded
+    
     TargetFile <- input$infileTargetTable
     
     ext <- tools::file_ext(TargetFile$datapath)
-    req(TargetFile)
-    validate(need(ext == "csv", "Please upload a csv file"))
+    # Stop execution and show error if the file is not a CSV
+    if (ext != "csv") {
+      shiny::showNotification("Please upload a CSV file", type = "error")
+      TargetTab(NULL) # Reset or clear previous data
+      return() # Stop further execution
+    }
     
-    read.csv(TargetFile$datapath, header = input$header)
+    # If execution reaches here, it means a CSV file is uploaded
+    tryCatch({
+      # Attempt to read the CSV
+      dataTable <- read.csv(TargetFile$datapath, header = input$header)
+      TargetTab(dataTable) # Store the read data
+    }, error = function(e) {
+      # In case of error reading the file, show notification and reset TargetTab
+      shiny::showNotification("Error reading the CSV file", type = "error")
+      TargetTab(NULL)
+    })
   })
-  
- 
- 
-  #updateNumericInput(inputId = "noCandidates",value=(nrow(Geno())-nrow(TargetTab())),min =1, max=(nrow(Geno())-nrow(TargetTab())))})
-  # observeEvent(input$infileTargetTable, {
-  #   updateNumericInput(inputId = "noToSelect",value=(nrow(Geno())-nrow(TargetTab())),min =1, max=(nrow(Geno())-nrow(TargetTab())))})
-  # 
+#####
   
   phenoHead <- eventReactive(input$infileBLUEs,{ paste("Phenotype Table with ",nrow(Pheno())," lines and ",ncol(Pheno())-1," traits",sep="")})
   output$PhenoHeader <- renderText({phenoHead()})
@@ -725,29 +770,48 @@ server <- function(input,output,session){
   output$GenoTable <- renderTable({as.data.frame((Geno())[1:5,1:5])})
   
   
-  TargetHead <- eventReactive(input$infileTargetTable,{ paste("Table with information on ",nrow(TargetTab())," Target lines",sep="")})
-  output$TargetHeader <- renderText({TargetHead()})
-  output$TargetTable <-  renderTable({
-    
-    TargetTableOut <- as.data.frame(TargetTab()[1:5,]) 
-    colnames(TargetTableOut) <- ""
-    TargetTableOut
+  
+  # TargetHead <- eventReactive(input$infileTargetTable,{
+  #    if(!is.null(TargetTab())){
+  #       paste("Table with information on ",nrow(TargetTab())," Target lines",sep="")
+  #       output$TargetHeader <- renderText({TargetHead()})
+  #       
+  #       output$TargetTable <-  renderTable({
+  #         TargetTableOut <- as.data.frame(TargetTab()[1:5,]) 
+  #         colnames(TargetTableOut) <- ""
+  #         TargetTableOut
+  #       })
+  #     }
+  #  })
+  
+  TargetHead <- eventReactive(input$infileTargetTable, {
+    if (!is.null(TargetTab())) {
+      paste("Information on", nrow(TargetTab()), "Target lines")
+    }
+  })
+  output$TargetHeader <- renderText({
+    req(TargetHead()) # Ensure that TargetHead has a value before proceeding
+    TargetHead()
   })
   
+  output$TargetTable <- renderTable({
+    req(TargetTab()) # Ensure that TargetTab is not NULL
+    TargetTableOut <- as.data.frame(TargetTab()[1:5,]) 
+    colnames(TargetTableOut) <- "" # Clear column names if needed
+    TargetTableOut
+  })
+ 
+####  
+
   
-  
-  # 
-  # 
-  # eventReactive(list(input$infileVCF,input$infileBLUEs),{
-  #   if(is.null(input$infileTargetTable)){
-  #     Pheno()[,1] 
-  #     
-  #   }
-  # })
-  
+  TargetIDs <- reactiveVal(NULL)
+ 
   nTraits <- eventReactive(input$infileBLUEs,{(ncol(Pheno())-1)})
-  TargetIDs <- eventReactive(input$infileTargetTable,{
-          as.character(TargetTab()[,1])})
+  # TargetIDs <- eventReactive(input$infileTargetTable,{
+  #         as.character(TargetTab()[,1])})
+  # 
+  observeEvent(input$infileTargetTable,{
+           TargetIDs(as.character(TargetTab()[,1]))})
   
 ## Trait 
   
@@ -1319,45 +1383,74 @@ server <- function(input,output,session){
    
    
 ### Merge geno and pheno data    
+  
    
-   mergedData <-  reactive({
-     t_Geno <- reactive(GenoPre())
-     withProgress(message = 'Merging Pheno and Geno Data', value = 0, {
-       getMergedData(t_Geno(),Pheno(),TargetIDs())
-     }) 
-   })
-   
-   processedData <- reactive(getProcessedData(mergedData(),Trait()))
-   
+  mergedData <-  eventReactive(input$trait,{
+    t_Geno <- reactive(GenoPre())
+    withProgress(message = 'Merging Pheno and Geno Data', value = 0, {
+     tryCatch({
+        # Simulate data merging process
+        #browser()
+        result <- getMergedData(t_Geno(),Pheno(),TargetIDs())
 
+        if (length(result) != 2) {
+          # Throw a custom error if the length condition is not met
+          stop("The merged data must have exactly 2 elements.")
+        }
+        return(result)
+      }, error = function(e) {
+        # Print error and stop the execution
+        print(e)
+        stop(e)
+      })
+    })
+  })
+
+
+###
+   
+   processedData <- reactive({
+     prData <-  getProcessedData(mergedData(),Trait())
+     validate(
+       need(length(mergedData()) == 2, "Error: The merged data does not have exactly 2 elements.")
+     )
+     return(prData)
+   })
+ 
 ###    
      
-   # observeEvent(input$trait, {
-   #   updateNumericInput(inputId = "noCandidates",value= nrow(processedData()[[1]]),min =2, max=nrow(processedData()[[1]]))}) 
-   # 
-   # observeEvent(input$trait,{
-   #   updateNumericInput(inputId = "noToSelect",value= nrow(processedData()[[1]]),min =2, max=nrow(processedData()[[1]]))})
-   # 
    observeEvent(input$trait, {
-     updateNumericInput(inputId = "noCandidates",value= 250,min =2, max=nrow(processedData()[[1]]))}) 
+     if(length(processedData())==2){
+      updateNumericInput(inputId = "noCandidates",value= nrow(processedData()[[1]]),min =2, max=nrow(processedData()[[1]]))
+    }
+   })
    
    observeEvent(input$trait,{
-     updateNumericInput(inputId = "noToSelect",value= 100,min =2, max=nrow(processedData()[[1]]))})
+     if(length(processedData())==2){
+      updateNumericInput(inputId = "noToSelect",value= nrow(processedData()[[1]]),min =2, max=nrow(processedData()[[1]]))
+    }
+   })
    
+   # observeEvent(input$trait, {
+   #   updateNumericInput(inputId = "noCandidates",value= 250,min =2, max=nrow(processedData()[[1]]))}) 
+   # 
+   # observeEvent(input$trait,{
+   #   updateNumericInput(inputId = "noToSelect",value= 100,min =2, max=nrow(processedData()[[1]]))})
+   # 
    
   
-   MssgTargetSet <- eventReactive(input$trait,{
-     if(nrow(processedData()[[2]])==0){
-       "The current genotypic file doesn't have target line genotypes. 
-        Load genotypic data file with Target IDs"
-     }
-   })
-   
-   output$MssgTarget <- renderUI({
-     message <- MssgTargetSet()
-     HTML(paste0("<div class='message-text'>", message, "</div>"))
-   })
-   
+   # MssgTargetSet <- eventReactive(input$trait,{
+   #   if(nrow(processedData()[[2]])==0){
+   #     "The current genotypic file doesn't have target line genotypes. 
+   #      Load genotypic data file with Target IDs"
+   #   }
+   # })
+   # 
+   # output$MssgTarget <- renderUI({
+   #   message <- MssgTargetSet()
+   #   HTML(paste0("<div class='message-text'>", message, "</div>"))
+   # })
+   # 
     
      
 # TS Optimization
@@ -1658,12 +1751,8 @@ server <- function(input,output,session){
     }
   })  
   
-  # }
-  #   
-  #  
-  # local({
-   
-   #printPlots2 <- reactive({  
+############
+  
     observeEvent(input$RunPredictionsMT,{ 
     
         lapply(1:nSelTraits(),function(i){
@@ -1674,15 +1763,10 @@ server <- function(input,output,session){
          
         })
     
-   }) 
+    }) 
        
-             # XLim <- c(min(c(unlist(outputListMT()[,2:3])))-2,max(c(unlist(outputListMT()[,2:3])))+2)
-             # YLim <- c(min(c(unlist(outputListMT()[,4]))),max(c(unlist(outputListMT()[,4]))))
-             # plot.default(outputListMT()[,2],outputListMT()[,4],type="p",xlim=XLim,ylim=YLim,xlab=paste("Predicted Value of ",paste(unlist(Trait()),collapse=" and "),sep=""),ylab="Upper Bound of Reliability",main="Upper bound of Reliability vs Predicted Values")
-             # points(outputListMT()[,3],outputListMT()[,4],type="p",col="red")
-             # legend(XLim[2]-2,YLim[2],legend=c(unlist(Trait())),xpd=TRUE,lty=c(1,1),lwd=3,col=c("black","red"),cex=0.7)
-  #          }
-  # })
+  
+#######
     
   switch_page <- function(i) {
     sel <- reactive(i)
@@ -1703,6 +1787,28 @@ server <- function(input,output,session){
     }
   )
   
+### Export merged training geno-pheno
+  
+  output$ExportMerged_CompTS_DF <- downloadHandler(
+    filename = function() {
+      "Complete_Merged_GenoPheno_TSDF.txt"
+    },
+    content = function(file) {
+       write.table(as.data.frame(processedData()[[1]]), file, row.names = FALSE)
+    }
+  )
+  
+### Export target geno set  
+  output$ExportTargetGeno_DF <- downloadHandler(
+    filename= function(){
+      "Filtered_Target_GenoData.txt"
+    },
+    content= function(file){
+      write.table(as.data.frame(processedData()[[2]]),file,row.names=FALSE)
+    } 
+   )
+  
+### Export Optimal TS
   
   output$ExportOptTS <- downloadHandler(
     filename = function() {
