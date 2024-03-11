@@ -1270,7 +1270,6 @@ server <- function(input,output,session){
    
 ### Merge geno and pheno data    
   
-<<<<<<< HEAD
    
   mergedData <-  eventReactive(input$trait,{
     t_Geno <- reactive(GenoPre())
@@ -1317,7 +1316,7 @@ server <- function(input,output,session){
       updateNumericInput(inputId = "noToSelect",value= nrow(processedData()[[1]]),min =2, max=nrow(processedData()[[1]]))
     }
    })
-=======
+   
    mergedData <-  reactive({
   # mergedData <- eventReactive(input$trait,{
      t_Geno <- reactive(GenoPre())
@@ -1329,7 +1328,7 @@ server <- function(input,output,session){
 ###   
    processedData <- reactive(getProcessedData(mergedData(),Trait()))
    
->>>>>>> main
+
    
    # observeEvent(input$trait, {
    #   updateNumericInput(inputId = "noCandidates",value= 250,min =2, max=nrow(processedData()[[1]]))}) 
@@ -1338,7 +1337,7 @@ server <- function(input,output,session){
    #   updateNumericInput(inputId = "noToSelect",value= 100,min =2, max=nrow(processedData()[[1]]))})
    # 
    
-<<<<<<< HEAD
+
   
    # MssgTargetSet <- eventReactive(input$trait,{
    #   if(nrow(processedData()[[2]])==0){
@@ -1353,7 +1352,7 @@ server <- function(input,output,session){
    # })
    # 
     
-=======
+
    MssgTargetSet <- eventReactive(input$trait,{
      if(nrow(processedData()[[2]])==0 | is.null(processedData()[[2]])){
        response <- "The current genotypic file doesn't have target line genotypes. 
@@ -1380,8 +1379,7 @@ server <- function(input,output,session){
      updateNumericInput(inputId = "noToSelect",value= 100,min =2, max=nrow(processedData()[[1]]))})
    
    
->>>>>>> main
-     
+
 # TS Optimization
   
   noCandidates <- reactive(input$noCandidates)
