@@ -65,23 +65,23 @@ ui <- fluidPage(
                                                  tags$h6(tags$strong("1) Training & Target genotypic data in a combined VCF & target line IDs in a csv file"))
                                              )
                             )),           
-                          fluidRow(
-                            column(1),column(width=8,
-                                             div(style="display: inline-block; vertical-align: top;",
-                                                 checkboxInput("InGenoFormat2", "", FALSE)
-                                             ),
-                                             div(style="display: inline-block; vertical-align: top; padding-left: 10px;",              
-                                                 tags$h6(tags$strong("2) Training & Target genotypic data in separate VCF files")))
-                            )),
-                          
-                          fluidRow(
-                            column(1),column(width=8,
-                                             div(style="display: inline-block; vertical-align: top;",
-                                                 checkboxInput("InGenoFormat3","",FALSE),
-                                             ),
-                                             div(style="display: inline-block; vertical-align: top;padding-left: 10px;",         
-                                                 tags$h6(tags$strong("3) Training genotypic data only in VCF format for Crossvalidation"))), 
-                            )), 
+                          # fluidRow(
+                          #   column(1),column(width=8,
+                          #                    div(style="display: inline-block; vertical-align: top;",
+                          #                        checkboxInput("InGenoFormat2", "", FALSE)
+                          #                    ),
+                          #                    div(style="display: inline-block; vertical-align: top; padding-left: 10px;",              
+                          #                        tags$h6(tags$strong("2) Training & Target genotypic data in separate VCF files")))
+                          #   )),
+                          # 
+                          # fluidRow(
+                          #   column(1),column(width=8,
+                          #                    div(style="display: inline-block; vertical-align: top;",
+                          #                        checkboxInput("InGenoFormat3","",FALSE),
+                          #                    ),
+                          #                    div(style="display: inline-block; vertical-align: top;padding-left: 10px;",         
+                          #                        tags$h6(tags$strong("3) Training genotypic data only in VCF format for Crossvalidation"))), 
+                          #   )), 
                           tags$br(),
                           tags$br()
                         ),
@@ -115,31 +115,31 @@ ui <- fluidPage(
                         ),
 					              
 					              
-					             conditionalPanel(condition="input.InGenoFormat2 == true",
-                                        fluidRow(
-                                          column(1),column(width=4,tags$h5(tags$strong("Upload Training Genotypic Data (VCF)"))),
-                                          column(6),column(width=4,tags$h5(tags$strong("Upload Target Genotypic Data (VCF)"))),
-                                        ),
-                                        fluidRow(
-                                          # column(1),column(width=5,fileInput("infileVCF", "Choose Training Genotype File (VCF)", accept = ".vcf")),
-                                           column(1),column(width=5,fileInput("infileVCF", "", accept = ".vcf")),
-                                           column(6),column(width=5,fileInput("infileTargetVCF","",accept = ".vcf")),
-                                        ),
-                                        tags$br(),
-                        ),
-                       
-                        conditionalPanel(condition="input.InGenoFormat3 == true",
-                                        fluidRow(
-                                          column(1),column(width=4,tags$h5(tags$strong("Upload Training Genotypic Data (VCF)"))),
-                                          #column(6),column(width=4,tags$h5(tags$strong("Upload Target Genotypic Data (.vcf)"))),
-                                        ),
-                                        fluidRow(
-                                          column(1),column(width=5,fileInput("infileVCF", "", accept = ".vcf")),
-                                          #column(6),column(width=5,fileInput("infileTargetVCF", "Choose Target Genotype  File (VCF)", accept = ".vcf")),
-                                        ),
-                                        
-                                        tags$br(),
-                       ),
+# 					             conditionalPanel(condition="input.InGenoFormat2 == true",
+#                                         fluidRow(
+#                                           column(1),column(width=4,tags$h5(tags$strong("Upload Training Genotypic Data (VCF)"))),
+#                                           column(6),column(width=4,tags$h5(tags$strong("Upload Target Genotypic Data (VCF)"))),
+#                                         ),
+#                                         fluidRow(
+#                                           # column(1),column(width=5,fileInput("infileVCF", "Choose Training Genotype File (VCF)", accept = ".vcf")),
+#                                            column(1),column(width=5,fileInput("infileVCF", "", accept = ".vcf")),
+#                                            column(6),column(width=5,fileInput("infileTargetVCF","",accept = ".vcf")),
+#                                         ),
+#                                         tags$br(),
+#                         ),
+#                        
+#                         conditionalPanel(condition="input.InGenoFormat3 == true",
+#                                         fluidRow(
+#                                           column(1),column(width=4,tags$h5(tags$strong("Upload Training Genotypic Data (VCF)"))),
+#                                           #column(6),column(width=4,tags$h5(tags$strong("Upload Target Genotypic Data (.vcf)"))),
+#                                         ),
+#                                         fluidRow(
+#                                           column(1),column(width=5,fileInput("infileVCF", "", accept = ".vcf")),
+#                                           #column(6),column(width=5,fileInput("infileTargetVCF", "Choose Target Genotype  File (VCF)", accept = ".vcf")),
+#                                         ),
+#                                         
+#                                         tags$br(),
+#                        ),
                        
 					            fluidRow(
                          column(1),column(width=5,checkboxInput("header", "Header", TRUE)),
@@ -370,11 +370,30 @@ ui <- fluidPage(
                                         "))
                                         ),
                                         
+                                        tags$head(
+                                          tags$style(HTML("
+                                          #messageTrtME {
+                                          
+                                          /*max-height: 1200px; Set maximum height */
+                                          overflow-y: scroll; /* Enable vertical scrolling */
+                                          overflow-x: scroll;  /*Hide horizontal scrolling */
+                                          overflow-wrap: anywhere; /* Ensure long words do not cause horizontal scrolling */
+                                          width: 350px; 
+                                          /*max-width: 100%; */
+                                          padding: 6px 12px;
+                                          height: 150px;
+                                         }
+                                        "))
+                                        ),
+                                        
+                                        
+                                        
                                         fluidRow(
                                           
                                           column(width = 5,
                                                  verbatimTextOutput("messagePhME")
-                                          ),
+                                          ), column(7),column(width=5, verbatimTextOutput("messageTrtME")),
+                                          
                                         ),
                                         
                                       tags$br(),
@@ -1483,6 +1502,43 @@ server <- function(input,output,session){
     getPhenoMEData(PhenoME(),TraitME(),nSelTraitsME(),IDColsME())
     
   })
+  
+  temp_file3b <- reactiveVal('none')
+  IDColME <- reactive(input$IDColME)
+  
+  observeEvent(input$traitME,{
+    
+    # Extract necessary input values
+    # Path for the temporary file
+    temp_file3b(tempfile())
+    
+    # Start the process in a separate R process
+    
+    if(length(TraitME())>0 & !is.null(PhenoME())){
+      sink(temp_file3b())
+      
+      cat("Summary of selected trait values across all locations : \n")
+      cat(paste(names(summary((PhenoME()[,TraitME()]))),"\t",sep=""))
+      cat("\n")
+      cat(summary(as.numeric(PhenoME()[,TraitME()])))
+      
+      sink()
+    }
+  })
+  ### Test output 
+  # Periodically read the file and update the UI
+  
+  output$messageTrtME <- renderText({
+    
+    invalidateLater(1000, session) # Update every second
+    if(file.exists(temp_file3b())){
+      lines <- readLines(temp_file3b(), warn = FALSE)
+      return(paste(lines, collapse = "\n"))
+    }else {
+      return("Waiting for output...")
+    }
+  })
+  
   
 ### Merge geno and pheno data    
  
