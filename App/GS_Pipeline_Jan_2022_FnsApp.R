@@ -3740,7 +3740,7 @@ getRankedPredictedValuesME_BGGE <- function(Data_Table_Num_Filt_List,nTraits,tra
 
 ####
 
-getPhenoMEData <- function(PhenoME,TraitME,nSelTraits,IDColsME){
+getPhenoMEData <- function(PhenoME,TraitME,nSelTraits,IDColsME,StrainME){
 
    print("Get Pheno ME Data")
 
@@ -3758,32 +3758,12 @@ getPhenoMEData <- function(PhenoME,TraitME,nSelTraits,IDColsME){
 	  selCols <- trait
 	  Data_Trt <- PhenoME[,c(IDCols,selCols)]
 	 
-	 
+	  colnames(Data_Trt)[which(colnames(Data_Trt) %in% StrainME)] <- "Strain"
 	  Data_Trt$Strain <- as.factor(Data_Trt$Strain)
 	  Data_Trt$Loc <- as.factor(Data_Trt$Loc)
 	  
-	  # Data_Trt$LocTest <- as.factor(Data_Trt$LocTest)
-	  # 
-	  # Data_Trt$Test <- as.factor(Data_Trt$Test)
-	  # Data_Trt$LocTest <- paste(Data_Trt$Loc,Data_Trt$Test,sep="_")
-	  
 	  Loc <- levels(factor(Data_Trt$Loc))
-	  # Tests <- levels(factor(Data_Trt$Test))
-	  # LocTests <- levels(factor(Data_Trt$LocTest))
-	  # nTsts <- length(Tests)
-	  
-	  # #### No of locations for each test
-	  
-	  # Loc_Tsts <- lapply(Tests,function(x) table(Data_Trt[Data_Trt$Test==x,"Loc"]))
-	  # ####
-	  # noLoc_for_Tsts <- (unlist(lapply(Loc_Tsts,function(x) length(which(x>0)))))
-	  # names(noLoc_for_Tsts) <- Tests
-	  
-	  # rmTstInd <- which(noLoc_for_Tsts==1)
-	  # tsts_to_rm <- names(noLoc_for_Tsts)[rmTstInd]
-	  
-	  # Data_Trt_Filt <- Data_Trt[which(! as.character(Data_Trt$Test) %in% tsts_to_rm),]
-	  
+	 
 	  Data_Trt_Filt <-  Data_Trt
 	  Data_Trt_Filt <- droplevels(Data_Trt_Filt)
 	  
@@ -3838,7 +3818,7 @@ getMergedDataME <- function(phData,genoImp,TargetIDs){
 	  
 	  rmID <- which(colnames(genoImp) %in% c("SNPID","Chrom","Position","REF","ALT"))
 	  genoImpDF <- as.data.frame(t(genoImp[,-c(1:5)]))
-	  colnames(genoImpDF) <- as.vector(as.data.frame(genoImp)[,"SNPID"])
+	  colnames(genoImpDF) <- paste("ss",as.vector(as.data.frame(genoImp)[,"SNPID"]),sep="-")
 	  ####
 	  
 	  Data <- merge(phData,genoImpDF,by=0)
@@ -4021,9 +4001,11 @@ syncEnvPhenoDat <- function(KE,LocCoord,OtherLoc){
 
 
 
+
+
 #######
 
-getMEPred <- function(DT_1_Filt_List,genoDat_List,traits,KG=NULL,KE=NULL,KMethod="Linear",FitEnvModels=FALSE,fixedME=fixME,envVar=varEnv,IDColsME){
+getMEPred <- function(DT_1_Filt_List,genoDat_List,traits,KG=NULL,KE=NULL,KMethod="Linear",FitEnvModels=FALSE,fixedME=fixME,envVar=varEnv,IDColsME,LocME=LocationME,YrME=YearME){
 
  nTraits <- length(traits)
  GK_Pred_Trt <- list()
@@ -4034,21 +4016,34 @@ getMEPred <- function(DT_1_Filt_List,genoDat_List,traits,KG=NULL,KE=NULL,KMethod
   genoDat <- genoDat_List[[nTrt]]
   trait <- traits[nTrt]
  
-### Test 5 conducted in GR008 and CR (Include only when fitting GR008 in env)
+	 if(LocME == "All"){
+		DT_1A <- DT_1
+	 }else if(LocME != "All"){
+	    locInd <- which(DT_1$Loc %in% LocME)
+		DT_1A <- DT_1[locInd,]
+	 } 
+ 
+	 if(YrME =="All"){ 
+		DT_1B <- DT_1A
+	 }else if(YrME != "All"){ 
+		yrInd <- which(DT_1A$Year %in% YrME)
+		DT_1B <- DT_1A[yrInd,] 
+	 }
+
   
-  DT_2 <- DT_1
+  DT_2 <- DT_1B
   dim(DT_2)
   
   DT_2$Loc <- as.factor(DT_2$Loc) 
   DT_2$Location <- DT_2$Loc
   Loc <- levels(factor(DT_2$env))
   
-  nanInd <-   which(is.na(DT_2[,trait]) | is.nan(DT_2[,trait]))
+  nanInd <-   which(is.nan(DT_2[,trait]))
   if(length(nanInd)>0){DT_2 <- DT_2[-nanInd,]}
   
   DT_2 <- droplevels(DT_2)
   
- # EnvVar <- "Loc"
+ #EnvVar <- "Loc"
  
   EnvVar <- envVar
   LineID <- "Strain"
@@ -5150,7 +5145,8 @@ get_weather_terra <- function (env.id = NULL, lat = NULL, lon = NULL, start.day 
         }
         return(CL)
     }
-    # sec_to_hms <- function(t) {
+   
+   # sec_to_hms <- function(t) {
         # paste(formatC(t%/%(60 * 60)%%24, width = 2, format = "d", 
             # flag = "0"), formatC(t%/%60%%60, width = 2, format = "d", 
             # flag = "0"), formatC(t%%60, width = 2, format = "d", 
@@ -5442,3 +5438,156 @@ extract_GIS_terra <- function(covraster = NULL, Latitude = NULL, Longitude = NUL
     
     return(final_data_V2)
 }
+
+
+
+
+
+
+getFreq_Alleles <- function(GenoTable){
+
+
+	nMarkers <- dim(GenoTable)[1]
+	nIndividuals <- dim(GenoTable)[2]
+	n_alleles <- 2*nIndividuals
+
+	FreqList <- lapply(1:ncol(GenoTable),function(j){ 
+		p_2_P <- length(which(GenoTable[,j]==2))
+		p_1_H <- length(which(GenoTable[,j]==1))
+		p_0_Q <- length(which(GenoTable[,j]==0))
+
+		count_1 <- ((2*p_2_P)+p_1_H )
+		count_0 <- ((2*p_0_Q)+p_1_H )
+
+		Freq_1 <- count_1/n_alleles
+		Freq_0 <- count_0/n_alleles
+		
+		return(list(Freq_1,Freq_0))
+	})
+     
+	 Freq_1_Vec <- unlist(lapply(FreqList,function(x) x[[1]]))
+     Freq_0_Vec <- unlist(lapply(FreqList,function(x) x[[2]]))
+	
+	return(list(Freq_1_Vec,Freq_0_Vec))
+
+}
+
+
+
+numMAF <- function(Geno,MAFTh){ 
+   
+   AF_List <- getFreq_Alleles(Geno)
+   MAFVec <- AF_List[[2]] 
+  
+   numMAF_LT <- length(which(MAFVec <= MAFTh))
+   return(numMAF_LT)
+}
+
+numMissSites <- function(GenoT,missSitesTH){ 
+
+     Geno <- GenoT[,-c(1:5)]
+     nInd <- ncol(Geno)
+	 nSites <- nrow(Geno)
+	 
+	 NALen <- apply(Geno,1,function(x) length(which(is.na(x))))
+	 numMissingSites <- length(which(NALen >= missSitesTH*nInd))
+	 
+	 return(numMissingSites)
+ 
+ } 
+ 
+ 
+ 
+numMissInd <- function(GenoT,missIndTH){ 
+
+  Geno <- GenoT[,-c(1:5)]
+  nInd <- ncol(Geno)
+  nSites <- nrow(Geno)
+ 
+  NALen <- apply(Geno,2,function(x) length(which(is.na(x))))
+  numMissingInd <- length(which(NALen >= missIndTH*nSites))
+ 
+ return(numMissingInd)
+ 
+} 
+
+getGenoDiff <- function(Geno1,Geno2){ 
+
+  DiffInd <- abs(ncol(Geno1)-ncol(Geno2)) 
+  DiffSites <- abs(nrow(Geno1)-nrow(Geno2))
+  
+  return(list(DiffSites,DiffInd))
+  
+ }
+
+
+getGenoQCStats <- function(GenoT){ 
+ 
+  Geno <- GenoT[,-c(1:5)]
+  nInd <- ncol(Geno)
+  nSites <- nrow(Geno)
+  
+  missFrac <- (length(which(is.na(as.vector(Geno))))) / (length(as.vector(Geno)))
+  
+  code <- paste(names(table(apply(Geno,2,as.numeric))),sep="-",collapse="")
+  
+  genoLine <- paste("The genotype table has genotype scores for ", nInd," genotypes and ", nSites, " markers. \n",sep="")
+  genoCodingLine <- paste("The genotype scores are coded in ",code," format. \n",sep="")
+  missScoresLines <- paste(missFrac*100," % of the genotype scores in the table have missing values. \n",sep="") 
+  outMsg <- paste(genoLine,genoCodingLine,missScoresLines,sep="")
+  
+  return(outMsg)
+}
+  
+ 
+    
+getGenoQCStatsFilt1 <- function(GenoT,GenoFilt1T,missSitesTH,MAFTH){ 
+
+  Geno <- GenoT[,-c(1:5)]
+  GenoFilt1 <- GenoFilt1T[,-c(1:5)]
+
+  missSitesGTH <- numMissSites(Geno,missSitesTH)
+  mafLTH <- numMAF(Geno,MAFTH)
+  
+  nInd <- ncol(GenoFilt1)
+  nSites <- nrow(GenoFilt1)
+  code <- paste(names(table(apply(GenoFilt1,2,as.numeric))),sep="-",collapse="")
+  
+  diffStats <- getGenoDiff(Geno,GenoFilt1)
+  
+  genoLine <- paste("The genotype table has genotype scores for ", nInd," genotypes and ", nSites, " markers. \n",sep="")
+  genoCodingLine <- paste("The genotype scores are coded in ",code, " format. \n",sep="")
+  MAFLine <- paste(mafLTH," markers have MAF less than ",MAFTH, " threshold. \n",sep="\t")
+  missSiteLine <- paste(missSitesGTH," markers have missing values in more than ",missSitesTH," of the genotypes. \n",sep="")
+  filtLine <- paste(diffStats[[2]]," genotypes and ",diffStats[[1]]," markers have been removed in the filtered table. \n")
+  
+  outMsg <- paste(genoLine,genoCodingLine,MAFLine,missSiteLine,filtLine,sep="")
+  
+  return(outMsg)
+}
+ 
+
+
+getGenoQCStatsFilt2 <- function(GenoFilt1T,GenoFilt2T,missIndTH){ 
+
+  GenoFilt1 <- GenoFilt1T[,-c(1:5)]
+  GenoFilt2 <- GenoFilt2T[,-c(1:5)]
+  
+  nInd <- ncol(GenoFilt2)
+  nSites <- nrow(GenoFilt2)
+  diffStats <- getGenoDiff(GenoFilt1,GenoFilt2)
+  code <- paste(names(table(apply(GenoFilt2,2,as.numeric))),sep="-",collapse="")
+  
+  missIndGTH <- numMissInd(GenoFilt1,missIndTH)
+  
+  
+  genoLine <- paste("The genotype table has genotype scores for ", nInd," genotypes and ", nSites, " markers. \n",sep="")
+  genoCodingLine <- paste("The genotype scores are coded in ",code, " format. \n",sep="")
+  missIndLine <- paste(missIndGTH," genotypes had missing values in more than ",missIndTH*100," % of the markers. \n",sep="")
+  filtLine <- paste(diffStats[[2]]," genotypes and ",diffStats[[1]]," markers have been removed in the filtered table. \n")
+  
+  outMsg <- paste(genoLine,genoCodingLine,missIndLine,filtLine,sep="")
+  
+  return(outMsg)
+}
+

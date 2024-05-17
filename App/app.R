@@ -112,6 +112,11 @@ ui <- fluidPage(
                                           column(1),column(width=5,fileInput("infileVCF", "", accept = ".vcf")),
                                           column(6),column(width=5,fileInput("infileTargetTable", "", accept = ".csv")),
                                         ),
+                                        tags$br(),
+                                        fluidRow(
+                                          column(6),column(width=5,selectInput(inputId="TargetIDCol","Choose Target ID Col",choices=NULL,multiple=FALSE)),
+                                        ),
+                                        
                         ),
 					              
 					              
@@ -146,14 +151,49 @@ ui <- fluidPage(
                          column(6),column(width=5,checkboxInput("header", "Header", TRUE)) 
                        ),
                        
-                       fluidRow(
-                         column(1),column(width=5,tags$h4(tags$strong(textOutput("GenoHeader")))),
-                         column(6),column(width=5,tags$h4(tags$strong(textOutput("TargetHeader")))),
-                       ),
-                       fluidRow(
-                         column(1),column(width=5,tags$h6(tableOutput("GenoTable"))),
-                         column(6),column(width=5,tags$h6(tableOutput("TargetTable")))
-                       ),
+                       # fluidRow(
+                       #   column(1),column(width=5,tags$h4(tags$strong(textOutput("GenoHeader")))),
+                       #   column(6),column(width=5,tags$h4(tags$strong(textOutput("TargetHeader")))),
+                       # ),
+                       # fluidRow(
+                       #   column(1),column(width=5,tags$h6(tableOutput("GenoTable"))),
+                       #   column(6),column(width=5,tags$h6(tableOutput("TargetTable")))
+                       # ),
+
+                      tags$head(
+                            tags$style(HTML("
+                                          #messageGenoStats {
+                                          
+                                          /*max-height: 1200px; Set maximum height */
+                                          overflow-y: scroll; /* Enable vertical scrolling */
+                                          overflow-x: scroll;  /*Hide horizontal scrolling */
+                                          overflow-wrap: anywhere; /* Ensure long words do not cause horizontal scrolling */
+                                          width: 350px; 
+                                          /*max-width: 100%; */
+                                          padding: 6px 12px;
+                                          height: 400px;
+                                         }
+                                        "))
+                              ),
+
+                      tags$head(
+                          tags$style(HTML("
+                                #messageTargetStats {
+                                          
+                                          /*max-height: 1200px; Set maximum height */
+                                          overflow-y: scroll; /* Enable vertical scrolling */
+                                          overflow-x: scroll;  /*Hide horizontal scrolling */
+                                          overflow-wrap: anywhere; /* Ensure long words do not cause horizontal scrolling */
+                                          width: 350px; 
+                                          /*max-width: 100%; */
+                                          padding: 6px 12px;
+                                          height: 400px;
+                                         }
+                                        "))
+                        ),
+
+                      fluidRow(column(width=5,tags$h6(verbatimTextOutput("messageGenoStats"))),
+                       column(6),column(width=5,tags$h6(verbatimTextOutput("messageTargetStats")))),
                        tags$br(),
                        tags$br(),
                       )
@@ -214,13 +254,52 @@ ui <- fluidPage(
                        
                        tags$br(),
                        tags$br(),
-                      
-                       fluidRow(column(1),column(width=4,tags$h4(tags$strong(textOutput("GenoFiltHeader")))),
-                                column(7),column(width=4,tags$h4(tags$strong(textOutput("GenoFiltHeader2"))))),      
-                       tags$br(),
-                       fluidRow(column(1),column(width=4,tags$h6(tableOutput("FilteredGenoTable"))),
-                                column(7),column(width=4,tags$h6(tableOutput("FilteredGenoTable2")))),
-                      
+                       # 
+                       # fluidRow(column(1),column(width=4,tags$h4(tags$strong(textOutput("GenoFiltHeader")))),
+                       #          column(7),column(width=4,tags$h4(tags$strong(textOutput("GenoFiltHeader2"))))),      
+                       # tags$br(),
+                       # fluidRow(column(1),column(width=4,tags$h6(tableOutput("FilteredGenoTable"))),
+                       #          column(7),column(width=4,tags$h6(tableOutput("FilteredGenoTable2")))),
+                       # 
+                       
+                       tags$head(
+                        tags$style(HTML("
+                                          #messageGenoFilt1 {
+                                          
+                                          /*max-height: 1200px; Set maximum height */
+                                          overflow-y: scroll; /* Enable vertical scrolling */
+                                          overflow-x: scroll;  /*Hide horizontal scrolling */
+                                          overflow-wrap: anywhere; /* Ensure long words do not cause horizontal scrolling */
+                                          width: 350px; 
+                                          /*max-width: 100%; */
+                                          padding: 6px 12px;
+                                          height: 400px;
+                                         }
+                                        "))
+                       ),
+                     
+                       tags$head(
+                         tags$style(HTML("
+                                          #messageGenoFilt2 {
+                                          
+                                          /*max-height: 1200px; Set maximum height */
+                                          overflow-y: scroll; /* Enable vertical scrolling */
+                                          overflow-x: scroll;  /*Hide horizontal scrolling */
+                                          overflow-wrap: anywhere; /* Ensure long words do not cause horizontal scrolling */
+                                          width: 350px; 
+                                          /*max-width: 100%; */
+                                          padding: 6px 12px;
+                                          height: 400px;
+                                         }
+                                        "))
+                       ),
+                     
+                     
+                     
+                        fluidRow(column(1),column(width=4,tags$h6(verbatimTextOutput("messageGenoFilt1"))),
+                                 column(7),column(width=4,tags$h6(verbatimTextOutput("messageGenoFilt2")))),
+                       
+                     
                        tags$br(),
                        tags$br(),
                        tags$br()
@@ -345,11 +424,19 @@ ui <- fluidPage(
                                         ),
                                         
                                         fluidRow(
+                                          column(width=5,checkboxInput("headerME", "Header", TRUE)),
+                                        ),
+                                        
+                                        fluidRow(
                                           column(width=5,selectInput(inputId="traitCols","Choose all the trait Cols",choices=NULL,multiple=TRUE)),
                                         ),
                                         
                                         fluidRow(
                                           column(width=5,selectInput(inputId="IDColME","Choose Uniq ID Col",choices=NULL,multiple=FALSE)),
+                                        ),
+                                        
+                                        fluidRow(
+                                          column(width=5,selectInput(inputId="strainME","Choose Strain Col",choices=NULL,multiple=FALSE)),
                                         ),
                                         
                                         tags$br(),
@@ -763,17 +850,46 @@ server <- function(input,output,session){
       getTasObj(genoFile$datapath)})
   })
   
-  Geno <- eventReactive(input$infileVCF,{ 
+  Geno <- eventReactive(input$infileVCF,{
     withProgress(message = 'Converting VCF to Dataframe', value = 0, {
       gt2d <- getGenoTas_to_DF(GenoTas())})
     gt2d
+
+  })
+  # genoHead <- eventReactive(input$infileVCF,{ paste("Genotype Table with ",ncol(Geno())-5," lines and ",nrow((Geno()))," markers",sep="")})
+  # output$GenoHeader <- renderText({genoHead()})
+  # output$GenoTable <- renderTable({as.data.frame((Geno())[1:5,1:5])})
+  # 
+  
+  temp_file0a <- reactiveVal('none')
+  
+  # Start the process in a separate R process
+  
+  observe({
+    
+    temp_file0a(tempfile())
+    if(!is.null(Geno_DF())){
+      sink(temp_file0a())
+      cat(getGenoQCStats(Geno_DF()))
+      sink()
+    }
     
   })
   
+  ### Test output 
+  # Periodically read the file and update the UI
   
-  genoHead <- eventReactive(input$infileVCF,{ paste("Genotype Table with ",ncol(Geno())-5," lines and ",nrow((Geno()))," markers",sep="")})
-  output$GenoHeader <- renderText({genoHead()})
-  output$GenoTable <- renderTable({as.data.frame((Geno())[1:5,1:5])})
+  output$messageGenoStats <- renderText({
+    
+    invalidateLater(1000, session) # Update every second
+    if(file.exists(temp_file0a())){
+      lines <- readLines(temp_file0a(), warn = FALSE)
+      return(paste(lines, collapse = "\n"))
+    }else {
+      return("Waiting for output...")
+    }
+  })
+  
   
   
 #### Target Table 
@@ -791,22 +907,56 @@ server <- function(input,output,session){
   
   TargetIDs <- reactive(NULL)
   
+  
+  observeEvent(input$infileTargetTable,{updateSelectInput(inputId="TargetIDCol",choices=colnames(TargetTab()))})
+  
+  TargtIDCol <- reactive(input$TargetIDCol)
   TargetIDs <- eventReactive(input$infileTargetTable,{
-    as.character(TargetTab()[,1])})
+                  as.character(TargetTab()[,TargtIDCol()])
+               })
   
   
-  TargetHead <- eventReactive(input$infileTargetTable,{ paste("Table with information on ",nrow(TargetTab())," Target lines",sep="")})
-  output$TargetHeader <- renderText({TargetHead()})
-  output$TargetTable <-  renderTable({
+  # TargetHead <- eventReactive(input$infileTargetTable,{ paste("Table with information on ",nrow(TargetTab())," Target lines",sep="")})
+  # output$TargetHeader <- renderText({TargetHead()})
+  # output$TargetTable <-  renderTable({
+  #      TargetTableOut <- as.data.frame(TargetTab()[1:5,]) 
+  #      #colnames(TargetTableOut) <- ""
+  #      TargetTableOut
+  # })
+  
+  temp_file0d <- reactiveVal('none')
+  
+  # Start the process in a separate R process
+  
+  observe({
     
-    TargetTableOut <- as.data.frame(TargetTab()[1:5,]) 
-    colnames(TargetTableOut) <- ""
-    TargetTableOut
+    temp_file0d(tempfile())
+    if(!is.null(TargetTab())){
+      sink(temp_file0d())
+      cat(paste("Table with information on ",nrow(TargetTab())," Target lines",sep=""))
+      sink()
+    }
+    
+  })
+  
+  ### Test output 
+  # Periodically read the file and update the UI
+  
+  output$messageTargetStats <- renderText({
+    
+    invalidateLater(1000, session) # Update every second
+    if(file.exists(temp_file0d())){
+      lines <- readLines(temp_file0d(), warn = FALSE)
+      return(paste(lines, collapse = "\n"))
+    }else {
+      return("Waiting for output...")
+    }
   })
   
   
+  
  
- ### Filter Data
+### Filter Data
   
   ### Filter 1  
   observeEvent(input$infileVCF, {
@@ -816,22 +966,49 @@ server <- function(input,output,session){
   siteMinCnt <- reactive(input$siteMinCnt)
   MAF <- reactive(input$MAF)
   
-  
-  # GenoTas <- reactive({
-  #   genoFile <- input$infileVCF
-  #   ext <- tools::file_ext(genoFile$datapath)
-  #   req(genoFile)
-  #   validate(need(ext == "vcf", "Please upload a vcf file"))
-  #   getTasObj(genoFile$datapath)
-  # })
-  
+ 
   
   GenoFilt1 <- eventReactive(input$FilterSites,{
     withProgress(message = 'Filtering Sites', value = 0, {
       getFilteredSitesGenoData(GenoTas(),siteMinCnt(),MAF())}) 
   })
+ 
   
-  ### Filter 2
+######## 
+  
+  temp_file0b <- reactiveVal('none')
+  
+  
+# Start the process in a separate R process
+  
+  observeEvent(input$FilterSites, {
+    
+    temp_file0b(tempfile())
+    if(!is.null(GenoFilt1_DF())){
+      sink(temp_file0b())
+      cat(getGenoQCStatsFilt1(Geno_DF(),GenoFilt1_DF(),siteMinCnt(),MAF()))
+      sink()
+    }
+
+  })
+  
+### Test output 
+# Periodically read the file and update the UI
+
+output$messageGenoFilt1 <- renderText({
+  
+  invalidateLater(1000, session) # Update every second
+  if(file.exists(temp_file0b())){
+    lines <- readLines(temp_file0b(), warn = FALSE)
+    return(paste(lines, collapse = "\n"))
+  }else {
+    return("Waiting for output...")
+  }
+})
+
+  
+  
+### Filter 2
   
   minNotMissing <- reactive(input$minNotMissing)
   
@@ -849,8 +1026,63 @@ server <- function(input,output,session){
   
   setTasGenoFilt2 <- reactive(input$setGenoFilt2Tas)
   
+######## 
+  
+  temp_file0c <- reactiveVal('none')
+  
+# Start the process in a separate R process
+  
+  observeEvent(input$FilterTaxa,{
+    temp_file0c(tempfile())
+    if(!is.null(GenoFilt2_DF())){
+      sink(temp_file0c())
+      cat(getGenoQCStatsFilt2(GenoFilt1_DF(),GenoFilt2_DF(),minNotMissing()))
+      sink()
+    }
+  })
+  
+### Test output 
+# Periodically read the file and update the UI
+  
+  output$messageGenoFilt2 <- renderText({
+    
+    invalidateLater(1000, session) # Update every second
+    if(file.exists(temp_file0c())){
+      lines <- readLines(temp_file0c(), warn = FALSE)
+      return(paste(lines, collapse = "\n"))
+    }else {
+      return("Waiting for output...")
+    }
+  })
+  
+  
+  
   ## Tas to DF
-  # Geno_DF <- reactive(getGenoTas_to_DF(GenoTas(),Geno()))
+  
+  
+  
+  
+  Geno_DF <- reactive({
+   # browser()
+    if(!is.null(GenoTas())){getGenoTas_to_DF(GenoTas())}
+  })
+  
+  GenoFilt1_DF <- reactive({
+    #browser()
+    if(!is.null(GenoFilt1())){ getGenoTas_to_DF(GenoFilt1())}
+  })
+  
+  GenoFilt2_DF <- reactive({
+    if(!is.null(GenoFilt2())){ getGenoTas_to_DF(GenoFilt2())}
+  })
+  
+  # Geno_DF <- reactiveVal(NULL)
+  # observeEvent(input$infileVCF, {Geno_DF(getGenoTas_to_DF(GenoTas()))})
+  # # 
+  # GenoFilt1_DF <- eventReactive(input$FilterSites,{getGenoTas_to_DF(GenoFilt1())})
+  # GenoFilt2_DF <- eventReactive(input$FilterTaxa,{getGenoTas_to_DF(GenoFilt2())})
+  # 
+  
   # GenoFilt1_DF <- reactive(getGenoTas_to_DF(GenoFilt1(),Geno()))
   # GenoFilt2_DF <- reactive(getGenoTas_to_DF(GenoFilt2(),Geno()))
   
@@ -858,34 +1090,32 @@ server <- function(input,output,session){
   # GenoFilt1_DF <- reactive(getGenoTas_to_DF(GenoFilt1()))
   # GenoFilt2_DF <- reactive(getGenoTas_to_DF(GenoFilt2()))
   
-  Geno_DF <- observeEvent(input$infileVCF, {getGenoTas_to_DF(GenoTas())})
-  GenoFilt1_DF <- eventReactive(input$FilterSites,{getGenoTas_to_DF(GenoFilt1())})
-  GenoFilt2_DF <- eventReactive(input$FilterTaxa,{getGenoTas_to_DF(GenoFilt2())})
-  
+ 
   
   # Geno_DF <- reactive(as.data.frame(as.matrix(GenoTas())))
   # GenoFilt1_DF <- reactive(as.data.frame(as.matrix(GenoFilt1())))
   # GenoFilt2_DF <- reactive(as.data.frame(as.matrix(GenoFilt2())))
   # 
   
-  ####  
-  genoFiltHead <- eventReactive(input$FilterSites,{ paste("Filter Sites: Genotype Table with ",ncol(GenoFilt1_DF())-5," lines and ",nrow((GenoFilt1_DF()))," markers",sep="")})
-  output$GenoFiltHeader <- renderText({genoFiltHead()})
-  output$FilteredGenoTable <- renderTable({as.data.frame((GenoFilt1_DF())[1:5,1:6])})
-  
-  ###
-  genoFiltHead2 <- eventReactive(input$FilterTaxa,{ paste("Filter Taxa: Genotype Table with ",ncol(GenoFilt2_DF())-5," lines and ",nrow((GenoFilt2_DF()))," markers",sep="")})
-  output$GenoFiltHeader2 <- renderText({genoFiltHead2()})
-  output$FilteredGenoTable2 <- renderTable({as.data.frame((GenoFilt2_DF())[1:5,1:6])})
-  
+  # ####  
+  # genoFiltHead <- eventReactive(input$FilterSites,{ paste("Filter Sites: Genotype Table with ",ncol(GenoFilt1_DF())-5," lines and ",nrow((GenoFilt1_DF()))," markers",sep="")})
+  # output$GenoFiltHeader <- renderText({genoFiltHead()})
+  # output$FilteredGenoTable <- renderTable({as.data.frame((GenoFilt1_DF())[1:5,1:6])})
+  # 
+  # ###
+  # genoFiltHead2 <- eventReactive(input$FilterTaxa,{ paste("Filter Taxa: Genotype Table with ",ncol(GenoFilt2_DF())-5," lines and ",nrow((GenoFilt2_DF()))," markers",sep="")})
+  # output$GenoFiltHeader2 <- renderText({genoFiltHead2()})
+  # output$FilteredGenoTable2 <- renderTable({as.data.frame((GenoFilt2_DF())[1:5,1:6])})
+  # 
   #####
   
   # Debug output to show the value of input.InGenoFormat3
-  output$debugOutput <- renderText({
-    paste("input.InGenoFormat3:", input$InGenoFormat3)
-  })
+  # output$debugOutput <- renderText({
+  #   paste("input.InGenoFormat3:", input$InGenoFormat3)
+  # })
+  # 
   
-  ### Imputation
+### Imputation
   
   FiltGeno <- reactive({ 
     if(setTasGenoFilt1()== FALSE  & setTasGenoFilt2()== FALSE){        
@@ -1029,23 +1259,23 @@ server <- function(input,output,session){
           
           tags$head(
             tags$style(HTML("
-      #message {
+             #message {
         
-        /*max-height: 1200px; Set maximum height */
-        overflow-y: scroll; /* Enable vertical scrolling */
-        overflow-x: scroll;  /*Hide horizontal scrolling */
-        overflow-wrap: anywhere; /* Ensure long words do not cause horizontal scrolling */
-        width: 400px; 
-        /*max-width: 100%; */
-        padding: 6px 12px;
-        height: 300px;
-      }
-    "))
-          ),
+              /*max-height: 1200px; Set maximum height */
+              overflow-y: scroll; /* Enable vertical scrolling */
+              overflow-x: scroll;  /*Hide horizontal scrolling */
+              overflow-wrap: anywhere; /* Ensure long words do not cause horizontal scrolling */
+              width: 400px; 
+              /*max-width: 100%; */
+              padding: 6px 12px;
+              height: 300px;
+            }
+          "))
+         ),
           
           tags$head(
             tags$style(HTML("
-      #message2 {
+        #message2 {
         
         overflow-y: scroll; /* Enable vertical scrolling */
         overflow-x: scroll;  /*Hide horizontal scrolling */
@@ -1370,12 +1600,13 @@ server <- function(input,output,session){
     req(phenoFileME)
     validate(need(ext == "csv", "Please upload a csv file"))
     
-    read.csv(phenoFileME$datapath, header = input$header)
+    read.csv(phenoFileME$datapath, header = input$headerME)
     
   })
   
   
   observeEvent(input$infileBLUEsME, {
+    
     updateSelectInput(inputId = "traitCols",choices = colnames(PhenoME()))
   })
   
@@ -1383,6 +1614,11 @@ server <- function(input,output,session){
     updateSelectInput(inputId="IDColME",choices = colnames(PhenoME()))
   })
   
+  observeEvent(input$infileBLUEsME, {
+    updateSelectInput(inputId="strainME",choices = colnames(PhenoME()))
+  })
+  
+  StrainME <- reactive(input$strainME)
   
   TraitCols <- reactive(input$traitCols)
 
@@ -1483,24 +1719,32 @@ server <- function(input,output,session){
 ## Trait ME
   
   TraitME <- reactive({input$traitME})
-  nSelTraitsME <- reactive(length(TraitME()))
- 
-  # IDColsME <- reactive({
-  #    colnames(PhenoME())[which(as.character(colnames(PhenoME())) %in% as.character(TraitCols()))]
-  # })
+  nSelTraitsME <- reactiveVal(NULL)
   # 
+  observeEvent(input$traitME,{
+    if(!is.null(TraitME())){
+      nSelTraitsME(length(TraitME()))
+    }
+  })
+ 
+  #nSelTraitsME <- reactive(length(TraitME()))
+ 
+  IDColsME <- reactive({
+     colnames(PhenoME())[which(!as.character(colnames(PhenoME())) %in% as.character(TraitCols()))]
+  })
+
   # 
 #####  
   # 
-  IDColsME <- reactive({
-     colnames(PhenoME())[1:5]
-  })
-  # 
+  # IDColsME <- reactive({
+  #    colnames(PhenoME())[1:5]
+  # })
+  # # 
   
   phenoMEData <- reactive({ 
     print("phME In")
-    getPhenoMEData(PhenoME(),TraitME(),nSelTraitsME(),IDColsME())
-    
+    #browser()
+    getPhenoMEData(PhenoME(),TraitME(),nSelTraitsME(),IDColsME(),StrainME())
   })
   
   temp_file3b <- reactiveVal('none')
@@ -1520,7 +1764,7 @@ server <- function(input,output,session){
       cat("Summary of selected trait values across all locations : \n")
       cat(paste(names(summary((PhenoME()[,TraitME()]))),"\t",sep=""))
       cat("\n")
-      cat(summary(as.numeric(PhenoME()[,TraitME()])))
+      cat(paste(summary(as.numeric(PhenoME()[,TraitME()])),"\t",sep=""))
       
       sink()
     }
@@ -1649,19 +1893,24 @@ server <- function(input,output,session){
  # Link plotRenderList and outputList
  observe({
    input$traitME
-   if(nSelTraitsME()>1){
-     lapply(1:nSelTraitsME(), function(i) {
-       outputList[[paste0("distPlot", i)]] <- plotRenderList()[[i]]
-     })
+   
+   if(!is.null(TraitME())){
+     if(nSelTraitsME()>1){
+       lapply(1:nSelTraitsME(), function(i) {
+         outputList[[paste0("distPlot", i)]] <- plotRenderList()[[i]]
+       })
+     }
    }
  })
  
  output$LocDistribution <- renderUI({
    print("outLD")
-   if (nSelTraitsME() == 1) {
-     plotOutput("distPlots")
-   } else if (nSelTraitsME() > 1) { 
-     do.call(tagList, outputList())
+   if(!is.null(TraitME())){
+     if (nSelTraitsME() == 1) {
+       plotOutput("distPlots")
+     } else if (nSelTraitsME() > 1) { 
+       do.call(tagList, outputList())
+     }else{NULL}
    }
  })
 
@@ -1741,9 +1990,6 @@ output$messageEnvK <- renderText({
  envDatStatus()  
 
 })
-
-
-
 
 
 processWthDat <- reactive(input$processWth)
@@ -2016,8 +2262,16 @@ EnvK_Mod <- reactive({syncEnvPhenoDat(EnvK(),LocCoords(),OtherLoc())})
   yrCol <- reactive(which(colnames(PhenoME()) %in% "Year"))
   locCol <- reactive(which(colnames(PhenoME()) %in% "Loc"))
  
-  YearsME <- reactive({levels(factor(PhenoME()[,yrCol()]))})
-  LocationsME <- reactive({levels(factor(PhenoME()[,locCol()]))})
+  YearsME <- reactive({
+    if(length(yrCol()) >0){
+      levels(factor(PhenoME()[,yrCol()]))
+    }
+  })
+  LocationsME <- reactive({
+    if(length(locCol()) >0){
+     levels(factor(PhenoME()[,locCol()]))
+    }
+  })
  
   
   observeEvent(input$infileBLUEsME, {
@@ -2029,6 +2283,8 @@ EnvK_Mod <- reactive({syncEnvPhenoDat(EnvK(),LocCoords(),OtherLoc())})
     
   })
   
+  YearME <- reactive(input$YearME)
+  LocationME <- reactive(input$LocationME)
   
   observeEvent(input$infileBLUEsME, {
     updateSelectInput(inputId ="fixedME",choices = IDColsME())
@@ -2055,9 +2311,9 @@ EnvK_Mod <- reactive({syncEnvPhenoDat(EnvK(),LocCoords(),OtherLoc())})
     #browser()
     withProgress(message = 'Running Computations', value = 0, {
       if(fitEnvCovs() == FALSE){
-        getMEPred(DT_Filt_List(),genoDat_List(),TraitME(),KG=NULL,KE=NULL,KMethod= KGMethod(),FitEnvModels = fitEnvCovs(),fixedME=fixME(),envVar=varEnv(),IDColsME = IDColsME())
+        getMEPred(DT_Filt_List(),genoDat_List(),TraitME(),KG=NULL,KE=NULL,KMethod= KGMethod(),FitEnvModels = fitEnvCovs(),fixedME=fixME(),envVar=varEnv(),IDColsME = IDColsME(),LocME=LocationME(),YrME=YearME())
       }else{ 
-        getMEPred(DT_Filt_List(),genoDat_List(),TraitME(),KG=NULL,KE=EnvK_Mod(),KMethod= KGMethod(),FitEnvModels = fitEnvCovs(),fixedME=fixME(),envVar=varEnv(),IDColsME = IDColsME())
+        getMEPred(DT_Filt_List(),genoDat_List(),TraitME(),KG=NULL,KE=EnvK_Mod(),KMethod= KGMethod(),FitEnvModels = fitEnvCovs(),fixedME=fixME(),envVar=varEnv(),IDColsME = IDColsME(),LocME=LocationME(),YrME=YearME())
       }
     })
   })
