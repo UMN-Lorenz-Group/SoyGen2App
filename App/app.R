@@ -64,7 +64,12 @@ ui <- fluidPage(
                                              div(style="display: inline-block; vertical-align: top; padding-left: 10px;",
                                                  tags$h6(tags$strong("1) Training & Target genotypic data in a combined VCF & target line IDs in a csv file"))
                                              )
-                            )),           
+                            )), 
+                          
+                          tags$br(),
+                          
+                          selectInput(inputId="TargetIDCol","Choose Target ID Col",choices=NULL,multiple=FALSE),
+                          
                           # fluidRow(
                           #   column(1),column(width=8,
                           #                    div(style="display: inline-block; vertical-align: top;",
@@ -89,15 +94,16 @@ ui <- fluidPage(
                        mainPanel(
                        
                          fluidRow(
-                           column(4),column(width=4,tags$h3(tags$strong("Load Genotypic Data"))),   
+                           column(3),column(width=4,tags$h3(tags$strong("Load Genotypic Data"))),   
                          ), 
                          tags$br(),
                          fluidRow(
-                           column(2),column(width=8,tags$h4(tags$strong("You can upload genotypic data in any one of the three formats in the side panel.Select your input format and load data")))
+                           column(2),column(width=8,tags$h4(tags$strong("You can upload genotypic data in the format in the side panel. Select your input format and load data.")))
                          ),
+                        tags$br(),
 					              fluidRow(
                          column(1),column(width=3,tags$h4(tags$strong("Genotypic Data"))),
-                         column(5,offset=2,tags$h4(tags$strong("Target Population IDs/ Genotypic Data"))),
+                         column(5,offset=2,tags$h4(tags$strong("Target Population IDs"))),
                         ),
                         
 					                 
@@ -105,20 +111,23 @@ ui <- fluidPage(
                         conditionalPanel(condition="input.InGenoFormat1 == true",
                                         tags$br(),
                                         fluidRow(
-                                          column(1),column(width=5,tags$h5(tags$strong("Upload Complete Genotypic Data (Training +Target) (VCF)"))),
+                                         column(width=5,tags$h5(tags$strong("Upload Complete Genotypic Data (Training +Target) (VCF)"))),
                                           column(6),column(width=5,tags$h5(tags$strong("Upload Target Line IDs (CSV) file"))),
                                         ),
                                         fluidRow(
-                                          column(1),column(width=5,fileInput("infileVCF", "", accept = ".vcf")),
+                                          column(width=5,fileInput("infileVCF", "", accept = ".vcf")),
                                           column(6),column(width=5,fileInput("infileTargetTable", "", accept = ".csv")),
                                         ),
-                                        tags$br(),
+                                        
                                         fluidRow(
-                                          column(6),column(width=5,selectInput(inputId="TargetIDCol","Choose Target ID Col",choices=NULL,multiple=FALSE)),
+                                          column(1),column(width=5,checkboxInput("header", "Header", TRUE)),
+                                          column(6),column(width=5,checkboxInput("header", "Header", TRUE)) 
                                         ),
                                         
+                                       
+                                        
                         ),
-					              
+         
 					              
 # 					             conditionalPanel(condition="input.InGenoFormat2 == true",
 #                                         fluidRow(
@@ -146,10 +155,7 @@ ui <- fluidPage(
 #                                         tags$br(),
 #                        ),
                        
-					            fluidRow(
-                         column(1),column(width=5,checkboxInput("header", "Header", TRUE)),
-                         column(6),column(width=5,checkboxInput("header", "Header", TRUE)) 
-                       ),
+					            
                        
                        # fluidRow(
                        #   column(1),column(width=5,tags$h4(tags$strong(textOutput("GenoHeader")))),
@@ -168,10 +174,10 @@ ui <- fluidPage(
                                           overflow-y: scroll; /* Enable vertical scrolling */
                                           overflow-x: scroll;  /*Hide horizontal scrolling */
                                           overflow-wrap: anywhere; /* Ensure long words do not cause horizontal scrolling */
-                                          width: 350px; 
+                                          width: 300px; 
                                           /*max-width: 100%; */
                                           padding: 6px 12px;
-                                          height: 400px;
+                                          height: 250px;
                                          }
                                         "))
                               ),
@@ -184,16 +190,16 @@ ui <- fluidPage(
                                           overflow-y: scroll; /* Enable vertical scrolling */
                                           overflow-x: scroll;  /*Hide horizontal scrolling */
                                           overflow-wrap: anywhere; /* Ensure long words do not cause horizontal scrolling */
-                                          width: 350px; 
+                                          width: 300px; 
                                           /*max-width: 100%; */
                                           padding: 6px 12px;
-                                          height: 400px;
+                                          height: 250px;
                                          }
                                         "))
                         ),
 
                       fluidRow(column(width=5,tags$h6(verbatimTextOutput("messageGenoStats"))),
-                       column(6),column(width=5,tags$h6(verbatimTextOutput("messageTargetStats")))),
+                       column(7),column(width=4,tags$h6(verbatimTextOutput("messageTargetStats")))),
                        tags$br(),
                        tags$br(),
                       )
@@ -381,6 +387,13 @@ ui <- fluidPage(
               sidebarLayout(
                 sidebarPanel(
                  checkboxInput("chkPhenoME","Load Pheno Data from Mult-Env",FALSE),
+                 conditionalPanel(condition="input.chkPhenoME == true",
+                                  selectInput(inputId="traitCols","Choose all the trait Cols",choices=NULL,multiple=TRUE),
+                                  selectInput(inputId="IDColME","Choose Uniq ID Col",choices=NULL,multiple=FALSE),
+                                  selectInput(inputId="strainME","Choose Strain Col",choices=NULL,multiple=FALSE),
+                                  tags$br(),
+                              
+                 ),
                 ),
                 mainPanel(
                  conditionalPanel(condition="input.chkPhenoME == false",
@@ -427,17 +440,17 @@ ui <- fluidPage(
                                           column(width=5,checkboxInput("headerME", "Header", TRUE)),
                                         ),
                                         
-                                        fluidRow(
-                                          column(width=5,selectInput(inputId="traitCols","Choose all the trait Cols",choices=NULL,multiple=TRUE)),
-                                        ),
-                                        
-                                        fluidRow(
-                                          column(width=5,selectInput(inputId="IDColME","Choose Uniq ID Col",choices=NULL,multiple=FALSE)),
-                                        ),
-                                        
-                                        fluidRow(
-                                          column(width=5,selectInput(inputId="strainME","Choose Strain Col",choices=NULL,multiple=FALSE)),
-                                        ),
+                                        # fluidRow(
+                                        #   column(width=5,selectInput(inputId="traitCols","Choose all the trait Cols",choices=NULL,multiple=TRUE)),
+                                        # ),
+                                        # 
+                                        # fluidRow(
+                                        #   column(width=5,selectInput(inputId="IDColME","Choose Uniq ID Col",choices=NULL,multiple=FALSE)),
+                                        # ),
+                                        # 
+                                        # fluidRow(
+                                        #   column(width=5,selectInput(inputId="strainME","Choose Strain Col",choices=NULL,multiple=FALSE)),
+                                        # ),
                                         
                                         tags$br(),
                                         tags$br(),
@@ -1764,7 +1777,7 @@ output$messageGenoFilt1 <- renderText({
       cat("Summary of selected trait values across all locations : \n")
       cat(paste(names(summary((PhenoME()[,TraitME()]))),"\t",sep=""))
       cat("\n")
-      cat(paste(summary(as.numeric(PhenoME()[,TraitME()])),"\t",sep=""))
+      cat(paste(round(summary(as.numeric(PhenoME()[,TraitME()])),digits = 3),"\t",sep=""))
       
       sink()
     }
@@ -1959,14 +1972,14 @@ envData <- reactiveVal(NULL)
 
 observeEvent(input$getEnvK,{
   # Path for the temporary file
- # browser()
+# browser()
   temp_file4(tempfile())
   if(!is.null(LocCoords())){
     sink(temp_file4())
     
-     #withProgress(message = 'Collecting Weather Data', value = 0, {
+     withProgress(message = 'Collecting Weather Data', value = 0, {
         envDat <- getEnvData(LocCoords(),startDate(),endDate())
-     #})
+     })
    
     sink()
     
@@ -1977,7 +1990,7 @@ observeEvent(input$getEnvK,{
 ### Test output 
 # Periodically read the file and update the UI
 envDatStatus <- reactive({
-  invalidateLater(100, session)
+  invalidateLater(1000, session)
   if(file.exists(temp_file4())){
     lines <- readLines(temp_file4(), warn = FALSE)
     return(paste(lines, collapse = "\n"))
@@ -2007,20 +2020,24 @@ EnvK <- reactive({
      getEnvKernel(envData(),processWthDat(),gaussVar())})
  })
 
-# 
-# plotEnvKData <- reactiveVal(NULL)
-# observeEvent(input$getEnvK,{
-#   #browser()
-#   print("envin")
-#   plotEnvKData(plotEnvRel(EnvK()))
-# })
+
+
+
+OtherLoc <- reactive(input$OtherLoc)
+EnvK_Mod <- reactive({syncEnvPhenoDat(EnvK(),LocCoords(),OtherLoc())})
+
+
 
 # Render the main plot
 output$envPlot <- renderPlot({ 
-    
+  
   print("envPl")
   if(!is.null(envData())){ 
-   plotEnvRel(EnvK())
+   if(OtherLoc()==FALSE){
+      plotEnvRel(EnvK())
+   }else if(OtherLoc()==TRUE){
+     plotEnvRel(EnvK_Mod())
+   }
   }
 })
 # 
@@ -2029,8 +2046,6 @@ output$envPlot <- renderPlot({
 #     plotOutput("envPlot",height = "500px", width = "700px")
 # }) 
 
-OtherLoc <- reactive(input$OtherLoc)
-EnvK_Mod <- reactive({syncEnvPhenoDat(EnvK(),LocCoords(),OtherLoc())})
 ##### 
   
 
@@ -2322,7 +2337,7 @@ EnvK_Mod <- reactive({syncEnvPhenoDat(EnvK(),LocCoords(),OtherLoc())})
 
   outputListMETab <- reactive({
     #browser()
-    getCombinedTab(outputListSTME(),TraitME(),IDColsME(),IDColME())
+    getCombinedTab(outputListSTME(),TraitME(),IDColsME(),IDColME(),fitEnvCovs())
   })
 
 
