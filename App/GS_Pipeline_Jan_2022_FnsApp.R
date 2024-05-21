@@ -725,8 +725,7 @@ getTasObj <- function(infileVCF){
 
 
 getFilteredSitesGenoData <- function(tasGeno,siteMinCnt,MAF){
-
-
+   
 	tasGenoFilt <- rTASSEL::filterGenotypeTableSites(
 		tasObj = tasGeno,
 		siteMinCount = siteMinCnt,
@@ -842,8 +841,7 @@ getImpGenoData_API <- function(vcfIDTab){
 
 getGenoTas_to_DF_Old <- function(tasGeno){
 
-    tasSumExp <- rTASSEL::getSumExpFromGenotypeTable(
-    tasObj = tasGeno)
+    tasSumExp <- rTASSEL::getSumExpFromGenotypeTable(tasObj = tasGeno)
 	
 	tasGenoDF <- (SummarizedExperiment::assays(tasSumExp)[[1]])
 	colnames(tasGenoDF) <- SummarizedExperiment::colData(tasSumExp)[,"Sample"]
@@ -894,6 +892,7 @@ getGenoTas_to_DF <- function(tasGeno){
 	return(gt2d_tasGeno)
   
 }
+
 
 
 
@@ -5097,8 +5096,9 @@ getFreq_Alleles <- function(GenoTable){
      
 	 Freq_1_Vec <- unlist(lapply(FreqList,function(x) x[[1]]))
      Freq_0_Vec <- unlist(lapply(FreqList,function(x) x[[2]]))
+	 Freq_Tab <- rbind.data.frame(Freq_1_Vec,Freq_0_Vec)
 	
-	return(list(Freq_1_Vec,Freq_0_Vec))
+	return(Freq_Tab)
 
 }
 
@@ -5106,9 +5106,8 @@ getFreq_Alleles <- function(GenoTable){
 
 numMAF <- function(Geno,MAFTh){ 
    
-   AF_List <- getFreq_Alleles(Geno)
-   MAFVec <- AF_List[[2]] 
-  
+   AF_Tab <- getFreq_Alleles(Geno)
+   MAFVec <-  apply(AF_Tab,2,function(x) min(as.numeric(x)))
    numMAF_LT <- length(which(MAFVec <= MAFTh))
    return(numMAF_LT)
 }
@@ -5120,7 +5119,7 @@ numMissSites <- function(GenoT,missSitesTH){
 	 nSites <- nrow(Geno)
 	 
 	 NALen <- apply(Geno,1,function(x) length(which(is.na(x))))
-	 numMissingSites <- length(which(NALen >= missSitesTH*nInd))
+	 numMissingSites <- length(which(NALen >= (missSitesTH*nInd)))
 	 
 	 return(numMissingSites)
  
@@ -5128,13 +5127,12 @@ numMissSites <- function(GenoT,missSitesTH){
  
  
  
-numMissInd <- function(GenoT,missIndTH){ 
+numMissInd <- function(Geno,missIndTH){ 
 
-  Geno <- GenoT[,-c(1:5)]
   nInd <- ncol(Geno)
   nSites <- nrow(Geno)
  
-  NALen <- apply(Geno,2,function(x) length(which(is.na(x))))
+  NALen <- as.vector(apply(Geno,2,function(x) length(which(is.na(x)))))
   numMissingInd <- length(which(NALen >= missIndTH*nSites))
  
  return(numMissingInd)
@@ -5157,7 +5155,9 @@ getGenoQCStats <- function(GenoT){
   nInd <- ncol(Geno)
   nSites <- nrow(Geno)
   
-  missFrac <- (length(which(is.na(as.vector(Geno))))) / (length(as.vector(Geno)))
+  missNum <- sum(as.vector(apply(Geno,2,function(x) length(which(is.na(x))))))
+  missFrac <- round(missNum/(nInd*nSites),digits=3)
+  #missFrac <- (length(which(is.na(as.vector(Geno))))) / (length(as.vector(Geno)))
   
   code <- paste(names(table(apply(Geno,2,as.numeric))),sep="-",collapse="")
   
@@ -5176,8 +5176,10 @@ getGenoQCStatsFilt1 <- function(GenoT,GenoFilt1T,missSitesTH,MAFTH){
   Geno <- GenoT[,-c(1:5)]
   GenoFilt1 <- GenoFilt1T[,-c(1:5)]
 
-  missSitesGTH <- numMissSites(Geno,missSitesTH)
-  mafLTH <- numMAF(Geno,MAFTH)
+
+
+  # missSitesGTH <- numMissSites(Geno,missSitesTH)
+  # mafLTH <- numMAF(Geno,MAFTH)
   
   nInd <- ncol(GenoFilt1)
   nSites <- nrow(GenoFilt1)
@@ -5187,11 +5189,11 @@ getGenoQCStatsFilt1 <- function(GenoT,GenoFilt1T,missSitesTH,MAFTH){
   
   genoLine <- paste("The genotype table has genotype scores for ", nInd," genotypes and ", nSites, " markers. \n",sep="")
   genoCodingLine <- paste("The genotype scores are coded in ",code, " format. \n",sep="")
-  MAFLine <- paste(mafLTH," markers have MAF less than ",MAFTH, " threshold. \n",sep="\t")
-  missSiteLine <- paste(missSitesGTH," markers have missing values in more than ",missSitesTH," of the genotypes. \n",sep="")
+  # MAFLine <- paste(mafLTH," markers have MAF less than ",MAFTH, " threshold. \n",sep="\t")
+  # missSiteLine <- paste(missSitesGTH," markers have missing values in more than ",missSitesTH*100," % of the genotypes. \n",sep="")
   filtLine <- paste(diffStats[[2]]," genotypes and ",diffStats[[1]]," markers have been removed in the filtered table. \n")
-  
-  outMsg <- paste(genoLine,genoCodingLine,MAFLine,missSiteLine,filtLine,sep="")
+  #MAFLine,missSiteLine,
+  outMsg <- paste(genoLine,genoCodingLine,filtLine,sep="")
   
   return(outMsg)
 }
@@ -5208,15 +5210,15 @@ getGenoQCStatsFilt2 <- function(GenoFilt1T,GenoFilt2T,missIndTH){
   diffStats <- getGenoDiff(GenoFilt1,GenoFilt2)
   code <- paste(names(table(apply(GenoFilt2,2,as.numeric))),sep="-",collapse="")
   
-  missIndGTH <- numMissInd(GenoFilt1,missIndTH)
+ # missIndGTH <- numMissInd(GenoFilt1,missIndTH)
   
   
   genoLine <- paste("The genotype table has genotype scores for ", nInd," genotypes and ", nSites, " markers. \n",sep="")
   genoCodingLine <- paste("The genotype scores are coded in ",code, " format. \n",sep="")
-  missIndLine <- paste(missIndGTH," genotypes had missing values in more than ",missIndTH*100," % of the markers. \n",sep="")
+ # missIndLine <- paste(missIndGTH," genotypes had missing values in more than ",missIndTH*100," % of the markers. \n",sep="")
   filtLine <- paste(diffStats[[2]]," genotypes and ",diffStats[[1]]," markers have been removed in the filtered table. \n")
-  
-  outMsg <- paste(genoLine,genoCodingLine,missIndLine,filtLine,sep="")
+  #missIndLine,
+  outMsg <- paste(genoLine,genoCodingLine,filtLine,sep="")
   
   return(outMsg)
 }
