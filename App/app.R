@@ -339,6 +339,9 @@ ui <- fluidPage(
                            ),
                            tags$br(),
                            tags$br(),
+                          
+                           checkboxInput("setGenoImpTas", "Use Imputed Genotypes For Next Steps", TRUE), 
+                           tags$br(),
                            downloadButton("ExportImpGenoDF", "Export Imputed Genotypes"),
                            tags$br(),
                            tags$br(),
@@ -358,15 +361,29 @@ ui <- fluidPage(
                      are used to impute scores."))
                                             ),
                                             tags$br(),
+                                            # 
+                                            # fluidRow(column(2),column(width=8,tags$h4(tags$strong(textOutput("GenoImpHeader"))))),
+                                            # tags$br(),
+                                            # fluidRow(column(2),column(width=8,tags$h6(tags$strong(tableOutput("ImputedGenoTable"))))),
+                                            # tags$br(),
+                                            tags$head(
+                                              tags$style(HTML("
+                                            #messageImpGeno1 {
                                             
-                                            fluidRow(column(2),column(width=8,tags$h4(tags$strong(textOutput("GenoImpHeader"))))),
+                                              /*max-height: 1200px; Set maximum height */
+                                              overflow-y: scroll; /* Enable vertical scrolling */
+                                              overflow-x: scroll;  /*Hide horizontal scrolling */
+                                              overflow-wrap: anywhere; /* Ensure long words do not cause horizontal scrolling */
+                                              width: 350px; 
+                                              /*max-width: 100%; */
+                                              padding: 6px 12px;
+                                              height: 400px;
+                                             }"))
+                                            ),
+                                            
                                             tags$br(),
-                                            fluidRow(column(2),column(width=8,tags$h6(tags$strong(tableOutput("ImputedGenoTable"))))),
                                             tags$br(),
-                                            tags$br(),
-                                            tags$br(),
-                                            tags$br(),
-                                            checkboxInput("setGenoImpTas", "Use Imputed Genotypes For Next Steps", TRUE), 
+                                            fluidRow(column(1),column(width=4,tags$h6(verbatimTextOutput("messageImpGeno1")))),
                                             tags$br(),
                                             tags$br(),
                            ),
@@ -1174,35 +1191,70 @@ output$messageGenoFilt1 <- renderText({
   })
   
   
+  
+  ######## 
+  
+  temp_file0d <- reactiveVal('none')
+  
+  
+  # Start the process in a separate R process
+  
+  observeEvent(input$Impute, {
+    
+    temp_file0d(tempfile())
+    if(!is.null(GenoImp_DF1())){
+      sink(temp_file0d())
+      cat(getGenoImp1Stats(Geno_DF(),GenoImp_DF1()))
+      sink()
+    }
+    
+  })
+  
+  ### Test output 
+  # Periodically read the file and update the UI
+  
+  output$messageImpGeno1 <- renderText({
+    
+    invalidateLater(1000, session) # Update every second
+    if(file.exists(temp_file0d())){
+      lines <- readLines(temp_file0d(), warn = FALSE)
+      return(paste(lines, collapse = "\n"))
+    }else {
+      return("Waiting for output...")
+    }
+  })
+  
+  
+  
   ### if you use only reactive, this will throw an error ncol(GenoImp_DF())-5
   
   #genoImpHead <- eventReactive(input$Impute,{paste("Genotype Table with ",ncol(GenoImp_DF())-5," lines and ",nrow((GenoImp_DF()))," markers",sep="")})
   
   # genoImpHead <- reactive({paste("Genotype Table with ",ncol(GenoImp_DF())-5," lines and ",nrow((GenoImp_DF()))," markers",sep="")})
   
-  
-  genoImpHead <- reactive({
-    # Ensure GenoImp_DF is only called when it has updated data
-    df <- as.data.frame(GenoImp_DF1()) # This call ensures dependency
-    
-    if(is.data.frame(df) && ncol(df) > 5) {
-      #     # Successful case
-      paste("Genotype Table with ", ncol(df) - 5, " lines and ", nrow(df), " markers", sep = "")
-    } else {
-      #     # Fallback or error message
-      "Waiting for data"
-    }
-  })
   # 
-  # UI and server logic to render the header text and imputed genotype table
-  output$GenoImpHeader <- renderText({
-    genoImpHead()  # This will now wait for GenoImp_DF to complete
-  })
-  
-  
-  # output$GenoImpHeader <- renderText({genoImpHead()})
-  output$ImputedGenoTable <- renderTable({as.data.frame((GenoImp_DF1())[1:5,1:10])})
+  # genoImpHead <- reactive({
+  #   # Ensure GenoImp_DF is only called when it has updated data
+  #   df <- as.data.frame(GenoImp_DF1()) # This call ensures dependency
+  #   
+  #   if(is.data.frame(df) && ncol(df) > 5) {
+  #     #     # Successful case
+  #     paste("Genotype Table with ", ncol(df) - 5, " lines and ", nrow(df), " markers", sep = "")
+  #   } else {
+  #     #     # Fallback or error message
+  #     "Waiting for data"
+  #   }
+  # })
+  # # 
+  # # UI and server logic to render the header text and imputed genotype table
+  # output$GenoImpHeader <- renderText({
+  #   genoImpHead()  # This will now wait for GenoImp_DF to complete
+  # })
   # 
+  # 
+  # # output$GenoImpHeader <- renderText({genoImpHead()})
+  # output$ImputedGenoTable <- renderTable({as.data.frame((GenoImp_DF1())[1:5,1:10])})
+  # # 
   ### 
   
   observeEvent(input$imputeMet,{ 

@@ -5223,3 +5223,43 @@ getGenoQCStatsFilt2 <- function(GenoFilt1T,GenoFilt2T,missIndTH){
   return(outMsg)
 }
 
+
+getGenoImp1Stats <- function(Geno_DF,GenoImp_DF1){ 
+   
+  Geno <- Geno_DF[,-c(1:5)]
+  nInd <- ncol(Geno)
+  nSites <- nrow(Geno)
+     
+  GenoImp <- GenoImp_DF1[,-c(1:5)]
+  nInd_I <- ncol(GenoImp)
+  nSites_I <- nrow(GenoImp)
+  
+  missNum <- sum(as.vector(apply(Geno,2,function(x) length(which(is.na(x))))))
+  missFrac <- round(missNum/(nInd*nSites),digits=3)
+  code <- paste(names(table(apply(Geno,2,as.numeric))),sep="-",collapse="")
+
+  
+  
+  missNumI <- sum(as.vector(apply(GenoImp,2,function(x) length(which(is.na(x))))))
+  missFracI <- round(missNumI/(nInd_I*nSites_I),digits=3)
+  codeI <- paste(names(table(apply(GenoImp,2,as.numeric))),sep="-",collapse="")
+
+  diffStats <- getGenoDiff(Geno,GenoImp)
+  
+  genoLine <- paste("The genotype table has genotype scores for ", nInd," genotypes and ", nSites, " markers. \n",sep="")
+  genoCodingLine <- paste("The genotype scores are coded in ",code," format. \n",sep="")
+  missScoresLines <- paste(missFrac*100," % of the genotype scores in the table have missing values. \n",sep="") 
+  
+  genoLineI <- paste("The imputed genotype table has genotype scores for ", nInd_I," genotypes and ", nSites_I, " markers. \n",sep="")
+  genoCodingLineI <- paste("The genotype scores in the imputed table are coded in ",codeI," format. \n",sep="")
+  missScoresLinesI <- paste(missFracI*100," % of the genotype scores in the table have missing values. \n",sep="") 
+  
+  filtLine <- paste(diffStats[[2]]," genotypes and ",diffStats[[1]]," markers have been removed in the imputed compared to the input table. \n")
+
+  
+  outMsg <- paste(genoLine,genoCodingLine,missScoresLines,genoLineI,genoCodingLineI,missScoresLinesI,filtLine,sep="")
+ 
+ 
+ 
+ }
+   
