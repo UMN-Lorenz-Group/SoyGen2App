@@ -973,7 +973,7 @@ server <- function(input,output,session){
   
   ### Filter 1  
   observeEvent(input$infileVCF, {
-    updateNumericInput(inputId = "siteMinCnt",value= round(0.8*ncol(Geno()),digits=0),min = round(0.1*ncol(Geno()),digits=0), max=ncol(Geno()))}) 
+    updateNumericInput(inputId = "siteMinCnt",value= 0.80,min =0, max=1)}) 
   
   
   siteMinCnt <- reactive(input$siteMinCnt)
@@ -983,7 +983,7 @@ server <- function(input,output,session){
   
   GenoFilt1 <- eventReactive(input$FilterSites,{
     withProgress(message = 'Filtering Sites', value = 0, {
-      getFilteredSitesGenoData(GenoTas(),siteMinCnt(),MAF())}) 
+      getFilteredSitesGenoData(GenoTas(),round(siteMinCnt()*(ncol(Geno())-5),digits = 0),MAF())}) 
   })
  
   
