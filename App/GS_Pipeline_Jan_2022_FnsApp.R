@@ -5246,7 +5246,7 @@ getGenoImp1Stats <- function(Geno_DF,GenoImp_DF1){
 
   diffStats <- getGenoDiff(Geno,GenoImp)
   
-  genoLine <- paste("The genotype table has genotype scores for ", nInd," genotypes and ", nSites, " markers. \n",sep="")
+  genoLine <- paste("The input genotype table has genotype scores for ", nInd," genotypes and ", nSites, " markers. \n",sep="")
   genoCodingLine <- paste("The genotype scores are coded in ",code," format. \n",sep="")
   missScoresLines <- paste(missFrac*100," % of the genotype scores in the table have missing values. \n",sep="") 
   
