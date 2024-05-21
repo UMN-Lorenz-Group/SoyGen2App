@@ -1194,16 +1194,16 @@ output$messageGenoFilt1 <- renderText({
   
   ######## 
   
-  temp_file0d <- reactiveVal('none')
+  temp_file0e <- reactiveVal('none')
   
   
   # Start the process in a separate R process
   
   observeEvent(input$Impute, {
     
-    temp_file0d(tempfile())
+    temp_file0e(tempfile())
     if(!is.null(GenoImp_DF1())){
-      sink(temp_file0d())
+      sink(temp_file0e())
       cat(getGenoImp1Stats(Geno_DF(),GenoImp_DF1()))
       sink()
     }
@@ -1216,8 +1216,8 @@ output$messageGenoFilt1 <- renderText({
   output$messageImpGeno1 <- renderText({
     
     invalidateLater(1000, session) # Update every second
-    if(file.exists(temp_file0d())){
-      lines <- readLines(temp_file0d(), warn = FALSE)
+    if(file.exists(temp_file0e())){
+      lines <- readLines(temp_file0e(), warn = FALSE)
       return(paste(lines, collapse = "\n"))
     }else {
       return("Waiting for output...")
@@ -1967,6 +1967,14 @@ output$messageGenoFilt1 <- renderText({
      }
    }
  })
+ 
+
+#### 
+ 
+ 
+ 
+### 
+ 
  
  output$LocDistribution <- renderUI({
    print("outLD")
