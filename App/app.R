@@ -1,8 +1,19 @@
 if(!require(shiny)){
   install.packages("shiny")
 }
+
+if(!require(shinyBS)){
+  install.packages("shinyBS")
+}
+
+if(!require(shinyWidgets)){
+  install.packages("shinyWidgets")
+}
+
 library(shiny) 
 
+library(shinyBS)
+library(shinyWidgets)
 ### Change source file path to working directory
 
 FN <- paste(getwd(),"/GS_Pipeline_Jan_2022_FnsApp.R",sep="")
@@ -403,16 +414,28 @@ ui <- fluidPage(
               ####
               sidebarLayout(
                 sidebarPanel(
-                 checkboxInput("chkPhenoME","Load Pheno Data from Mult-Env",FALSE),
+                 checkboxInput("chkPhenoME",tags$h5(tags$strong("Load Pheno Data from Multi-Environs")),FALSE),
+                 tags$br(),
+                 tags$br(),
+                 
+                 conditionalPanel(condition="input.chkPhenoME == false",
+                                  selectInput(inputId="IDColSE","Choose Uniq ID Col",choices=NULL,multiple=FALSE),
+                                  selectInput(inputId="strainSE","Choose Strain Col",choices=NULL,multiple=FALSE),
+                                  numericRangeInput(inputId="traitColsNum","Choose all the trait Cols",value=NULL,min=1,max=1),
+                                  tags$br(),
+                              
+                 ),
                  conditionalPanel(condition="input.chkPhenoME == true",
                                   selectInput(inputId="traitCols","Choose all the trait Cols",choices=NULL,multiple=TRUE),
                                   selectInput(inputId="IDColME","Choose Uniq ID Col",choices=NULL,multiple=FALSE),
                                   selectInput(inputId="strainME","Choose Strain Col",choices=NULL,multiple=FALSE),
                                   tags$br(),
-                              
+                       
                  ),
+                 
                 ),
                 mainPanel(
+                  
                  conditionalPanel(condition="input.chkPhenoME == false",
                                         
                  tags$br(),
@@ -430,18 +453,66 @@ ui <- fluidPage(
                            column(width=5,checkboxInput("header", "Header", TRUE)),
                          ),
                          tags$br(),
-                         fluidRow(
-                          column(width=6,tags$h4(tags$strong(textOutput("PhenoHeader")))),
-                           column(7),column(width=5,div( 
-                             tags$h4(tags$strong(textOutput("summaryHeader")))))
+                         # fluidRow(
+                         #  column(width=6,tags$h4(tags$strong(textOutput("PhenoHeader")))),
+                         #   column(7),column(width=5,div( 
+                         #     tags$h4(tags$strong(textOutput("summaryHeader")))))
+                         # ),
+                         # fluidRow(
+                         #   column(width=5,tags$h6(tableOutput("PhenoTable"))),
+                         #   tags$h6(tableOutput("Summary"))
+                         # ),
+                 
+                         tags$br(),
+                         tags$head(
+                           tags$style(HTML("
+                                                #messagePhSE {
+                                                  
+                                                  /*max-height: 1200px; Set maximum height */
+                                                  overflow-y: scroll; /* Enable vertical scrolling */
+                                                  overflow-x: scroll;  /*Hide horizontal scrolling */
+                                                  overflow-wrap: anywhere; /* Ensure long words do not cause horizontal scrolling */
+                                                  width: 350px; 
+                                                  /*max-width: 100%; */
+                                                  padding: 6px 12px;
+                                                  height: 150px;
+                                                 }
+                                                "))
                          ),
-                         fluidRow(
-                           column(width=5,tags$h6(tableOutput("PhenoTable"))),
-                           tags$h6(tableOutput("Summary"))
-                         ),
+                 
+                     tags$head(
+                       tags$style(HTML("
+                                              #messageTrtSE {
+                                              
+                                              /*max-height: 1200px; Set maximum height */
+                                              overflow-y: scroll; /* Enable vertical scrolling */
+                                              overflow-x: scroll;  /*Hide horizontal scrolling */
+                                              overflow-wrap: anywhere; /* Ensure long words do not cause horizontal scrolling */
+                                              width: 350px; 
+                                              /*max-width: 100%; */
+                                              padding: 6px 12px;
+                                              height: 150px;
+                                             }
+                                            "))
+                     ),
+                     
+                 
+                 
+                   fluidRow(
+                     
+                     column(width = 5,
+                            verbatimTextOutput("messagePhSE")
+                     ), column(7),column(width=5, verbatimTextOutput("messageTrtSE")),
+                     
+                   ),
+                   
+                   tags$br(),
+                  
+                   
+                 ),
+                 
                     
-                       ),
-                       conditionalPanel(condition="input.chkPhenoME == true",
+                   conditionalPanel(condition="input.chkPhenoME == true",
                                         
                                         tags$br(),
                                         fluidRow(
@@ -659,6 +730,8 @@ ui <- fluidPage(
               
               ### CV tab
               tabPanel("Cross Validations",
+                   tabsetPanel(id="CV",
+                      tabPanel("Single Trait",
                        sidebarLayout(
                          sidebarPanel(
                            numericInput(inputId="k",label = "Enter k for k-fold cross validation",value=2,min=2,max=10),
@@ -668,46 +741,163 @@ ui <- fluidPage(
                            actionButton("CrossValidationST", "Run Cross Validation for Single Trait Models"),
                            tags$br(),
                            tags$br(),
-                           tags$br(),
-                           tags$br(),
-                           actionButton("CrossValidationMT", "Run Cross Validation for Multi-trait Models"),
-                           tags$br()
                          ), 
                          mainPanel(
                            fluidRow(
                              column(1),column(width=7,tags$h3(tags$strong("Cross Validation of GP Models"))), 
-                             #actionButton("CVR_TS", "prev"),
-                             #actionButton("CVR_GP", "next")
-                             
                            ),
                            fluidRow(
-                             
                              column(width=10, tags$p("Perform an optional k-fold cross validation with training dataset to identify the model with the best prediction accuracy.
-                                           K-fold cross validation is performed using 'emCV' function implemented in the 'bWGR' package (Xavier et al. 2020).
-                                           For multivariate models, 'Multitrait' and 'mmer' functions implemented in BGLR and Sommer packages are used for cross validations."))),
+                             K-fold cross validation is performed using 'emCV' function implemented in the 'bWGR' package (Xavier et al. 2020)."))),
                            tags$br(),
                            fluidRow(
                              column(1),column(width=8,tags$h5(tags$strong(textOutput("cvrHeader"))))),
                            tags$br(),
-                           
                            fluidRow(
                              column(2),column(width=8,tags$h5(tags$strong(textOutput("Mssg"))))),
                            tags$br(),
                            fluidRow(
                              column(2),column(width=8,tags$h5(tableOutput("emCVRST")))),
-                           tags$br(),
-                           # fluidRow(
-                           #  column(3),column(width=8,tags$h5(tableOutput("emCVRMT")))),
-                           tags$br()
-                           
-                         ) 
+                           ),
                        )),
-              #   
-              ### GP Tab 
-              tabPanel("Genomic Prediction",
-                       tabsetPanel(id="GPModels",
+                      
+                       tabPanel("Multi-trait",
+                           sidebarLayout(
+                              sidebarPanel(
+                                 numericInput(inputId="k",label = "Enter k for k-fold cross validation",value=2,min=2,max=10),
+                                 numericInput(inputId="nIter",label = "Enter n for n-iterations of each cycle of cross validation",value=2,min=2,max=10),
+                                 tags$br(),
+                                 tags$br(),
+                                 actionButton("CrossValidationMT", "Run CV for MT Models"),
+                                 tags$br()
+                               ),
+                               mainPanel(
+                                fluidRow(
+                                  column(1),column(width=7,tags$h3(tags$strong("Cross Validation of GP Models"))), 
+                                ),
+                                fluidRow(
+                                 column(width=10, tags$p("Perform an optional k-fold cross validation with training dataset to identify the model with the best prediction accuracy.
+                                 For multi-trait models, 'Multitrait' and 'mmer' functions implemented in BGLR and Sommer packages are used for cross validations."))),
+                                tags$br(),
+                                fluidRow(
+                                  column(1),column(width=8,tags$h5(tags$strong(textOutput("cvrHeaderMT"))))),
+                                tags$br(),
+                                tags$head(
+                                  tags$style(HTML("
+                                              #MssgMT {
+                                               color: red;
+                                              }")
+                                 )
+                                ),
+                                fluidRow(
+                                column(2),column(width=8,tags$h5(tags$strong(textOutput("MssgMT"))))),
+                                tags$br(),
+                                
+                                tags$head(
+                                  tags$style(HTML("
+                                     #messageMT5{
+                                        
+                                          /*max-height: 1200px; Set maximum height */
+                                          overflow-y: scroll; /* Enable vertical scrolling */
+                                          overflow-x: scroll;  /*Hide horizontal scrolling */
+                                          overflow-wrap: anywhere; /* Ensure long words do not cause horizontal scrolling */
+                                          width: 600px; 
+                                          /*max-width: 100%; */
+                                          padding: 6px 12px;
+                                          height: 150px;
+                                      }
+                                   "))
+                                ),
+                                
+                                fluidRow(column(width = 6,verbatimTextOutput("messageMT5"))),
+                                
+                                tags$br(),
+                                fluidRow(
+                                   column(3),column(width=8,tags$h5(tableOutput("emCVRMT")))),
+                                tags$br()
+                               )
+                              
+                              
+                              
+                            )
+                         ),
+                         tabPanel("Multi Environment",
+                               sidebarLayout(
+                                 sidebarPanel(
                                    
-                                   tabPanel("Single Trait",
+                                   tags$h4(tags$strong("Crossvalidation (CV) Method")),
+                                   tags$br(),
+                                   selectInput(inputId = "CVMet","Select CV Method",choices=c("CV1","CV2","CV0","CV00","CV_LOFO"),selected="CV1",multiple=FALSE),
+                                   
+                                   conditionalPanel(condition = "input.CVMet=='CV1' || input.CVMet=='CV2' || input.CVMet== 'CV0' || input.CVMet=='CV00'", 
+                                        numericInput(inputId="k",label = "Enter k for k-fold cross validation",value=2,min=2,max=10),
+                                        numericInput(inputId="nIter",label = "Enter n for n-iterations of each cycle of cross validation",value=2,min=2,max=10),
+                                        tags$br(),
+                                   ),
+                                   conditionalPanel(condition = "input.CVMet=='CV_LOFO'",
+                                        selectInput(inputId = "CVFactor","Select Factor for LOFO CV",choices=NULL,selected=NULL,multiple=FALSE),
+                                        tags$br(),      
+                                   ),
+                                   tags$br(),
+                                   actionButton("CrossValidationME", "Run CV for ME GP Models"),
+                                   tags$br()
+                                  ),
+                                  mainPanel(
+                                   fluidRow(
+                                     column(1),column(width=7,tags$h3(tags$strong("Cross Validation of GP Models"))), 
+                                   ),
+                                   
+                                  fluidRow(
+                                    column(width=9, tags$p("Perform crossvalidation for multi-environmental models to identify the model 
+                                         with the best prediction accuracy. Crossvalidation for multi-environmental data is performed using the BGGE/EnvRtype packages.")),
+                                    column(width=10,
+                                      tags$ul(
+                                        tags$li("CV1, where novel genotypes in tested environments are predicted."),
+                                        tags$li( "CV2, where known genotypes in known environments are predicted."),
+                                        tags$li("CV0, where tested genotypes in untested novel environments are predicted."),
+                                        tags$li("CV00, where novel genotypes in novel environments are predicted."),
+                                        tags$li("CV LOFO (Leave One Factor Out), eg: Leave One Test Out/ Leave One Line Out cross validation."),
+                                       )
+                                     )
+                                  ),
+                                   
+                                  tags$br(),
+                                  tags$head(
+                                    tags$style(HTML("
+                                     #messageME6{
+                                        
+                                          /*max-height: 1200px; Set maximum height */
+                                          overflow-y: scroll; /* Enable vertical scrolling */
+                                          overflow-x: scroll;  /*Hide horizontal scrolling */
+                                          overflow-wrap: anywhere; /* Ensure long words do not cause horizontal scrolling */
+                                          width: 600px; 
+                                          /*max-width: 100%; */
+                                          padding: 6px 12px;
+                                          height: 150px;
+                                      }
+                                   "))
+                                  ),
+                                  
+                                  fluidRow(column(width = 6,verbatimTextOutput("messageME6"))),
+                                  
+                                   fluidRow(
+                                     column(1),column(width=8,tags$h5(tags$strong(textOutput("cvrHeaderME"))))),
+                                   tags$br(),
+                                   fluidRow(
+                                     column(2),column(width=8,tags$h5(tags$strong(textOutput("MssgME"))))),
+                                   tags$br(),
+                                   fluidRow(
+                                     column(3),column(width=8,tags$h5(tableOutput("emCVRME")))),
+                                   tags$br()
+                                )
+                             )
+                        )
+                     )
+                  ), 
+          ### GP Tab 
+            tabPanel("Genomic Prediction",
+                       tabsetPanel(id="GPModels",
+                            tabPanel("Single Trait",
                                             
                                             sidebarLayout(
                                               sidebarPanel(
@@ -786,13 +976,33 @@ ui <- fluidPage(
                                                 tags$br(),
                                                 selectInput(inputId="LocationME","Select Location/Locations",choices="All",selected="All",multiple=TRUE),
                                                 tags$br(),
-                                               
                                                 tags$h5(tags$strong("Choose Covariates")),
-                                                selectInput(inputId="EnvVarID","Environmental Factor",choices=NULL,multiple=FALSE),
+                                                selectInput(inputId = "EnvVarID", "Environmental Factor", choices = NULL, multiple = FALSE),
                                                 tags$br(),
-                                                selectInput(inputId="fixedME","Fixed Effect",choices=NULL,multiple=FALSE),
+                                                selectInput(inputId = "fixedME", "Fixed Effect", choices = NULL, multiple = FALSE),
                                                 tags$br(),
+                                               
+                                                # bsCollapse(
+                                                #   id = "collapseCov",
+                                                #   bsCollapsePanel(tags$h5(tags$strong("Choose Covariates")), 
+                                                #   #tags$h5(tags$strong("Choose Covariates")),
+                                                #     selectInput(inputId="EnvVarID","Environmental Factor",choices=NULL,multiple=FALSE),
+                                                #     tags$br(),
+                                                #     selectInput(inputId="fixedME","Fixed Effect",choices=NULL,multiple=FALSE),
+                                                #     tags$br()
+                                                #  ,style = "primary")),
+                                                # tags$br(),
+                                                
+                                                
+                                                # bsCollapse(
+                                                #   id = "collapseCov",
+                                                #   bsCollapsePanel(
+                                                #     
+                                                #     style = "primary"
+                                                #   )
+                                                # ),
                                                 tags$br(),
+                                                
 
                                                 selectInput(inputId="Package","Choose Package for MultiEnvironment GP Modeling ",c("BGGE-EnvRType","SOMMER")),
 
@@ -1639,22 +1849,83 @@ output$messageGenoFilt1 <- renderText({
     
   })
   
-  observeEvent(input$infileBLUEsSE, {
-    updateSelectInput(inputId = "trait",choices = colnames(Pheno())[2:ncol(Pheno())])})
-  
-  observeEvent(input$infileBLUEsSE, {
-    updateSelectInput(inputId = "fixed",choices = c("NULL",colnames(Pheno())[2:ncol(Pheno())]),selected="NULL")})
-  
 ###
   
-  phenoHead <- eventReactive(input$infileBLUEsSE,{ paste("Table with ",nrow(Pheno())," lines and ",ncol(Pheno())-1," traits",sep="")})
-  output$PhenoHeader <- renderText({phenoHead()})
-  output$PhenoTable <- renderTable({as.data.frame((Pheno())[1:5,1:3])})
+  observeEvent(input$infileBLUEsSE, {
+    updateSelectInput(inputId="trait",choices = colnames(Pheno())[2:ncol(Pheno())])})
   
+  observeEvent(input$infileBLUEsSE, {
+    updateSelectInput(inputId="fixed",choices = c("NULL",colnames(Pheno())[2:ncol(Pheno())]),selected="NULL")})
   
+###  
+
+
+  observeEvent(input$infileBLUEsSE, {
+    updateNumericRangeInput(inputId ="traitColsNum",value= c(2,ncol(Pheno())))})
   
+  observeEvent(input$infileBLUEsSE, {
+   updateSelectInput(inputId="IDColSE",choices=colnames(Pheno()))})
   
+  observeEvent(input$infileBLUEsSE, {
+   updateSelectInput(inputId="strainSE",choices=colnames(Pheno()))})
   
+ 
+###
+  
+ 
+  IDColSE <- reactive(input$IDColSE)
+  StrainSE <- reactive(input$strainSE)
+  
+  TraitColsSE <- reactive(c(input$traitColsNum[1]:input$traitColsNum[2]))
+  TraitsPhSE <- reactive(colnames(Pheno())[TraitColsSE()])
+  TraitsPhSEVec <- reactive(paste(TraitsPhSE()," ",sep="",collapse=","))
+  
+####  
+  
+  temp_file3d <- reactiveVal('none')
+  
+  observeEvent(input$traitColsNum,{
+   
+    # Path for the temporary file
+    temp_file3d(tempfile())
+    
+    if(length(IDColSE())>0 & !is.null(Pheno())){
+      sink(temp_file3d())
+      lenIDColSE <- reactive(length(unique(Pheno()[,IDColSE()])))
+      if(lenIDColSE()== nrow(Pheno())){
+        cat(paste("The Unique ID column has ",lenIDColSE()," unique number of entries and matches the total number of entries in the data table",sep=""))
+        cat("\n")
+        cat(paste("The phenotypes data table has data for ",length(TraitColsSE())," including ",TraitsPhSEVec(),"\n",sep=""))
+        cat("\n")
+      }else{
+        cat(paste("The Unique ID column has ",lenIDColSE()," unique number of entries, which doesn't match the total number of entries in the data table",sep=""))
+        cat("\n")
+        cat(paste("The phenotypes data table has data for ",length(TraitColsSE())," including ",TraitsPhSEVec(),"\n",sep=""))
+        cat("\n")
+      }
+      sink()
+    }
+  })  
+  
+  ### Test output 
+  # Periodically read the file and update the UI
+
+  output$messagePhSE <- renderText({
+    
+    invalidateLater(1000, session) # Update every second
+    if(file.exists(temp_file3d())){
+      lines <- readLines(temp_file3d(), warn = FALSE)
+      return(paste(lines, collapse = "\n"))
+    }else {
+      return("Waiting for output...")
+    }
+  })
+  
+  # 
+  # phenoHead <- eventReactive(input$infileBLUEsSE,{ paste("Table with ",nrow(Pheno())," lines and ",ncol(Pheno())-1," traits",sep="")})
+  # output$PhenoHeader <- renderText({phenoHead()})
+  # output$PhenoTable <- renderTable({as.data.frame((Pheno())[1:5,1:3])})
+
 ### PhenoME  
   
   PhenoME <- reactive({
@@ -1671,8 +1942,7 @@ output$messageGenoFilt1 <- renderText({
   
   
   observeEvent(input$infileBLUEsME, {
-    
-    updateSelectInput(inputId = "traitCols",choices = colnames(PhenoME()))
+   updateSelectInput(inputId = "traitCols",choices = colnames(PhenoME()))
   })
   
   observeEvent(input$infileBLUEsME, {
@@ -1753,32 +2023,66 @@ output$messageGenoFilt1 <- renderText({
   
   MssgTargetSet <- eventReactive(input$trait,{
     if(nrow(processedData()[[2]])==0 | is.null(processedData()[[2]])){
-      response <- "The current genotypic file doesn't have target line genotypes. 
+      response <- "The current genotypic file doesn't have target line genotypes.
         Load genotypic data file with Target IDs"
       return(response)
     }
   })
+
+  # output$MssgTarget <- renderUI({
+  #   message <- MssgTargetSet()
+  #   HTML(paste0("<div class='message-text'>", message, "</div>"))
+  # })
   
-  output$MssgTarget <- renderUI({
-    message <- MssgTargetSet()
-    HTML(paste0("<div class='message-text'>", message, "</div>"))
+  #summaryHead <- eventReactive(input$trait,{paste("Summary of trait values")})
+ 
+ 
+  temp_file3a <- reactiveVal('none')
+  observeEvent(input$trait,{
+    # Path for the temporary file
+    temp_file3a(tempfile())
+    
+    if(length(Trait())>0 & !is.null(Pheno())){
+      sink(temp_file3a())
+      cat("Summary of selected trait values : \n")
+      cat(paste(names(round(summary(Pheno()[,Trait()[1]]),digits=2)),collapse="\t"))
+      cat("\n")
+      for(nT in 1:length(Trait())){
+        cat(paste(Trait()[nT],paste(round(summary(Pheno()[,Trait()[nT]]),digits=2),collapse="\t"),sep="\t"))
+        cat("\n")
+      }
+      sink()
+    }
+  })
+  ### Test output 
+  # Periodically read the file and update the UI
+  
+  output$messageTrtSE <- renderText({
+    
+    invalidateLater(1000, session) # Update every second
+    if(file.exists(temp_file3a())){
+      lines <- readLines(temp_file3a(), warn = FALSE)
+      return(paste(lines, collapse = "\n"))
+    }else {
+      return("Waiting for output...")
+    }
   })
   
-  
-  summaryHead <- eventReactive(input$trait,{paste("Summary of trait values")})
-  output$summaryHeader <- renderText({summaryHead()})
   nSelTraits <- reactive(length(Trait()))
   
-  SummaryTxt <- eventReactive(input$trait,{ 
-    do.call(rbind,lapply(Trait(),function(x) round(summary(Pheno()[,x]),digits=2)))
-  })
   
-  observeEvent(input$trait,{ 
-    output$Summary <- renderTable({
-      trTable <- cbind(unlist(Trait()),SummaryTxt())
-      print(trTable)
-    })
-  })
+  
+  # output$summaryHeader <- renderText({summaryHead()})
+  # SummaryTxt <- eventReactive(input$trait,{ 
+  #   do.call(rbind,lapply(Trait(),function(x) round(summary(Pheno()[,x]),digits=2)))
+  # })
+  
+  # observeEvent(input$trait,{ 
+  #   output$Summary <- renderTable({
+  #     trTable <- cbind(unlist(Trait()),SummaryTxt())
+  #     print(trTable)
+  #   })
+  # })
   
   
 ## Trait ME
@@ -1800,11 +2104,7 @@ output$messageGenoFilt1 <- renderText({
 
   # 
 #####  
-  # 
-  # IDColsME <- reactive({
-  #    colnames(PhenoME())[1:5]
-  # })
-  # # 
+ 
   
   phenoMEData <- reactive({ 
     print("phME In")
@@ -1861,7 +2161,10 @@ output$messageGenoFilt1 <- renderText({
     withProgress(message = 'Merging Pheno and Geno Data', value = 0, {
     
       if(isPhenoME()==FALSE){
-        getMergedData(t_Geno(),Pheno(),TargetIDs())
+        
+          getMergedData(t_Geno(),Pheno(),TargetIDs())
+        
+        
       }else if(isPhenoME() == TRUE){ 
         getMergedDataME(phenoMEData(),t_Geno(),TargetIDs())
       }
@@ -2111,10 +2414,10 @@ output$envPlot <- renderPlot({
 
   
   observeEvent(input$trait, {
-    updateNumericInput(inputId = "noCandidates",value= nrow(processedData()[[1]]),min =2, max=nrow(processedData()[[1]]))}) 
+    updateNumericInput(inputId ="noCandidates",value= nrow(processedData()[[1]]),min =2, max=nrow(processedData()[[1]]))}) 
   
   observeEvent(input$trait,{
-    updateNumericInput(inputId = "noToSelect",value= 100,min =2, max=nrow(processedData()[[1]]))})
+    updateNumericInput(inputId ="noToSelect",value= 100,min =2, max=nrow(processedData()[[1]]))})
   
   
   
@@ -2178,20 +2481,152 @@ output$envPlot <- renderPlot({
   
   
   Mssg2CVR <- eventReactive(input$CrossValidationMT,{
-    if(nSelTraits()==1){
-      "Select more than one trait for cross validation of multi-trait models"
+    
+    mTraitMssg <- "Select more than one trait for cross validation of multi-trait models."
+    meTraitMssg <- "You've loaded pheno data from multiple environments. Try CV for multi-environmental models. "
+    if(nSelTraits()==1 && isPhenoME()){
+      paste(mTraitMssg,meTraitMssg,sep=" ")
+    }else if(nSelTraits()==1 && !isPhenoME()){
+      mTraitMssg
+    }else if(nSelTraits()>1 && isPhenoME()){
+      meTraitMssg
+    }else{""}  
+  })
+  
+  output$MssgMT <- renderText({
+    Mssg2CVR()
+    
+    #HTML(paste0("<div class='message-text'>", message, "</div>"))
+  })
+  
+  
+  
+  # cvrOutputListMT <- eventReactive(input$CrossValidationMT,{ withProgress(message = 'Running CrossValidations', value = 0, {
+  #         getMTCVR(predictionData(),unlist(Trait()),nTraits(),k(),nIter()) })
+  # })
+  # 
+  # temp_file5 <- reactiveVal('none')
+  # processComplete5 <- reactiveVal(FALSE)
+  # cvrOutputListMT <- reactiveVal(NULL)
+  # 
+  # 
+  # # Start the background process and return rProcess
+  # rProcess5 <- eventReactive(input$CrossValidationMT,{
+  #    
+  #   # Path for the temporary file
+  #   
+  #   temp_file5(tempfile())
+  #   
+  #   # Start the process in a separate R process
+  #   callr::r_bg(function(getMTCVR,predictionData,Trait,nTraits,k,nIter,temp_file5,cvrOutputListMT){
+  # 
+  #     library(BGLR)
+  #     #library(sommer)
+  #     sink(temp_file5)
+  #     cvrOutputListMT(getMTCVR(predictionData,Trait,nTraits,k,nIter))
+  #     sink()
+  #   }, args = list(getMTCVR,predictionData(),unlist(Trait()),nTraits(),k(),nIter(),temp_file5(),cvrOutputListMT()), stdout = temp_file5(), stderr = temp_file5())
+  #   
+  # })
+  # 
+  # 
+  # # Reactive expression to check process status and read temp file
+  # processStatus5 <- reactive({
+  #   invalidateLater(1000,session) # Update every second
+  #   
+  #   if (!is.null(rProcess5()) && rProcess5()$is_alive()){
+  #     if (file.exists(temp_file5())) {
+  #       lines <- readLines(temp_file5(), warn = FALSE)
+  #       return(paste(lines,collapse = "\n"))
+  #     }else {
+  #       return("Waiting for output...")
+  #     }
+  #   }else if(!is.null(rProcess5()) && !rProcess5()$is_alive()){
+  #     
+  #     if (file.exists(temp_file5())) {
+  #       lines <- readLines(temp_file5(), warn = FALSE)
+  #       txt <- paste(lines, collapse = "\n")
+  #       processComplete5(TRUE)
+  #       return(paste(txt,"Crossvalidation Completed",collapse="\n"))
+  #       
+  #     }else {
+  #       return("Waiting for output...")
+  #     }
+  #   }else{return("Error")}
+  # })
+  # 
+  # # Update the UI with process status
+  # output$messageMT5 <- renderText({
+  #   processStatus5()
+  # })
+  # 
+###
+  
+  temp_file5 <- reactiveVal('none')
+  processComplete5 <- reactiveVal(FALSE)
+  cvrOutputListMT <- reactiveVal(NULL)
+  
+  # Start the background process and return rProcess
+  rProcess5 <- eventReactive(input$CrossValidationMT, {
+    # Path for the temporary file
+    temp_file5(tempfile())
+    
+    # Start the process in a separate R process
+    callr::r_bg(function(getMTCVR, predictionData, Trait, nTraits, k, nIter, temp_file5_path) {
+      library(BGLR)
+      library(rrBLUP)
+      # library(sommer)
+      sink(temp_file5_path)
+      # Simulate a long-running process
+      result <- getMTCVR(predictionData, Trait, nTraits, k, nIter)
+      sink()
+      result
+    }, args = list(
+      getMTCVR = getMTCVR,
+      predictionData = predictionData(),
+      Trait = unlist(Trait()),
+      nTraits = nTraits(),
+      k = k(),
+      nIter = nIter(),
+      temp_file5_path = temp_file5()
+    ), stdout = temp_file5(), stderr = temp_file5())
+  })
+  
+  # Reactive expression to check process status and read temp file
+  processStatus5 <- reactive({
+    invalidateLater(1000, session) # Update every second
+    
+    if (!is.null(rProcess5()) && rProcess5()$is_alive()) {
+      if (file.exists(temp_file5())) {
+        lines <- readLines(temp_file5(), warn = FALSE)
+        return(paste(lines, collapse = "\n"))
+      } else {
+        return("Waiting for output...")
+      }
+    } else if (!is.null(rProcess5()) && !rProcess5()$is_alive()) {
+      if (file.exists(temp_file5())) {
+        lines <- readLines(temp_file5(), warn = FALSE)
+        txt <- paste(lines, collapse = "\n")
+        processComplete5(TRUE)
+        cvrOutputListMT(rProcess5()$get_result())
+        return(paste(txt, "Cross-validation Completed", collapse = "\n"))
+      } else {
+        return("Waiting for output...")
+      }
+    } else {
+      return("Error")
     }
   })
   
-  output$Mssg <- renderText({Mssg2CVR()})
-  
-  
-  
-  cvrOutputListMT <- eventReactive(input$CrossValidationMT,{ withProgress(message = 'Running CrossValidations', value = 0, {
-    getMTCVR(predictionData(),unlist(Trait()),nTraits(),k(),nIter()) })
+  # Update the UI with process status
+  output$messageMT5 <- renderText({
+    processStatus5()
   })
+
   
-  ###
+  
+  
+###
   
   cvrHead <- eventReactive(input$CVEvent,{
     paste("Correlation between observed and predicted values for ",paste(Trait(),collapse=" and "),sep="")})
@@ -2221,47 +2656,138 @@ output$envPlot <- renderPlot({
         PATableComb <- rbind(PATableComb,PATable)
         
       }
+     
       #PATableComb <- rbind(c("Trait","Ridge Regression","BayesB","Bayes LASSO"),PATableComb)
       #colnames(PATableComb) <- rep("",ncol(PATableComb))
+      
       colnames(PATableComb) <- c("Ridge Regression","BayesB","Bayes LASSO")
       rownames(PATableComb) <- unlist(Trait())
       return(PATableComb)
     }
     
   })
+
+##### 
   
+  temp_file6 <- reactiveVal('none')
+  processComplete6 <- reactiveVal(FALSE)
+  MECV_Out <- reactiveVal(NULL)
+  
+  # Start the background process and return rProcess
+  rProcess6 <- eventReactive(input$CrossValidationME, {
+    # Path for the temporary file
+    temp_file6(tempfile())
+    
+    #ME_argList <- list(DT_1_Filt_List,genoDat_List,traits,KG,KE,CVMet,factVar,KMethod,FitEnvModels,fixedME,envVar,IDColsME,LocME,YrME)
+    
+    # Start the process in a separate R process
+    callr::r_bg(function(getME_CV,DT_1_Filt_List,genoDat_List,traits,KG,KE,CVMet,factVar,KMethod,FitEnvModels,fixedME,envVar,IDColsME,LocME,YrME,temp_file6_path) {
+      library(BGLR)
+      library(BGGE)
+      library(EnvRtype)
+      
+      sink(temp_file6_path)
+      result <- getME_CV(DT_1_Filt_List,genoDat_List,traits,KG,KE,CVMet,factVar,KMethod,FitEnvModels,fixedME,envVar,IDColsME,LocME,YrME)
+      sink()
+      result
+    }, args = list(
+      getME_CV = getME_CV,
+      DT_1_Filt_List = DT_Filt_List(),
+      genoDat_List = genoDat_List(),
+      traits = nTraits(),
+      KG = KG(),
+      KE= EnvK_Mod(), 
+      CVMet= CVMet(),
+      factVar= factVar(),  
+      KMethod= KGMethod(),
+      FitEnvModels=fitEnvCovs(),
+      fixedME= fixME(),
+      envVar= varEnv(),
+      IDColsME= IDcolsME(),
+      LocME=LocationME(),
+      YrME=YearME(),
+      temp_file6_path = temp_file6()
+    ), stdout = temp_file6(), stderr = temp_file6())
+  })
+  
+ # getMEPred(DT_Filt_List(),genoDat_List(),TraitME(),KG=NULL,KE=EnvK_Mod(),KMethod= KGMethod(),FitEnvModels = fitEnvCovs(),fixedME=fixME(),envVar=varEnv(),IDColsME = IDColsME(),LocME=LocationME(),YrME=YearME())
+  
+  # Reactive expression to check process status and read temp file
+  processStatus6 <- reactive({
+    invalidateLater(1000, session) # Update every second
+    
+    if (!is.null(rProcess6()) && rProcess6()$is_alive()) {
+      if (file.exists(temp_file6())) {
+        lines <- readLines(temp_file6(), warn = FALSE)
+        return(paste(lines, collapse = "\n"))
+      } else {
+        return("Waiting for output...")
+      }
+    } else if (!is.null(rProcess6()) && !rProcess6()$is_alive()) {
+      if (file.exists(temp_file6())) {
+        lines <- readLines(temp_file6(), warn = FALSE)
+        txt <- paste(lines, collapse = "\n")
+        processComplete6(TRUE)
+        MECV_Out(rProcess6()$get_result())
+        return(paste(txt, "Cross-validation Completed", collapse = "\n"))
+      } else {
+        return("Waiting for output...")
+      }
+    } else {
+      return("Error")
+    }
+  })
+  
+  # Update the UI with process status
+  output$messageME6 <- renderText({
+    processStatus6()
+  })
+  
+  
+######
   
   output$emCVRST <- renderTable({
-    
-    cvrOutputListST()
-    
+     cvrOutputListST()
   },colnames=TRUE,rownames=TRUE)
   
   
   output$emCVRMT <- renderTable({
-    
     if(nSelTraits()>1){
       PATable <- cvrOutputListMT()
-      #colnames(PATable) <- rep("",ncol(PATable))
+     # colnames(PATable) <- rep("",ncol(PATable))
       print.data.frame(as.data.frame(PATable))
     }
+   },colnames=TRUE,rownames=TRUE)
+  
+
+  output$emCVRME <- renderTable({
     
+    if(isPhenoME()){
+      PATable <- cvrOutputListME()
+      print.data.frame(as.data.frame(PATable))
+    }
   },colnames=TRUE,rownames=TRUE)
   
+###  
   
   observeEvent(input$CrossValidationST, {
-    updateTextInput(session,"CVEvent", value = "ST")
+    updateTextInput(session,"CVEventST", value = "ST")
   })
   
   observeEvent(input$CrossValidationMT,{
-    updateTextInput(session,"CVEvent", value = "MT")
+    updateTextInput(session,"CVEventMT", value = "MT")
   })
   
-  #### Optimized Training Sets
+  observeEvent(input$CrossValidationME,{
+    updateTextInput(session,"CVEventME", value = "ME")
+  }) 
+  
+
+  
+#### Optimized Training Sets
   
   TS <- reactive(input$TrainSet) 
-  
-  
+
   optTS <-  reactive({ 
     if(TS() == "Complete Input Genotype Set"){
       optimTS <- NULL
@@ -2372,7 +2898,6 @@ output$envPlot <- renderPlot({
   
   fixME <- reactive(input$fixedME)
   varEnv <- reactive(input$EnvVarID) 
-  
   GPModelME <- reactive(input$MEModelEnvR)
   
   KGMethod <- reactive({
