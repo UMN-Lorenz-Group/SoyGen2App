@@ -1155,6 +1155,10 @@ server <- function(input,output,session){
                   as.character(TargetTab()[,TargtIDCol()])
                })
   
+
+  
+#### Target Table 
+
   
   # TargetHead <- eventReactive(input$infileTargetTable,{ paste("Table with information on ",nrow(TargetTab())," Target lines",sep="")})
   # output$TargetHeader <- renderText({TargetHead()})

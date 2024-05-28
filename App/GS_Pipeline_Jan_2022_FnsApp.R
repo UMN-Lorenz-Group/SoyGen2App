@@ -538,8 +538,10 @@ getMergedData <- function(gt2d,Pheno,testIDs){
 	Genotypes_Table_Mod_Num_Filt<- cbind(rownames(Genotypes_Table_Mod_Num_Filt0),Genotypes_Table_Mod_Num_Filt0)
    }
 
-### Filtered Genotype Table 
-	
+
+### Filtered Genotype Table  
+### Separate train and test sets
+
 	Test_Genotypes_Table_Mod_Num_Filt <- NULL
 #### 
     if(!is.null(TestIDs)){
@@ -550,11 +552,12 @@ getMergedData <- function(gt2d,Pheno,testIDs){
 	  trainIndices <- which(as.character(Genotypes_Table_Mod_Num_Filt[,1]) %in% TrainIDs)
 	  Test_Genotypes_Table_Mod_Num_Filt <- Genotypes_Table_Mod_Num_Filt[testIndices,]
       Train_Genotypes_Table_Mod_Num_Filt <- Genotypes_Table_Mod_Num_Filt[trainIndices,]
-    }
-  
-   if(is.null(TestIDs) | is.null(Test_Genotypes_Table_Mod_Num_Filt)){ 
+   }else if(is.null(TestIDs)){ 
      
-	  print("Load Target File")
+	  StrainIDs <- as.character(Genotypes_Table_Mod_Num_Filt[,1])
+	  TrainIDs <- StrainIDs
+	  trainIndices <- which(as.character(Genotypes_Table_Mod_Num_Filt[,1]) %in% TrainIDs)
+	  Train_Genotypes_Table_Mod_Num_Filt <- Genotypes_Table_Mod_Num_Filt[trainIndices,]
    }
   
 ######### Data Prep for GP model training
@@ -567,16 +570,16 @@ getMergedData <- function(gt2d,Pheno,testIDs){
 
 ## Remove MG from PhenoIDs
 	if(length(grep("MG",as.character(StrainID))) >1){
-		  
-		  StrainIDMod <- gsub("MG.*","",as.character(StrainID))
-		 
-	}
+   	StrainIDMod <- gsub("MG.*","",as.character(StrainID))
+	}else if(length(grep("MG",as.character(StrainID))) <1){
+		StrainIDMod <- as.character(StrainID)
+  }	
 
-    if(length(grep("MG",as.character(StrainID))) <1){
+  if(length(grep("MG",as.character(StrainID))) <1){
 			StrainIDMod <- as.character(StrainID)
-    }	
+  }	
 
-    Pheno1 <- cbind(Pheno,StrainIDMod)
+  Pheno1 <- cbind(Pheno,StrainIDMod)
 	Pheno1[,1] <- StrainID
 	colnames(Pheno1)[ncol(Pheno1)] <- "StrainID"
 				
