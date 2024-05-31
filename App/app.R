@@ -934,6 +934,32 @@ server <- function(input,output,session){
     read.csv(TargetFile$datapath, header = input$header)
   })
   
+
+ # phenoHead <- eventReactive(input$infileBLUEs,{ paste("Phenotype Table with ",nrow(Pheno())," lines and ",ncol(Pheno())-1," traits",sep="")})
+ # output$PhenoHeader <- renderText({phenoHead()})
+ # output$PhenoTable <- renderTable({as.data.frame((Pheno())[1:5,1:5])})
+  
+  # genoHead <- eventReactive(input$infileVCF,{ paste("Genotype Table with ",ncol(Geno())-5," lines and ",nrow((Geno()))," markers",sep="")})
+  # output$GenoHeader <- renderText({genoHead()})
+  # output$GenoTable <- renderTable({as.data.frame((Geno())[1:5,1:5])})
+  
+  
+  
+  # TargetHead <- eventReactive(input$infileTargetTable,{
+  #    if(!is.null(TargetTab())){
+  #       paste("Table with information on ",nrow(TargetTab())," Target lines",sep="")
+  #       output$TargetHeader <- renderText({TargetHead()})
+  #       
+  #       output$TargetTable <-  renderTable({
+  #         TargetTableOut <- as.data.frame(TargetTab()[1:5,]) 
+  #         colnames(TargetTableOut) <- ""
+  #         TargetTableOut
+  #       })
+  #     }
+  #  })
+  
+ 
+### Target Table 
   
   TargetIDs <- reactive(NULL)
   
