@@ -3893,12 +3893,12 @@ getMergedDataME <- function(phData,genoImp,TargetIDs){
 getPhenoDistbnPlots <- function(DT_1_Filt_List,TraitME,nTrt){
 
 ###### Distribution of Trait BLUEs & BLUPs across locations 
-  
-    traits <- TraitME
+     
     DT_1_Filt <- DT_1_Filt_List[[nTrt]]
+	trait <- TraitME
 #### Trait BLUPs
  
-    trait <- traits[nTrt]
+
 	
 		 
 	DT_2B <- DT_1_Filt
@@ -4568,10 +4568,13 @@ fitMEModels_Predictions <- function(DT,genoDat,strainGeno,KG=NULL,KE=NULL,method
 
 #######
 
-getME_CV <- function(DT_1_Filt_List,genoDat_List,traits,KG=NULL,KE=NULL,CVMet,factVar,KMethod="Linear",FitEnvModels=FALSE,fixedME=fixME,envVar=varEnv,IDColsME,LocME=LocationME,YrME=YearME){
+getME_CV <- function(DT_1_Filt_List,genoDat_List,traits,KG=NULL,KE=NULL,CVMet,factVar,K,NIter,KMethod="Linear",FitEnvModels=FALSE,fixedME=fixME,envVar=varEnv,IDColsME,IDColME,LocME=LocationME,YrME=YearME){
 
+ print("ME_CV_In")
  nTraits <- length(traits)
- ME_LOFCV_Trt <- list()
+ ME_Out_CV_Trt <- list()
+ 
+ UniqID <- IDColME
  
  for(nTrt in 1:nTraits){
  
@@ -4596,7 +4599,6 @@ getME_CV <- function(DT_1_Filt_List,genoDat_List,traits,KG=NULL,KE=NULL,CVMet,fa
   
   DT_2 <- DT_1B
   dim(DT_2)
-  
   DT_2$Loc <- as.factor(DT_2$Loc) 
   DT_2$Location <- DT_2$Loc
   Loc <- levels(factor(DT_2$env))
@@ -4605,7 +4607,6 @@ getME_CV <- function(DT_1_Filt_List,genoDat_List,traits,KG=NULL,KE=NULL,CVMet,fa
   if(length(nanInd)>0){DT_2 <- DT_2[-nanInd,]}
   
   DT_2 <- droplevels(DT_2)
-  
   EnvVar <- envVar
   LineID <- "Strain"
   Trait <- trait
@@ -4613,109 +4614,404 @@ getME_CV <- function(DT_1_Filt_List,genoDat_List,traits,KG=NULL,KE=NULL,CVMet,fa
   
 ### Set Env and Trait Value Columns   
 
-  selColInd <- match(c(EnvVar,LineID,Trait),colnames(DT_2))
-  selIDColInd <- match(c(EnvVar,LineID),IDColsME)
+  selColInd <- match(c(EnvVar,LineID,Trait,UniqID),colnames(DT_2))
+  selIDColInd <- match(c(EnvVar,LineID,UniqID),IDColsME)
   
-  colnames(DT_2)[selColInd] <- c("env","gid","value") 
+  colnames(DT_2)[selColInd] <- c("env","gid","value","uniqID") 
   loc <- levels(factor(DT_2$Loc))
   
   IDColsMEMod <- IDColsME
-  IDColsMEMod[selIDColInd] <- c("env","gid")
+  IDColsMEMod[selIDColInd] <- c("env","gid","uniqID")
   
   Fixed= fixedME
   ke <- KE
 
- IDColsMEList <- list(IDColsME,IDColsMEMod)
- names(IDColsMEList) <- c("IDCols","IDColsMod")
- 
-  if(FitEnvModels==FALSE){
-    ME_LOFCV <- fitMEModels_LOFCV(DT_2,genoDat,strainGeno,KG=NULL,KE=NULL,factVar,factr,method=KMethod,fitEnvModels=FitEnvModels,FixedTerm=Fixed,IDColsList=IDColsMEList)
-  }else if(FitEnvModels==TRUE){ 
-    ME_LOFCV <- fitMEModels_LOFCV(DT_2,genoDat,strainGeno,KG=NULL,KE=ke,factVar,factr,method=KMethod,fitEnvModels=FitEnvModels,FixedTerm=Fixed,IDColsList=IDColsMEList)
-  } 
- 
-  ME_LOFCV_Trt[[nTrt]] <- ME_LOFCV
-   
+	 IDColsMEList <- list(IDColsME,IDColsMEMod)
+	 names(IDColsMEList) <- c("IDCols","IDColsMod")
+	 
+	 if(CVMet=="CV_LOFO"){
+	 
+	    print(paste("Running Leave One ",factVar," Out CV",sep=""))
+		 factorsVar <- levels(factor(DT_2[,factVar]))
+	 
+		 if(FitEnvModels==FALSE){
+			ME_LOFCV <-   foreach(nFact=1:length(factorsVar),.export=c("fitMEModels_LOF_CV","get_kernel_MDe","get_geno_kernel","Vcomp.BGGE"),.packages=c("BGGE","EnvRtype")) %dopar%
+			   (fitMEModels_LOF_CV(DT_2,genoDat,strainGeno,KG=NULL,KE=NULL,factVar,factorsVar[nFact],method=KMethod,fitEnvModels=FitEnvModels,FixedTerm=Fixed,IDColsList=IDColsMEList))
+		 }else if(FitEnvModels==TRUE){ 
+			ME_LOFCV <- foreach(nFact=1:length(factorsVar),.export=c("fitMEModels_LOF_CV","get_kernel_MDe","get_geno_kernel","Vcomp.BGGE"),.packages=c("BGGE","EnvRtype")) %dopar% (fitMEModels_LOF_CV(DT_2,genoDat,strainGeno,KG=NULL,KE=ke,factVar,factorsVar[nFact],method=KMethod,fitEnvModels=FitEnvModels,FixedTerm=Fixed,IDColsList=IDColsMEList))
+		 }
+		
+		 ME_Out_CV_Trt[[nTrt]] <- ME_LOFCV
+	  
+	 }else if(CVMet!= "CV_LOFO"){
+		 if(FitEnvModels==FALSE){
+			ME_CV <- fitMEModels_CV(DT_2,genoDat,strainGeno,KG=NULL,KE=NULL,CVMet,K,NIter,method=KMethod,fitEnvModels=FitEnvModels,FixedTerm=Fixed,IDColsList=IDColsMEList)
+		 }else if(FitEnvModels==TRUE){ 
+			ME_CV <- fitMEModels_CV(DT_2,genoDat,strainGeno,KG=NULL,KE=ke,CVMet,K,NIter,method=KMethod,fitEnvModels=FitEnvModels,FixedTerm=Fixed,IDColsList=IDColsMEList)
+		 }
+		 ME_Out_CV_Trt[[nTrt]] <- ME_CV
+	  }
   }
-	return(ME_LOFCV_Trt)
+  
+  return(ME_Out_CV_Trt)
+}
+
+### 
+
+# resultsTab <- getOutTab_ME_CV(result,traits)
+# resultsTab3 <- getOutTab_ME_CV(result3,CVMet,traits)
+ # resultsTab4 <- getOutTab_ME_CV(result4,CVMet,traits)
+ # resultsTab5 <- getOutTab_ME_CV(result5,CVMet,traits)
+
+getOutTab_ME_CV <- function(ME_Out_CV_Trt,CVMet,Traits){
+  
+   nTraits <- length(ME_Out_CV_Trt) 
+   
+   if(CVMet=="CV_LOFO"){
+	   Cor_LOF_CV_Tab_Out_Trt <- list()
+	   
+	   
+	   for(nTrt in 1:nTraits){
+		 ME_LOFCV <- ME_Out_CV_Trt[[nTrt]]
+		 CorMM_LOF_CV <- unlist(lapply(ME_LOFCV,function(x) x[[1]][[1]]))
+		 CorMDs_LOF_CV <- unlist(lapply(ME_LOFCV,function(x) x[[1]][[2]]))
+		 CorMDe_LOF_CV <- unlist(lapply(ME_LOFCV,function(x) x[[1]][[3]]))
+		 cor_LOF_CV_Tab <- cbind(CorMM_LOF_CV,CorMDs_LOF_CV,CorMDe_LOF_CV)
+		 cor_LOF_CV_Tab_Out <- apply(cor_LOF_CV_Tab,2,summary)
+		 colnames(cor_LOF_CV_Tab_Out) <- c("MM","MDs","MDe")
+		 Cor_LOF_CV_Tab_Out_Trt[[nTrt]] <- cor_LOF_CV_Tab_Out
+		}
+	   
+	   Cor_LOF_CV_Out_Trt_Tab <- do.call(cbind,lapply(c(1:nTraits),function(x) { 
+				tab <- Cor_LOF_CV_Tab_Out_Trt[[x]]
+				colnames(tab) <- paste(Traits[x],colnames(tab),sep="-")
+				tab
+		  })
+		)
+	
+   	   Cor_CV_Out_Trt_Tab <- Cor_LOF_CV_Out_Trt_Tab
+
+    }else if(CVMet!="CV_LOFO"){	
+	
+		for(nTrt in 1:nTraits){
+		  ME_Out_CV <- ME_Out_CV_Trt[[nTrt]]
+		  nReps <- length(ME_Out_CV[[3]])
+		
+		  for(nrep in 1:nReps){
+			
+			  fit_Tab <- ME_Out_CV[[3]][[nrep]]
+			  nModels <- length(ME_Out_CV[[3]][[nrep]][[1]])
+			  
+			  corOut <- rep(0,nModels)
+			  for(nModel in 1:nModels){ 	  
+			   Out_Tab_Model <- do.call(rbind,lapply(fit_Tab,function(x) x[[nModel]]))
+			   corOut[nModel] <- cor(Out_Tab_Model[,"Obs"],Out_Tab_Model[,"Pred"],use="pairwise.complete.obs")
+			  }
+			   names(corOut) <- c("MM","MDs","MDe")
+			  
+			  if(nrep==1){ 
+				corOutReps <- corOut
+			  }else if(nrep >1){ 
+				corOutReps <- rbind(corOutReps,corOut)
+			  }
+		  } 
+		
+		if(nReps >1){
+		  corOutTab <- apply(corOutReps,2,function(x) round(summary(x),digits=3))
+		  colnames(corOutTab) <- paste(Traits[nTrt],c("MM","MDs","MDe"),sep="-")
+		 }else if(nReps <=1){
+		  corOutTab <- round(corOutReps,digits=3)
+		  names(corOutTab) <- paste(Traits[nTrt],c("MM","MDs","MDe"),sep="-")
+		 }
+	
+	    if(nTrt==1){
+      	 Cor_CV_Out_Trt_Tab <- corOutTab
+        }else if(nTrt >1){
+		 
+		 Cor_CV_Out_Trt_Tab <- rbind(Cor_CV_Out_Trt_Tab,corOutTab)
+	    }
+	  }
+    }
+  return(Cor_CV_Out_Trt_Tab)
+
 }
 
 ###
 
-fitMEModels_CV <- function(DT,genoDat,strainGeno,KG=NULL,KE=NULL,CVMet,method,fitEnvModels=FALSE,FixedTerm=Fixed,IDColsList=IDColsMEList){ 
+ fitMEModels_CV <- function(DT,genoDat,strainGeno,KG=NULL,KE=NULL,CVMet,k,nIter,method,fitEnvModels=FALSE,FixedTerm=Fixed,IDColsList=IDColsMEList){ 
   
 ### Prepare Data for CV
   
+   
   DT_2A <- DT
   DT_2B <- DT
      
   dim(DT_2B)
   DT_2B <- droplevels(DT_2B)
   
-  getTstIndices_CV_Data<- function(CVMet,nIter,k){
   
+## CV1, where novel genotypes in tested environments are predicted.
+## CV2, where tested genotypes in tested environments are predicted.
+## CV0, where tested genotypes in untested novel environments are predicted.
+## CV00, where novel genotypes in novel environments are predicted.
+## CV LOFO (Leave One Factor Out), eg: Leave One Test Out/ Leave One Line Out cross validation.
    
-  # CV1
+    
+  
+ getTstIndices_CV_Data <- function(DT_2B,CVMet,nIter,k){
+  
+# CV1
  
-	 if(CVMet =="CV1"){
-	  trIndices_List_Rep <- list()
-	  tstIndices_List_Rep <- list()
-	  
-	  for(nrep in 1:nIter){
+	if(CVMet =="CV1"){
+	
+	 ## A fraction of the strains are removed from all locations, so n corresponds the total no of unique strains 
+	
+		  n <- length(unique(DT_2B[,"gid"]))
+		  
+		  trIndices_List_Rep <- list()
+		  tstIndices_List_Rep <- list()
+		  DT_2B_List_Rep <- list()
 		 
-		 nK <- floor(n/k)
-		 k_List <- list()
-		 
-		 set.seed(125+nrep) 
-		 tot <- c(1:n)
-		 Test_Pred <- list()
-		 Y_Tst <- list() 
-		 
-		for(nF in 1:k){
-		   k_List[[nF]] <- sample(tot,nK)
-		   tot <- setdiff(tot,k_List[[nF]])
-		}
-		 trIndices_List <- list()
-		 tstIndices_List <- list()
-		 
-		for(nF in 1:k){ 
-		   trIndices_List[[nF]] <- unlist(k_List[-nF])
-		   tstIndices_List[[nF]] <- k_List[[nF]]
-		}	  
+		  unqStrains <- unique(DT_2B[,"gid"])
+		   
+		   for(nrep in 1:nIter){
+			 
+			
+			 k_List <- list()
+			 trIndices_List <- list()
+			 tstIndices_List <- list()
+			 DT_2B_List <- list()
+			 
+			 
+			 nK <- floor(n/k)
+			 set.seed(125+nrep) 
+			 tot <- c(1:n)
+			
+			 Test_Pred <- list()
+			 Y_Tst <- list() 
+			 
+			 
+			 
+			 
+			 for(nF in 1:k){
+			   k_List[[nF]] <- sample(tot,nK)
+			   tot <- setdiff(tot,k_List[[nF]])
+			 }
+			 
+			 for(nF in 1:k){ 
+			   trIndices_List[[nF]] <- unlist(k_List[-nF])
+			   tstIndices_List[[nF]] <- k_List[[nF]]
+			   
+			   testIndices <- tstIndices_List[[nF]]
+			   testStrains <- unqStrains[testIndices]
+			   DT_2B_tst <- DT_2B
+			   tstInd_in_DT <-  which(DT_2B_tst$Strain %in% testStrains)
+			   DT_2B_tst[tstInd_in_DT,"value"] <- NA
+			   DT_2B_List[[nF]] <- DT_2B_tst
+			   
+			 }	  
+		   
+		   
+			 trIndices_List_Rep[[nrep]] <- trIndices_List
+			 tstIndices_List_Rep[[nrep]] <- tstIndices_List
+			 DT_2B_List_Rep[[nrep]] <- DT_2B_List
+			 
+		   }
 	   
-		trIndices_List_Rep[[nrep]] <- trIndices_List
-		tstIndices_List_Rep[[nrep]] <- tstIndices_List
-	 
-	   }
-	   
-	   outList <- list(trIndices_List_Rep,tstIndices_List_Rep))
+	    outList <- list(DT_2B_List_Rep,trIndices_List_Rep,tstIndices_List_Rep)
+		
 		 
 	  }else if(CVMet=="CV2"){
-	  
-	  
+	   
+		   n <- length(unique(DT_2B[,"uniqID"]))
+		   trIndices_List_Rep <- list()
+		   tstIndices_List_Rep <- list()
+		   DT_2B_List_Rep <- list()
+			  
+		   for(nrep in 1:nIter){
+			 
+			 nK <- floor(n/k)
+			 k_List <- list()
+			 tot <- c(1:n)
+			 set.seed(125+nrep) 
+			 Test_Pred <- list()
+			 Y_Tst <- list() 
+			 
+			 DT_2B_List <- list()
+			 trIndices_List <- list()
+			 tstIndices_List <- list()
+			 
+			 for(nF in 1:k){
+			   k_List[[nF]] <- sample(tot,nK)
+			   tot <- setdiff(tot,k_List[[nF]])
+			 }
+			
+			 
+			 for(nF in 1:k){ 
+			   trIndices_List[[nF]] <- unlist(k_List[-nF])
+			   tstIndices_List[[nF]] <- k_List[[nF]]
+			   
+			   tstIndices <- tstIndices_List[[nF]]
+			  
+			   DT_2B_tst <- DT_2B
+			  
+			   DT_2B_tst[tstIndices,"value"] <- NA
+			   DT_2B_List[[nF]] <- DT_2B_tst
+			   
+			 }  
+		   
+		   
+			 trIndices_List_Rep[[nrep]] <- trIndices_List
+			 tstIndices_List_Rep[[nrep]] <- tstIndices_List
+			 DT_2B_List_Rep[[nrep]] <- DT_2B_List
+			 
+		   }
+		   
+			outList <- list(DT_2B_List_Rep,trIndices_List_Rep,tstIndices_List_Rep)
+		
 	  }else if(CVMet=="CV0"){
 	  
+	  #GID_Env_Tab <-  table(DT_1_Filt_List[[1]][,"env"],DT_1_Filt_List[[1]][,"gid"])
+	   
+		   GID_Env_Tab <-  table(DT_2B[,"env"],DT_2B[,"gid"])
+		   Tot_Env_GId <- apply(GID_Env_Tab,2,sum)
+		   
+		   fractEnv <- table(Tot_Env_GId)/sum(table(Tot_Env_GId))
+		   fractEnvSel <- fractEnv[which(fractEnv>=0.2)]
+		
+		   nTotEnv <- as.numeric(names(fractEnvSel))
+		   nTotEnvSel <- nTotEnv[nTotEnv>=2]
+		  
+		   selStrainIndices <- which(Tot_Env_GId %in% nTotEnvSel)
+		   selGID_Tab <- GID_Env_Tab[,selStrainIndices]
+		 
+		   selEnvList <- lapply(c(1:ncol(selGID_Tab)),function(x) which(selGID_Tab[,x] ==1))
+		   selEnvTab <- do.call(rbind,lapply(selEnvList,function(x)names(x)))
+		  
+		   LocCombns <- apply(selEnvTab,1,function(x) paste(x,sep="-",collapse="-"))
+		   LocCombsTab <- table(LocCombns)
+		   LocCombList <- lapply(names(LocCombsTab),function(x) strsplit(x,"-")[[1]])
+		   
+		   nLoc_in_Comb <- lapply(LocCombList,length)
+		   names(nLoc_in_Comb) <- names(LocCombsTab)
+		   
+	### max no.of env levels where genotypes are present 
+		  
+		   k <-  max(unlist(nLoc_in_Comb))
+			  
+		  
+		   trIndices_List_Rep <- list()
+		   tstIndices_List_Rep <- list()
+		   DT_2B_List_Rep <- list()
+
+           nrep <- 1			  
+			  
+		   trIndices_List <- list()
+		   tstIndices_List <- list()
+		   DT_2B_List <- list()	   
+
+		   for(nF in 1:k){
+			 
+				locSubS <- unlist(lapply(LocCombList,function(x) unlist(x)[nF]))
+				tstIndices <- which(DT_2B[,"env"] %in% locSubS)
+				trnIndices <- which(!DT_2B[,"env"] %in% locSubS)
+					
+				tstIndices_List[[nF]] <- tstIndices
+				trIndices_List[[nF]] <- trnIndices
+				
+				DT_2B_tst <- DT_2B
+			    DT_2B_tst[tstIndices,"value"] <- NA
+				DT_2B_List[[nF]] <- DT_2B_tst
+
+			}
+			  
+			trIndices_List_Rep[[nrep]] <- trIndices_List
+			tstIndices_List_Rep[[nrep]] <- tstIndices_List
+			DT_2B_List_Rep[[nrep]] <- DT_2B_List
+			
+			outList <- list(DT_2B_List_Rep,trIndices_List_Rep,tstIndices_List_Rep)
+		  	  
 	  }else if(CVMet=="CV00"){
 	  
-		  DT_factIndices2 <- which(DT_2A[,factVar] %n% factr)
-		  factIndices2 <- which(DT_2B[,factVar] %in% factr)
+	       GID_Env_Tab <-  table(DT_2B[,"env"],DT_2B[,"gid"])
+		   Tot_Env_GId <- apply(GID_Env_Tab,2,sum)
 		   
-		  DT_2B[factIndices2 ,"value"] <- NA
-		  dim(DT_2B)
-		  DT_2B <- droplevels(DT_2B)
+		   fractEnv <- table(Tot_Env_GId)/sum(table(Tot_Env_GId))
+		   fractEnvSel <- fractEnv[which(fractEnv>=0.2)]
+		
+		   nTotEnv <- as.numeric(names(fractEnvSel))
+		   nTotEnvSel <- nTotEnv[nTotEnv>=2]
 		  
-		  Y <- DT_2B[,c("env","gid","value")]
+		   selStrainIndices <- which(Tot_Env_GId %in% nTotEnvSel)
+		   selGID_Tab <- GID_Env_Tab[,selStrainIndices]
+		 
+		   selEnvList <- lapply(c(1:ncol(selGID_Tab)),function(x) which(selGID_Tab[,x] ==1))
+		   selEnvTab <- do.call(rbind,lapply(selEnvList,function(x)names(x)))
 		  
-		  y <- "value"
-		  gid <- "gid"
-		  env <- "env"
-	 }
+		   LocCombns <- apply(selEnvTab,1,function(x) paste(x,sep="-",collapse="-"))
+		   LocCombsTab <- table(LocCombns)
+		   LocCombList <- lapply(names(LocCombsTab),function(x) strsplit(x,"-"))
+		   
+		   nLoc_in_Comb <- lapply(LocCombList,length)
+		   names(nLoc_in_Comb) <- names(LocCombsTab)
+		   
+	### max no.of env levels where genotypes are present 
+		  
+		   k <-  max(unlist(nLoc_in_Comb))  
+			  
+		  
+		   trIndices_List_Rep <- list()
+		   tstIndices_List_Rep <- list()
+		   DT_2B_List_Rep <- list()
+        
+
+
+           for(nrep in 1:nIter){			 
+			   
+			   set.seed(125+nrep)
+			   
+			   trIndices_List <- list()
+			   tstIndices_List <- list()
+			   DT_2B_List <- list()	   
+
+			   for(nF in 1:k){
+				 
+				   
+					totRmLoc <- unlist(lapply(LocCombList,function(x) unlist(x)[nF]))
+					partRmLoc <- unlist(lapply(LocCombList,function(x) unlist(x)[-nF]))
+										
+					testIndicesTot <- which(DT_2B[,"env"] %in% totRmLoc)
+					testIndicesPart0 <- which(DT_2B[,"env"] %in% partRmLoc)
+					testIndicesPart <- sample(testIndicesPart0,round(length(testIndicesPart0)/2,digits=0))
+					
+					testIndices <- c(testIndicesTot,testIndicesPart)
+					trnIndices <- setdiff(c(1:nrow(DT_2B)),testIndices)
+					
+					tstIndices_List[[nF]] <- testIndices
+					trIndices_List[[nF]] <- trnIndices
+												
+					DT_2B_tst <- DT_2B
+					  
+					DT_2B_tst[testIndices,"value"] <- NA
+					DT_2B_List[[nF]] <- DT_2B_tst
+
+				}
+				  
+				trIndices_List_Rep[[nrep]] <- trIndices_List
+				tstIndices_List_Rep[[nrep]] <- tstIndices_List
+				DT_2B_List_Rep[[nrep]] <- DT_2B_List
+			}
+			outList <- list(DT_2B_List_Rep,trIndices_List_Rep,tstIndices_List_Rep)
+	  }
 	  
-  return()
+   return(outList)
  
- }
+  }
   
- ### Here IDCols is the vector with 'gid', 'env' and 'value'
+ 
+ Dat_Out_List <- getTstIndices_CV_Data(DT_2B,CVMet,nIter,k)
+  
+##### Here IDCols is the vector with 'gid', 'env' and 'value'
  
   IDCols <- IDColsList$`IDColsMod`
   
@@ -4730,187 +5026,220 @@ fitMEModels_CV <- function(DT,genoDat,strainGeno,KG=NULL,KE=NULL,CVMet,method,fi
   
   Fixed <- FixedTerm
   
-  if(fitEnvModels==FALSE & is.null(KE) & !is.null(KG) & is.null(method)){
+  
+   cor_CV_List_Reps <- list() 
+   var_CV_List_Reps <- list() 
+   fit_Out_CV_List_Reps <- list() 
+  
+  nReps <- length(Dat_Out_List[[1]])
+  
+  for(nrep in 1:nReps){ 
+  
+  
+	cor_CV_List_nF <- list()
+	var_CV_List_nF <- list()
+	fit_Out_CV_List_nF <- list()
+	  
+	k <- length(Dat_Out_List[[1]][[nrep]])
+   
+   for(nF in 1:k){ 
+  
+    DT_2B <- Dat_Out_List[[1]][[nrep]][[nF]]
+	tstIndices2 <-  Dat_Out_List[[3]][[nrep]][[nF]]
+    DT_tstIndices2 <- tstIndices2 
+	
+    dim(DT_2B)
+    DT_2B <- droplevels(DT_2B)
+  
+  
+    Y <- DT_2B[,c("env","gid","value")]
+  
+    y <- "value"
+    gid <- "gid"
+    env <- "env"
+  
+    X <- genoDat
+	
+	
+	if(fitEnvModels==FALSE & is.null(KE) & !is.null(KG) & is.null(method)){
     
-    ## Creating kernel models with EnvRtype::get_kernel
-    
-    system.time({
-      MM = EnvRtype::get_kernel(K_G = KG, y=y, gid = gid, env = env, data = DT_2B, model = "MM")
-    })
-    
-    system.time({
-      MDs = EnvRtype::get_kernel(K_G = KG, y=y, gid = gid, env = env, data = DT_2B, model = "MDs")
-    })
-    
-    ### Fit heterogeneous variance using BGGE    
-    
-    MDe <- get_kernel_MDe(Y,KG,KE,intercept.random=FALSE,dimension_KE=NULL)
+		## Creating kernel models with EnvRtype::get_kernel
+		
+		system.time({
+		  MM = EnvRtype::get_kernel(K_G = KG, y=y, gid = gid, env = env, data = DT_2B, model = "MM")
+		})
+		
+		system.time({
+		  MDs = EnvRtype::get_kernel(K_G = KG, y=y, gid = gid, env = env, data = DT_2B, model = "MDs")
+		})
+		
+		### Fit heterogeneous variance using BGGE    
+		
+		MDe <- get_kernel_MDe(Y,KG,KE,intercept.random=FALSE,dimension_KE=NULL)
 
-    fixed= model.matrix(~0+env,DT_2B)
-    
-    system.time({
-      fit_MM= EnvRtype::kernel_model(y=y, env=env, gid=gid, data=DT_2B, random=MM, fixed=fixed)
-    })
-    
-    
-    system.time({
-      fit_MDs= EnvRtype::kernel_model(y=y, env=env, gid=gid, data=DT_2B, random=MDs, fixed=fixed)
-    })
-    
-    
-    y_MDe <- DT_2B[,"value"]
-    NE <- table(DT_2B$env)
-    
-    system.time({
-      fit_MDe <- BGGE(y_MDe,K=MDe,XF=fixed,ne=NE)
-    })
-    
-    digits <- 3
-    VarComp = Vcomp.BGGE(model = fit_MDe, env = Y$env,gid = Y$gid, digits = digits)
-    
-    fit_MDe_Out = list(yHat = fit_MDe$yHat, varE = fit_MDe$varE, random = fit_MDe$K, 
-                       BGGE = fit_MDe, VarComp = VarComp)
-    
-    corMM_LOT_CV <- cor(fit_MM$yHat[tstIndices2],DT_2A[DT_tstIndices2,"value"])
-    corMDs_LOT_CV <- cor(fit_MDs$yHat[tstIndices2],DT_2A[DT_tstIndices2,"value"])
-    corMDe_LOT_CV <- cor(fit_MDe_Out$yHat[tstIndices2],DT_2A[DT_tstIndices2,"value"])
-    
-    varMM_LOT_CV <- fit_MM$VarComp
-    varMDs_LOT_CV <- fit_MDs$VarComp
-    varMDe_LOT_CV <- fit_MDe_Out$VarComp
+		fixed= model.matrix(~0+env,DT_2B)
+		
+		system.time({
+		  fit_MM= EnvRtype::kernel_model(y=y, env=env, gid=gid, data=DT_2B, random=MM, fixed=fixed)
+		})
+		
+		
+		system.time({
+		  fit_MDs= EnvRtype::kernel_model(y=y, env=env, gid=gid, data=DT_2B, random=MDs, fixed=fixed)
+		})
+		
+		
+		y_MDe <- DT_2B[,"value"]
+		NE <- table(DT_2B$env)
+		
+		system.time({
+		  fit_MDe <- BGGE(y_MDe,K=MDe,XF=fixed,ne=NE)
+		})
+		
+		digits <- 3
+		VarComp = Vcomp.BGGE(model = fit_MDe, env = Y$env,gid = Y$gid, digits = digits)
+		
+		fit_MDe_Out = list(yHat = fit_MDe$yHat, varE = fit_MDe$varE, random = fit_MDe$K, 
+						   BGGE = fit_MDe, VarComp = VarComp)
+		
+		corMM_CV <- cor(fit_MM$yHat[tstIndices2],DT_2A[DT_tstIndices2,"value"],use="pairwise.complete.obs")
+		corMDs_CV <- cor(fit_MDs$yHat[tstIndices2],DT_2A[DT_tstIndices2,"value"],use="pairwise.complete.obs")
+		corMDe_CV <- cor(fit_MDe_Out$yHat[tstIndices2],DT_2A[DT_tstIndices2,"value"],use="pairwise.complete.obs")
+		
+		varMM_CV <- fit_MM$VarComp
+		varMDs_CV <- fit_MDs$VarComp
+		varMDe_CV <- fit_MDe_Out$VarComp
+	   
+	  }else if(fitEnvModels ==FALSE & is.null(KE) & is.null(KG) & !is.null(method)){
+		if(method=="GB"){
+		  ## Creating kernel models with EnvRtype::get_kernel
+		  
+		  system.time({
+			MM_GB = get_geno_kernel(Y,X,KG,KE,intercept.random=FALSE,model="MM",method="GB",dimension_KE=NULL)
+		  })
+		  
+		  system.time({
+			MDs_GB =get_geno_kernel(Y,X,KG,KE,intercept.random=FALSE,model="MDs",method="GB",dimension_KE=NULL)
+		  })
+		  
+		  
+		  system.time({
+			MDe_GB <- get_geno_kernel(Y,X,KG,KE,intercept.random=FALSE,model="MDe",method="GB",dimension_KE=NULL)
+			
+		  })
+		  
+		  fixed=model.matrix(~0+env,DT_2B)
+		  
+		  system.time({
+			fit_MM_GB=EnvRtype::kernel_model(y=y, env=env, gid=gid, data=DT_2B, random=MM_GB, fixed=fixed)
+		  })
+		  
+		  
+		  system.time({
+			fit_MDs_GB=EnvRtype::kernel_model(y=y, env=env, gid=gid, data=DT_2B, random=MDs_GB, fixed=fixed)
+		  })
+		  
+		  
+		  ###Fit heterogeneous variance using BGGE    
+		  
+		  y_MDe <- DT_2B[,"value"]
+		  NE <- table(DT_2B$env)
+		  system.time({
+			fit_MDe_GB <- BGGE::BGGE(y_MDe,K=MDe_GB,XF=fixed,ne=NE)
+		  })
+		  
+		  digits <- 3
+		  VarComp = Vcomp.BGGE(model = fit_MDe_GB, env = Y$env, 
+							   gid = Y$gid, digits = digits)
+		  
+		  
+		  fit_MDe_GB_Out = list(yHat = fit_MDe_GB$yHat, varE = fit_MDe_GB$varE, random = fit_MDe_GB$K, 
+								BGGE = fit_MDe_GB, VarComp = VarComp)
+		  
+		  
+		  corMM_CV <- cor(fit_MM_GB$yHat[tstIndices2],DT_2A[DT_tstIndices2,"value"],use="pairwise.complete.obs")
+		  corMDs_CV <- cor(fit_MDs_GB$yHat[tstIndices2],DT_2A[DT_tstIndices2,"value"],use="pairwise.complete.obs")
+		  corMDe_CV <- cor(fit_MDe_GB_Out$yHat[tstIndices2],DT_2A[DT_tstIndices2,"value"],use="pairwise.complete.obs")
+		  
+		  varMM_CV <- fit_MM_GB$VarComp
+		  varMDs_CV <- fit_MDs_GB$VarComp
+		  varMDe_CV <- fit_MDe_GB_Out$VarComp
+			
+		  fit_MM_Out <- cbind.data.frame(DT_2A[DT_tstIndices2,IDCols],DT_2A[DT_tstIndices2,"value"],fit_MM_GB$yHat[tstIndices2])
+		  fit_MDs_Out <- cbind.data.frame(DT_2A[DT_tstIndices2,IDCols],DT_2A[DT_tstIndices2,"value"],fit_MDs_GB$yHat[tstIndices2])
+		  fit_MDe_Out <- cbind.data.frame(DT_2A[DT_tstIndices2,IDCols],DT_2A[DT_tstIndices2,"value"],fit_MDe_GB_Out$yHat[tstIndices2])
+	   
+		  colnames(fit_MM_Out) <- c(IDColsMod,"Obs","Pred")
+		  colnames(fit_MDs_Out) <- c(IDColsMod,"Obs","Pred")
+		  colnames(fit_MDe_Out) <- c(IDColsMod,"Obs","Pred")
    
-  }else if(fitEnvModels ==FALSE & is.null(KE) & is.null(KG) & !is.null(method)){
-    if(method=="GB"){
+    }
+	if(method=="GK"){
       ## Creating kernel models with EnvRtype::get_kernel
       
-      system.time({
-        MM_GB = get_geno_kernel(Y,X,KG,KE,intercept.random=FALSE,model="MM",method="GB",dimension_KE=NULL)
-      })
-      
-      system.time({
-        MDs_GB =get_geno_kernel(Y,X,KG,KE,intercept.random=FALSE,model="MDs",method="GB",dimension_KE=NULL)
-      })
-      
-      
-      system.time({
-        MDe_GB <- get_geno_kernel(Y,X,KG,KE,intercept.random=FALSE,model="MDe",method="GB",dimension_KE=NULL)
-        
-      })
-      
-      fixed=model.matrix(~0+env,DT_2B)
-      
-      system.time({
-        fit_MM_GB=EnvRtype::kernel_model(y=y, env=env, gid=gid, data=DT_2B, random=MM_GB, fixed=fixed)
-      })
-      
-      
-      system.time({
-        fit_MDs_GB=EnvRtype::kernel_model(y=y, env=env, gid=gid, data=DT_2B, random=MDs_GB, fixed=fixed)
-      })
-	  
-      
-      ###Fit heterogeneous variance using BGGE    
-      
-      y_MDe <- DT_2B[,"value"]
-      NE <- table(DT_2B$env)
-      system.time({
-        fit_MDe_GB <- BGGE::BGGE(y_MDe,K=MDe_GB,XF=fixed,ne=NE)
-      })
-      
-      digits <- 3
-      VarComp = Vcomp.BGGE(model = fit_MDe_GB, env = Y$env, 
-                           gid = Y$gid, digits = digits)
-      
-      
-      fit_MDe_GB_Out = list(yHat = fit_MDe_GB$yHat, varE = fit_MDe_GB$varE, random = fit_MDe_GB$K, 
-                            BGGE = fit_MDe_GB, VarComp = VarComp)
-      
-      
-      corMM_LOT_CV <- cor(fit_MM_GB$yHat[factIndices2],DT_2A[DT_factIndices2,"value"])
-      corMDs_LOT_CV <- cor(fit_MDs_GB$yHat[factIndices2],DT_2A[DT_factIndices2,"value"])
-      corMDe_LOT_CV <- cor(fit_MDe_GB_Out$yHat[factIndices2],DT_2A[DT_factIndices2,"value"])
-      
-      varMM_LOT_CV <- fit_MM_GB$VarComp
-      varMDs_LOT_CV <- fit_MDs_GB$VarComp
-      varMDe_LOT_CV <- fit_MDe_GB_Out$VarComp
-          
-   
-   
-      fit_MM_Out <- cbind.data.frame(DT_2A[DT_factIndices2,IDCols],DT_2A[DT_factIndices2,"value"],fit_MM_GB$yHat[factIndices2])
-      fit_MDs_Out <- cbind.data.frame(DT_2A[DT_factIndices2,IDCols],DT_2A[DT_factIndices2,"value"],fit_MDs_GB$yHat[factIndices2])
-      fit_MDe_Out <- cbind.data.frame(DT_2A[DT_factIndices2,IDCols],DT_2A[DT_factIndices2,"value"],fit_MDe_GB_Out$yHat[factIndices2])
-   
-      colnames(fit_MM_Out) <- c(IDColsMod,"Obs","Pred")
-      colnames(fit_MDs_Out) <- c(IDColsMod,"Obs","Pred")
-      colnames(fit_MDe_Out) <- c(IDColsMod,"Obs","Pred")
-   
-    
-    }if(method=="GK"){
-      ## Creating kernel models with EnvRtype::get_kernel
-      
-      system.time({
-        MM_GK = get_geno_kernel(Y,X,KG,KE,intercept.random=FALSE,model="MM",method="GK",dimension_KE=NULL)
-      })
-      
-      system.time({
-        MDs_GK = get_geno_kernel(Y,X,KG,KE,intercept.random=FALSE,model="MDs",method="GK",dimension_KE=NULL)
-      })
-      
-      ### Fit heterogeneous variance using BGGE    
-      system.time({
-        MDe_GK <- get_geno_kernel(Y,X,KG,KE,intercept.random=FALSE,model="MDe",method="GK",dimension_KE=NULL)
-        
-      })
-      
-####      
-      
-      fixed=model.matrix(~0+env,DT_2B)
-      
-      system.time({
-        fit_MM_GK=EnvRtype::kernel_model(y=y, env=env, gid=gid, data=DT_2B, random=MM_GK, fixed=fixed)
-      })
-      
-      
-      system.time({
-        fit_MDs_GK=EnvRtype::kernel_model(y=y, env=env, gid=gid, data=DT_2B, random=MDs_GK, fixed=fixed)
-      })
-      
-      ### MDe
-      
-      y_MDe <- DT_2B[,"value"]
-      NE <- table(DT_2B$env)
-      system.time({
-        fit_MDe_GK <- BGGE::BGGE(y_MDe,K=MDe_GK,XF=fixed,ne=NE)
-      })
-      
-      digits <- 3
-      VarComp = Vcomp.BGGE(model = fit_MDe_GK, env = Y$env, 
-                           gid = Y$gid, digits = digits)
-      
-      
-      fit_MDe_GK_Out = list(yHat = fit_MDe_GK$yHat, varE = fit_MDe_GK$varE, random = fit_MDe_GK$K, 
-                            BGGE = fit_MDe_GK, VarComp = VarComp)
-      
-      ###
-      
-      corMM_LOT_CV <- cor(fit_MM_GK$yHat[factIndices2],DT_2A[DT_factIndices2,"value"])
-      corMDs_LOT_CV <- cor(fit_MDs_GK$yHat[factIndices2],DT_2A[DT_factIndices2,"value"])
-      corMDe_LOT_CV <- cor(fit_MDe_GK_Out$yHat[factIndices2],DT_2A[DT_factIndices2,"value"])
-      
-      varMM_LOT_CV <- fit_MM_GK$VarComp
-      varMDs_LOT_CV <- fit_MDs_GK$VarComp
-      varMDe_LOT_CV <- fit_MDe_GK_Out$VarComp
-      
-	  
-    	  
-	  fit_MM_Out <- cbind.data.frame(DT_2A[DT_factIndices2,IDCols],DT_2A[DT_factIndices2,"value"],fit_MM_GK$yHat[factIndices2])
-      fit_MDs_Out <- cbind.data.frame(DT_2A[DT_factIndices2,IDCols],DT_2A[DT_factIndices2,"value"],fit_MDs_GK$yHat[factIndices2])
-      fit_MDe_Out <- cbind.data.frame(DT_2A[DT_factIndices2,IDCols],DT_2A[DT_factIndices2,"value"],fit_MDe_GK_Out$yHat[factIndices2])
-   
-      colnames(fit_MM_Out) <- c(IDColsMod,"Obs","Pred")
-      colnames(fit_MDs_Out) <- c(IDColsMod,"Obs","Pred")
-      colnames(fit_MDe_Out) <- c(IDColsMod,"Obs","Pred")
-	  
+		  system.time({
+			MM_GK = get_geno_kernel(Y,X,KG,KE,intercept.random=FALSE,model="MM",method="GK",dimension_KE=NULL)
+		  })
+		  
+		  system.time({
+			MDs_GK = get_geno_kernel(Y,X,KG,KE,intercept.random=FALSE,model="MDs",method="GK",dimension_KE=NULL)
+		  })
+		  
+		  ### Fit heterogeneous variance using BGGE    
+		  system.time({
+			MDe_GK <- get_geno_kernel(Y,X,KG,KE,intercept.random=FALSE,model="MDe",method="GK",dimension_KE=NULL)
+			
+		  })
+		  
+	####      
+		  
+		  fixed=model.matrix(~0+env,DT_2B)
+		  
+		  system.time({
+			fit_MM_GK=EnvRtype::kernel_model(y=y, env=env, gid=gid, data=DT_2B, random=MM_GK, fixed=fixed)
+		  })
+		  
+		  
+		  system.time({
+			fit_MDs_GK=EnvRtype::kernel_model(y=y, env=env, gid=gid, data=DT_2B, random=MDs_GK, fixed=fixed)
+		  })
+		  
+		  ### MDe
+		  
+		  y_MDe <- DT_2B[,"value"]
+		  NE <- table(DT_2B$env)
+		  system.time({
+			fit_MDe_GK <- BGGE::BGGE(y_MDe,K=MDe_GK,XF=fixed,ne=NE)
+		  })
+		  
+		  digits <- 3
+		  VarComp = Vcomp.BGGE(model = fit_MDe_GK, env = Y$env, 
+							   gid = Y$gid, digits = digits)
+		  
+		  
+		  fit_MDe_GK_Out = list(yHat = fit_MDe_GK$yHat, varE = fit_MDe_GK$varE, random = fit_MDe_GK$K, 
+								BGGE = fit_MDe_GK, VarComp = VarComp)
+		  
+		  ###
+		  
+		  corMM_CV <- cor(fit_MM_GK$yHat[tstIndices2],DT_2A[DT_tstIndices2,"value"],use="pairwise.complete.obs")
+		  corMDs_CV <- cor(fit_MDs_GK$yHat[tstIndices2],DT_2A[DT_tstIndices2,"value"],use="pairwise.complete.obs")
+		  corMDe_CV <- cor(fit_MDe_GK_Out$yHat[tstIndices2],DT_2A[DT_tstIndices2,"value"],use="pairwise.complete.obs")
+		  
+		  varMM_CV <- fit_MM_GK$VarComp
+		  varMDs_CV <- fit_MDs_GK$VarComp
+		  varMDe_CV <- fit_MDe_GK_Out$VarComp
+		  
+		  
+			  
+		  fit_MM_Out <- cbind.data.frame(DT_2A[DT_tstIndices2,IDCols],DT_2A[DT_tstIndices2,"value"],fit_MM_GK$yHat[tstIndices2])
+		  fit_MDs_Out <- cbind.data.frame(DT_2A[DT_tstIndices2,IDCols],DT_2A[DT_tstIndices2,"value"],fit_MDs_GK$yHat[tstIndices2])
+		  fit_MDe_Out <- cbind.data.frame(DT_2A[DT_tstIndices2,IDCols],DT_2A[DT_tstIndices2,"value"],fit_MDe_GK_Out$yHat[tstIndices2])
+	   
+		  colnames(fit_MM_Out) <- c(IDColsMod,"Obs","Pred")
+		  colnames(fit_MDs_Out) <- c(IDColsMod,"Obs","Pred")
+		  colnames(fit_MDe_Out) <- c(IDColsMod,"Obs","Pred")
+		  
     }
   }else if(fitEnvModels ==TRUE & !is.null(KE) & !is.null(KG) & is.null(method)){
     
@@ -4945,21 +5274,21 @@ fitMEModels_CV <- function(DT,genoDat,strainGeno,KG=NULL,KE=NULL,CVMet,method,fi
                         BGGE = fit_EMDe, VarComp = VarComp)
     
     
-    corMM_LOT_CV <- cor(fit_EMM$yHat[factIndices2],DT_2A[DT_factIndices2,"value"])
-    corMDs_LOT_CV <- cor(fit_EMDs$yHat[factIndices2],DT_2A[DT_factIndices2,"value"])
-    corMDe_LOT_CV <- cor(fit_EMDe$yHat[factIndices2],DT_2A[DT_factIndices2,"value"])
+    corMM_CV <- cor(fit_EMM$yHat[tstIndices2],DT_2A[DT_tstIndices2,"value"],use="pairwise.complete.obs")
+    corMDs_CV <- cor(fit_EMDs$yHat[tstIndices2],DT_2A[DT_tstIndices2,"value"],use="pairwise.complete.obs")
+    corMDe_CV <- cor(fit_EMDe$yHat[tstIndices2],DT_2A[DT_tstIndices2,"value"],use="pairwise.complete.obs")
     
 	fit_MM_Out <- fit_EMM
 	fit_MDs_Out <- fit_EMDs
 	fit_MDe_Out <- fit_EMDe_Out
 	
-    varMM_LOT_CV <- fit_EMM$VarComp
-    varMDs_LOT_CV <- fit_EMDs$VarComp
-    varMDe_LOT_CV <- fit_EMDe_Out$VarComp
+    varMM_CV <- fit_EMM$VarComp
+    varMDs_CV <- fit_EMDs$VarComp
+    varMDe_CV <- fit_EMDe_Out$VarComp
 	
-	fit_MM_Out <- cbind.data.frame(DT_2A[DT_factIndices2,IDCols],DT_2A[DT_factIndices2,"value"],fit_EMM$yHat[factIndices2])
-    fit_MDs_Out <- cbind.data.frame(DT_2A[DT_factIndices2,IDCols],DT_2A[DT_factIndices2,"value"],fit_EMDs$yHat[factIndices2])
-    fit_MDe_Out <- cbind.data.frame(DT_2A[DT_factIndices2,IDCols],DT_2A[DT_factIndices2,"value"],fit_EMDe_Out$yHat[factIndices2])
+	fit_MM_Out <- cbind.data.frame(DT_2A[DT_tstIndices2,IDCols],DT_2A[DT_tstIndices2,"value"],fit_EMM$yHat[tstIndices2])
+    fit_MDs_Out <- cbind.data.frame(DT_2A[DT_tstIndices2,IDCols],DT_2A[DT_tstIndices2,"value"],fit_EMDs$yHat[tstIndices2])
+    fit_MDe_Out <- cbind.data.frame(DT_2A[DT_tstIndices2,IDCols],DT_2A[DT_tstIndices2,"value"],fit_EMDe_Out$yHat[tstIndices2])
    
     colnames(fit_MM_Out) <- c(IDColsMod,"Obs","Pred")
     colnames(fit_MDs_Out) <- c(IDColsMod,"Obs","Pred")
@@ -5003,21 +5332,21 @@ fitMEModels_CV <- function(DT,genoDat,strainGeno,KG=NULL,KE=NULL,CVMet,method,fi
                              BGGE = fit_EMDe_GK, VarComp = VarComp)
       
       
-      corMM_LOT_CV <- cor(fit_EMM$yHat[factIndices2],DT_2A[DT_factIndices2,"value"])
-      corMDs_LOT_CV <- cor(fit_EMDs$yHat[factIndices2],DT_2A[DT_factIndices2,"value"])
-      corMDe_LOT_CV <- cor(fit_EMDe$yHat[factIndices2],DT_2A[DT_factIndices2,"value"])
+      corMM_CV <- cor(fit_EMM$yHat[tstIndices2],DT_2A[DT_tstIndices2,"value"],use="pairwise.complete.obs")
+      corMDs_CV <- cor(fit_EMDs$yHat[tstIndices2],DT_2A[DT_tstIndices2,"value"],use="pairwise.complete.obs")
+      corMDe_CV <- cor(fit_EMDe$yHat[tstIndices2],DT_2A[DT_tstIndices2,"value"],use="pairwise.complete.obs")
     
 	  fit_MM_Out <- fit_EMM
 	  fit_MDs_Out <- fit_EMDs
 	  fit_MDe_Out <- fit_EMDe_Out
 	
-      varMM_LOT_CV <- fit_EMM$VarComp
-      varMDs_LOT_CV <- fit_EMDs$VarComp
-      varMDe_LOT_CV <- fit_EMDe_Out$VarComp
+      varMM_CV <- fit_EMM$VarComp
+      varMDs_CV <- fit_EMDs$VarComp
+      varMDe_CV <- fit_EMDe_Out$VarComp
 	
-	  fit_MM_Out <- cbind.data.frame(DT_2A[DT_factIndices2,IDCols],DT_2A[DT_factIndices2,"value"],fit_EMM$yHat[factIndices2])
-      fit_MDs_Out <- cbind.data.frame(DT_2A[DT_factIndices2,IDCols],DT_2A[DT_factIndices2,"value"],fit_EMDs$yHat[factIndices2])
-      fit_MDe_Out <- cbind.data.frame(DT_2A[DT_factIndices2,IDCols],DT_2A[DT_factIndices2,"value"],fit_EMDe_Out$yHat[factIndices2])
+	  fit_MM_Out <- cbind.data.frame(DT_2A[DT_tstIndices2,IDCols],DT_2A[DT_tstIndices2,"value"],fit_EMM$yHat[tstIndices2])
+      fit_MDs_Out <- cbind.data.frame(DT_2A[DT_tstIndices2,IDCols],DT_2A[DT_tstIndices2,"value"],fit_EMDs$yHat[tstIndices2])
+      fit_MDe_Out <- cbind.data.frame(DT_2A[DT_tstIndices2,IDCols],DT_2A[DT_tstIndices2,"value"],fit_EMDe_Out$yHat[tstIndices2])
    
    
       colnames(fit_MM_Out) <- c(IDColsMod,"Obs","Pred")
@@ -5068,21 +5397,21 @@ fitMEModels_CV <- function(DT,genoDat,strainGeno,KG=NULL,KE=NULL,CVMet,method,fi
       
       
        
-      corMM_LOT_CV <- cor(fit_EMM$yHat[factIndices2],DT_2A[DT_factIndices2,"value"])
-      corMDs_LOT_CV <- cor(fit_EMDs$yHat[factIndices2],DT_2A[DT_factIndices2,"value"])
-      corMDe_LOT_CV <- cor(fit_EMDe$yHat[factIndices2],DT_2A[DT_factIndices2,"value"])
+      corMM_CV <- cor(fit_EMM$yHat[tstIndices2],DT_2A[DT_tstIndices2,"value"],use="pairwise.complete.obs")
+      corMDs_CV <- cor(fit_EMDs$yHat[tstIndices2],DT_2A[DT_tstIndices2,"value"],use="pairwise.complete.obs")
+      corMDe_CV <- cor(fit_EMDe$yHat[tstIndices2],DT_2A[DT_tstIndices2,"value"],use="pairwise.complete.obs")
     
 	  fit_MM_Out <- fit_EMM
 	  fit_MDs_Out <- fit_EMDs
 	  fit_MDe_Out <- fit_EMDe_Out
 	
-      varMM_LOT_CV <- fit_EMM$VarComp
-      varMDs_LOT_CV <- fit_EMDs$VarComp
-      varMDe_LOT_CV <- fit_EMDe_Out$VarComp
+      varMM_CV <- fit_EMM$VarComp
+      varMDs_CV <- fit_EMDs$VarComp
+      varMDe_CV <- fit_EMDe_Out$VarComp
 	
-	  fit_MM_Out <- cbind.data.frame(DT_2A[DT_factIndices2,IDCols],DT_2A[DT_factIndices2,"value"],fit_EMM$yHat[factIndices2])
-      fit_MDs_Out <- cbind.data.frame(DT_2A[DT_factIndices2,IDCols],DT_2A[DT_factIndices2,"value"],fit_EMDs$yHat[factIndices2])
-      fit_MDe_Out <- cbind.data.frame(DT_2A[DT_factIndices2,IDCols],DT_2A[DT_factIndices2,"value"],fit_EMDe_Out$yHat[factIndices2])
+	  fit_MM_Out <- cbind.data.frame(DT_2A[DT_tstIndices2,IDCols],DT_2A[DT_tstIndices2,"value"],fit_EMM$yHat[tstIndices2])
+      fit_MDs_Out <- cbind.data.frame(DT_2A[DT_tstIndices2,IDCols],DT_2A[DT_tstIndices2,"value"],fit_EMDs$yHat[tstIndices2])
+      fit_MDe_Out <- cbind.data.frame(DT_2A[DT_tstIndices2,IDCols],DT_2A[DT_tstIndices2,"value"],fit_EMDe_Out$yHat[tstIndices2])
    
       
    
@@ -5093,11 +5422,24 @@ fitMEModels_CV <- function(DT,genoDat,strainGeno,KG=NULL,KE=NULL,CVMet,method,fi
    }
   }  
   
-  cor_LOF_CV_List <- list(corMM_LOF_CV,corMDs_LOF_CV,corMDe_LOF_CV)
-  var_LOF_CV_List <- list(varMM_LOF_CV,varMDs_LOF_CV,varMDe_LOF_CV)
-  fit_Out_LOF_CV_List <- list(fit_MM_Out,fit_MDs_Out,fit_MDe_Out)
+	  cor_CV_List <- list(corMM_CV,corMDs_CV,corMDe_CV)
+	  var_CV_List <- list(varMM_CV,varMDs_CV,varMDe_CV)
+	  fit_Out_CV_List <- list(fit_MM_Out,fit_MDs_Out,fit_MDe_Out)
   
-  return(list(cor_LOF_CV_List,var_LOF_CV_List,fit_Out_LOF_CV_List))
+     
+	  cor_CV_List_nF[[nF]] <- cor_CV_List
+	  var_CV_List_nF[[nF]] <- var_CV_List
+	  fit_Out_CV_List_nF[[nF]] <- fit_Out_CV_List
+  }
+  
+   cor_CV_List_Reps[[nrep]] <- cor_CV_List_nF 
+   var_CV_List_Reps[[nrep]] <- var_CV_List_nF
+   fit_Out_CV_List_Reps[[nrep]] <- fit_Out_CV_List_nF
+  
+  }
+  
+ 
+  return(list(cor_CV_List_Reps,var_CV_List_Reps,fit_Out_CV_List_Reps))
   
 }
 
@@ -5114,7 +5456,7 @@ fitMEModels_LOF_CV <- function(DT,genoDat,strainGeno,KG=NULL,KE=NULL,factVar,fac
   dim(DT_2B)
   DT_2B <- droplevels(DT_2B)
   
-  DT_factIndices2 <- which(DT_2A[,factVar] %n% factr)
+  DT_factIndices2 <- which(DT_2A[,factVar] %in% factr)
   factIndices2 <- which(DT_2B[,factVar] %in% factr)
   
   
@@ -5243,9 +5585,9 @@ fitMEModels_LOF_CV <- function(DT,genoDat,strainGeno,KG=NULL,KE=NULL,factVar,fac
                             BGGE = fit_MDe_GB, VarComp = VarComp)
       
       
-      corMM_LOT_CV <- cor(fit_MM_GB$yHat[factIndices2],DT_2A[DT_factIndices2,"value"])
-      corMDs_LOT_CV <- cor(fit_MDs_GB$yHat[factIndices2],DT_2A[DT_factIndices2,"value"])
-      corMDe_LOT_CV <- cor(fit_MDe_GB_Out$yHat[factIndices2],DT_2A[DT_factIndices2,"value"])
+      corMM_LOT_CV <- cor(fit_MM_GB$yHat[factIndices2],DT_2A[DT_factIndices2,"value"],use="pairwise.complete.obs")
+      corMDs_LOT_CV <- cor(fit_MDs_GB$yHat[factIndices2],DT_2A[DT_factIndices2,"value"],use="pairwise.complete.obs")
+      corMDe_LOT_CV <- cor(fit_MDe_GB_Out$yHat[factIndices2],DT_2A[DT_factIndices2,"value"],use="pairwise.complete.obs")
       
       varMM_LOT_CV <- fit_MM_GB$VarComp
       varMDs_LOT_CV <- fit_MDs_GB$VarComp
@@ -5262,7 +5604,7 @@ fitMEModels_LOF_CV <- function(DT,genoDat,strainGeno,KG=NULL,KE=NULL,factVar,fac
       colnames(fit_MDe_Out) <- c(IDColsMod,"Obs","Pred")
    
     
-    }
+    } 
 	if(method=="GK"){
       ## Creating kernel models with EnvRtype::get_kernel
       
@@ -5311,16 +5653,15 @@ fitMEModels_LOF_CV <- function(DT,genoDat,strainGeno,KG=NULL,KE=NULL,factVar,fac
       
       ###
       
-      corMM_LOT_CV <- cor(fit_MM_GK$yHat[factIndices2],DT_2A[DT_factIndices2,"value"])
-      corMDs_LOT_CV <- cor(fit_MDs_GK$yHat[factIndices2],DT_2A[DT_factIndices2,"value"])
-      corMDe_LOT_CV <- cor(fit_MDe_GK_Out$yHat[factIndices2],DT_2A[DT_factIndices2,"value"])
+      corMM_LOT_CV <- cor(fit_MM_GK$yHat[factIndices2],DT_2A[DT_factIndices2,"value"],use="pairwise.complete.obs")
+      corMDs_LOT_CV <- cor(fit_MDs_GK$yHat[factIndices2],DT_2A[DT_factIndices2,"value"],use="pairwise.complete.obs")
+      corMDe_LOT_CV <- cor(fit_MDe_GK_Out$yHat[factIndices2],DT_2A[DT_factIndices2,"value"],use="pairwise.complete.obs")
       
       varMM_LOT_CV <- fit_MM_GK$VarComp
       varMDs_LOT_CV <- fit_MDs_GK$VarComp
       varMDe_LOT_CV <- fit_MDe_GK_Out$VarComp
       
-	  
-    	  
+	     	  
 	  fit_MM_Out <- cbind.data.frame(DT_2A[DT_factIndices2,IDCols],DT_2A[DT_factIndices2,"value"],fit_MM_GK$yHat[factIndices2])
       fit_MDs_Out <- cbind.data.frame(DT_2A[DT_factIndices2,IDCols],DT_2A[DT_factIndices2,"value"],fit_MDs_GK$yHat[factIndices2])
       fit_MDe_Out <- cbind.data.frame(DT_2A[DT_factIndices2,IDCols],DT_2A[DT_factIndices2,"value"],fit_MDe_GK_Out$yHat[factIndices2])
@@ -5421,9 +5762,9 @@ fitMEModels_LOF_CV <- function(DT,genoDat,strainGeno,KG=NULL,KE=NULL,factVar,fac
                              BGGE = fit_EMDe_GK, VarComp = VarComp)
       
       
-      corMM_LOT_CV <- cor(fit_EMM$yHat[factIndices2],DT_2A[DT_factIndices2,"value"])
-      corMDs_LOT_CV <- cor(fit_EMDs$yHat[factIndices2],DT_2A[DT_factIndices2,"value"])
-      corMDe_LOT_CV <- cor(fit_EMDe$yHat[factIndices2],DT_2A[DT_factIndices2,"value"])
+      corMM_LOT_CV <- cor(fit_EMM$yHat[factIndices2],DT_2A[DT_factIndices2,"value"],use="pairwise.complete.obs")
+      corMDs_LOT_CV <- cor(fit_EMDs$yHat[factIndices2],DT_2A[DT_factIndices2,"value"],use="pairwise.complete.obs")
+      corMDe_LOT_CV <- cor(fit_EMDe$yHat[factIndices2],DT_2A[DT_factIndices2,"value"],use="pairwise.complete.obs")
     
 	  fit_MM_Out <- fit_EMM
 	  fit_MDs_Out <- fit_EMDs
@@ -5486,9 +5827,9 @@ fitMEModels_LOF_CV <- function(DT,genoDat,strainGeno,KG=NULL,KE=NULL,factVar,fac
       
       
        
-      corMM_LOT_CV <- cor(fit_EMM$yHat[factIndices2],DT_2A[DT_factIndices2,"value"])
-      corMDs_LOT_CV <- cor(fit_EMDs$yHat[factIndices2],DT_2A[DT_factIndices2,"value"])
-      corMDe_LOT_CV <- cor(fit_EMDe$yHat[factIndices2],DT_2A[DT_factIndices2,"value"])
+      corMM_LOT_CV <- cor(fit_EMM$yHat[factIndices2],DT_2A[DT_factIndices2,"value"],use="pairwise.complete.obs")
+      corMDs_LOT_CV <- cor(fit_EMDs$yHat[factIndices2],DT_2A[DT_factIndices2,"value"],use="pairwise.complete.obs")
+      corMDe_LOT_CV <- cor(fit_EMDe$yHat[factIndices2],DT_2A[DT_factIndices2,"value"],use="pairwise.complete.obs")
     
 	  fit_MM_Out <- fit_EMM
 	  fit_MDs_Out <- fit_EMDs
@@ -5511,16 +5852,13 @@ fitMEModels_LOF_CV <- function(DT,genoDat,strainGeno,KG=NULL,KE=NULL,factVar,fac
    }
   }  
   
-  cor_LOF_CV_List <- list(corMM_LOF_CV,corMDs_LOF_CV,corMDe_LOF_CV)
-  var_LOF_CV_List <- list(varMM_LOF_CV,varMDs_LOF_CV,varMDe_LOF_CV)
-  fit_Out_LOF_CV_List <- list(fit_MM_Out,fit_MDs_Out,fit_MDe_Out)
+  cor_LOT_CV_List <- list(corMM_LOT_CV,corMDs_LOT_CV,corMDe_LOT_CV)
+  var_LOT_CV_List <- list(varMM_LOT_CV,varMDs_LOT_CV,varMDe_LOT_CV)
+  fit_Out_LOT_CV_List <- list(fit_MM_Out,fit_MDs_Out,fit_MDe_Out)
   
-  return(list(cor_LOF_CV_List,var_LOF_CV_List,fit_Out_LOF_CV_List))
+  return(list(cor_LOT_CV_List,var_LOT_CV_List,fit_Out_LOT_CV_List))
   
 }
-
-
-
 
 
 ####### 

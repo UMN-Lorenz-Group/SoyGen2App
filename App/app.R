@@ -423,7 +423,6 @@ ui <- fluidPage(
                                   selectInput(inputId="strainSE","Choose Strain Col",choices=NULL,multiple=FALSE),
                                   numericRangeInput(inputId="traitColsNum","Choose all the trait Cols",value=NULL,min=1,max=1),
                                   tags$br(),
-                              
                  ),
                  conditionalPanel(condition="input.chkPhenoME == true",
                                   selectInput(inputId="traitCols","Choose all the trait Cols",choices=NULL,multiple=TRUE),
@@ -446,13 +445,15 @@ ui <- fluidPage(
                          tags$br(),
                                 
                          fluidRow(
-                           column(width=5,fileInput("infileBLUEsSE", "Choose Phenotype File (CSV)", accept = ".csv")),
-                           column(7),column(width=5,selectInput(inputId="trait","Choose One or More Traits",choices=NULL,multiple=TRUE)),
+                           column(width=3,fileInput("infileBLUEsSE", "Choose Phenotype File (CSV)", accept = ".csv")),
+                           column(width=1,actionButton("iPh", "i")),column(7),
+                           column(width=5,selectInput(inputId="trait","Choose One or More Traits",choices=NULL,multiple=TRUE)),
                          ),
                          fluidRow(
                            column(width=5,checkboxInput("header", "Header", TRUE)),
                          ),
                          tags$br(),
+                         
                          # fluidRow(
                          #  column(width=6,tags$h4(tags$strong(textOutput("PhenoHeader")))),
                          #   column(7),column(width=5,div( 
@@ -496,10 +497,7 @@ ui <- fluidPage(
                                             "))
                      ),
                      
-                 
-                 
-                   fluidRow(
-                     
+                 fluidRow(
                      column(width = 5,
                             verbatimTextOutput("messagePhSE")
                      ), column(7),column(width=5, verbatimTextOutput("messageTrtSE")),
@@ -507,12 +505,9 @@ ui <- fluidPage(
                    ),
                    
                    tags$br(),
-                  
-                   
                  ),
-                 
-                    
-                   conditionalPanel(condition="input.chkPhenoME == true",
+                
+                conditionalPanel(condition="input.chkPhenoME == true",
                                         
                                         tags$br(),
                                         fluidRow(
@@ -520,7 +515,8 @@ ui <- fluidPage(
                                           column(6),column(width=3,tags$h4(tags$strong("Select trait(s)"))),
                                         ),
                                         fluidRow(
-                                          column(width=5,fileInput("infileBLUEsME", "Choose Phenotype File (CSV)", accept = ".csv")),
+                                          column(width=3,fileInput("infileBLUEsME", "Choose Phenotype File (CSV)", accept = ".csv")),
+                                          column(width=1,actionButton("iPhME", "i")),
                                           column(7),column(width=5,selectInput(inputId="traitME","Choose One or More Traits",choices=NULL,multiple=TRUE)),
                                         ),
                                         
@@ -619,7 +615,8 @@ ui <- fluidPage(
                   fluidRow(
                     
                     column(width=10, tags$p("Extract weather data from NASA POWER database and estimate environmental relationship matrix using the envRType pipeline.
-                                            The user needs to upload the co-ordinates file with the following columns 'Loc','Country','Lat','Long'") 
+                                            The user needs to upload the co-ordinates file with the following columns 'Location','Country','Lat','Long','OtherLocName','LocName'. 
+                                            The 'OtherLocName' and 'LocName' columns could contain abbreviations of location names.") 
                     )),
                   
                   tags$br(),
@@ -830,13 +827,29 @@ ui <- fluidPage(
                                    selectInput(inputId = "CVMet","Select CV Method",choices=c("CV1","CV2","CV0","CV00","CV_LOFO"),selected="CV1",multiple=FALSE),
                                    
                                    conditionalPanel(condition = "input.CVMet=='CV1' || input.CVMet=='CV2' || input.CVMet== 'CV0' || input.CVMet=='CV00'", 
-                                        numericInput(inputId="k",label = "Enter k for k-fold cross validation",value=2,min=2,max=10),
-                                        numericInput(inputId="nIter",label = "Enter n for n-iterations of each cycle of cross validation",value=2,min=2,max=10),
+                                        numericInput(inputId="kME",label = "Enter k for k-fold cross validation",value=2,min=2,max=10),
+                                        numericInput(inputId="nIterME",label = "Enter n for n-iterations of each cycle of cross validation",value=2,min=2,max=10),
                                         tags$br(),
+                                        tags$br(),
+                                        checkboxInput("fitEnvCov", "Include Enviromics Kernel from Step 2", FALSE),
+                                        
                                    ),
                                    conditionalPanel(condition = "input.CVMet=='CV_LOFO'",
+                                        tags$h5(tags$strong("Subset Data")),
+                                        selectInput(inputId="YearMECV","Select Year/Years",choices="All",selected="All",multiple=TRUE),
+                                        tags$br(),
+                                        selectInput(inputId="LocationMECV","Select Location/Locations",choices="All",selected="All",multiple=TRUE),
+                                        tags$br(),
+                                        tags$h5(tags$strong("Choose Covariates")),
+                                        selectInput(inputId = "EnvVarIDCV", "Environmental Factor", choices = NULL, multiple = FALSE),
+                                        tags$br(),
+                                        selectInput(inputId = "fixedMECV", "Fixed Effect", choices = NULL, multiple = FALSE),
+                                        tags$br(),
+                                        tags$h5(tags$strong("Leave One Factor Level Out")),
                                         selectInput(inputId = "CVFactor","Select Factor for LOFO CV",choices=NULL,selected=NULL,multiple=FALSE),
-                                        tags$br(),      
+                                        tags$br(),  
+                                        tags$br(),
+                                        checkboxInput("fitEnvCov", "Include Enviromics Kernel from Step 2", FALSE),
                                    ),
                                    tags$br(),
                                    actionButton("CrossValidationME", "Run CV for ME GP Models"),
@@ -853,7 +866,7 @@ ui <- fluidPage(
                                     column(width=10,
                                       tags$ul(
                                         tags$li("CV1, where novel genotypes in tested environments are predicted."),
-                                        tags$li( "CV2, where known genotypes in known environments are predicted."),
+                                        tags$li("CV2, where tested genotypes in tested environments are predicted."),
                                         tags$li("CV0, where tested genotypes in untested novel environments are predicted."),
                                         tags$li("CV00, where novel genotypes in novel environments are predicted."),
                                         tags$li("CV LOFO (Leave One Factor Out), eg: Leave One Test Out/ Leave One Line Out cross validation."),
@@ -879,12 +892,12 @@ ui <- fluidPage(
                                   ),
                                   
                                   fluidRow(column(width = 6,verbatimTextOutput("messageME6"))),
-                                  
-                                   fluidRow(
-                                     column(1),column(width=8,tags$h5(tags$strong(textOutput("cvrHeaderME"))))),
-                                   tags$br(),
-                                   fluidRow(
-                                     column(2),column(width=8,tags$h5(tags$strong(textOutput("MssgME"))))),
+                                   # 
+                                   # fluidRow(
+                                   #   column(1),column(width=8,tags$h5(tags$strong(textOutput("cvrHeaderME"))))),
+                                   # tags$br(),
+                                   # fluidRow(
+                                   #   column(2),column(width=8,tags$h5(tags$strong(textOutput("MssgME"))))),
                                    tags$br(),
                                    fluidRow(
                                      column(3),column(width=8,tags$h5(tableOutput("emCVRME")))),
@@ -1212,6 +1225,34 @@ server <- function(input,output,session){
     withProgress(message = 'Filtering Sites', value = 0, {
       getFilteredSitesGenoData(GenoTas(),round(siteMinCnt()*(ncol(Geno())-5),digits = 0),MAF())}) 
   })
+  
+  
+  observeEvent(input$iPh,{
+    showModal(modalDialog(
+      title = "Information",
+      "Format:",
+      tags$ul(
+        tags$li("The pheno file should have the following format: 'GermplasmId','Trait 1',Trait 2',..."),
+      ),
+      easyClose = TRUE,
+      footer = NULL
+    ))
+  })
+  
+  
+  observeEvent(input$iPhME,{
+    showModal(modalDialog(
+      title = "Information",
+      "Format:",
+      tags$ul(
+        tags$li("The pheno file from METs should have the following format: 'uniqID','Strain','Loc','Year','Test/Other factors','Trait 1','Trait 2',..."),
+      ),
+      easyClose = TRUE,
+      footer = NULL
+    ))
+  })
+  
+  #
  
   
 ######## 
@@ -1298,9 +1339,6 @@ output$messageGenoFilt1 <- renderText({
   
   
   ## Tas to DF
-  
-  
-  
   
   Geno_DF <- reactive({
    # browser()
@@ -1973,7 +2011,10 @@ output$messageGenoFilt1 <- renderText({
     #   }
     # })  
     # 
-   
+  
+ 
+  
+  
 #### 
    temp_file3 <- reactiveVal()
    IDColME <- reactive(input$IDColME)
@@ -2102,7 +2143,7 @@ output$messageGenoFilt1 <- renderText({
      colnames(PhenoME())[which(!as.character(colnames(PhenoME())) %in% as.character(TraitCols()))]
   })
 
-  # 
+##### 
 #####  
  
   
@@ -2116,7 +2157,7 @@ output$messageGenoFilt1 <- renderText({
   IDColME <- reactive(input$IDColME)
   
   observeEvent(input$traitME,{
-    
+   # browser()
     # Extract necessary input values
     # Path for the temporary file
     temp_file3b(tempfile())
@@ -2124,16 +2165,27 @@ output$messageGenoFilt1 <- renderText({
     # Start the process in a separate R process
     
     if(length(TraitME())>0 & !is.null(PhenoME())){
-      sink(temp_file3b())
-      
-      cat("Summary of selected trait values across all locations : \n")
-      cat(paste(names(summary((PhenoME()[,TraitME()]))),"\t",sep=""))
-      cat("\n")
-      cat(paste(round(summary(as.numeric(PhenoME()[,TraitME()])),digits = 3),"\t",sep=""))
-      
-      sink()
+        sink(temp_file3b())
+        cat("Summary of selected trait values across all locations : \n")
+        
+        if(nSelTraitsME()==1){
+         cat(paste(names(summary((PhenoME()[,TraitME()]))),"\t",sep=""))
+         cat("\n")
+         cat(paste(round(summary(as.numeric(PhenoME()[,TraitME()])),digits = 3),"\t",sep=""))
+        }else if(nSelTraitsME()>1){ 
+          cat(paste(names(summary((PhenoME()[,TraitME()[1]]))),"\t",sep=""))
+          cat("\n")
+          
+          for(nSel in 1:nSelTraitsME()){ 
+            
+            cat(paste(round(summary(as.numeric(PhenoME()[,TraitME()[nSel]])),digits = 3),"\t",sep=""))
+            cat("\n")
+          }
+        }
+        sink()
     }
   })
+  
   ### Test output 
   # Periodically read the file and update the UI
   
@@ -2162,9 +2214,7 @@ output$messageGenoFilt1 <- renderText({
     
       if(isPhenoME()==FALSE){
         
-          getMergedData(t_Geno(),Pheno(),TargetIDs())
-        
-        
+        getMergedData(t_Geno(),Pheno(),TargetIDs())
       }else if(isPhenoME() == TRUE){ 
         getMergedDataME(phenoMEData(),t_Geno(),TargetIDs())
       }
@@ -2201,21 +2251,20 @@ output$messageGenoFilt1 <- renderText({
   
   
   plotData <- reactiveVal(NULL)
+  
   observeEvent(input$traitME,{
     print("in")
-    
     if(nSelTraitsME()==1){
       print("in1")
       plotData(getPhenoDistbnPlots(DT_Filt_List(),TraitME(),1))
       
-    }else if(nSelTraitsME()>1){
-        plotList <- list()
-        lapply(1:nSelTraitsME(),function(loc_i){
-            plotList[[loc_i]] <- getPhenoDistbnPlots(DT_Filt_List(),TraitME()[loc_i],loc_i)
+    }else if(nSelTraitsME()>1 & !is.null(DT_Filt_List())){
+       
+         plotList <- lapply(1:nSelTraitsME(),function(loc_i){
+             getPhenoDistbnPlots(DT_Filt_List(),TraitME()[loc_i],loc_i)
          })
          plotData(plotList)
-      
-    }
+     }
   })
     
     # else if(nSelTraitsME()>1){
@@ -2234,7 +2283,7 @@ output$messageGenoFilt1 <- renderText({
     if(nSelTraitsME()==1){
      print("plLD")
     return(plotData())
-   }else{NULL}
+   }
  })
  
  # Define a reactive expression to generate renderPlot functions for each trait
@@ -2246,47 +2295,66 @@ output$messageGenoFilt1 <- renderText({
          plotData()[[i]]
        })
      })
-   } else {
-     list(renderPlot({NULL}))
    }
- })
+  })
  
  # Render individual plots for each trait using renderPlot functions generated in plotRenderList
- outputList <- reactive({
-   lapply(1:nSelTraitsME(), function(i) {
-     plotOutput(paste0("distPlot", i))
-   })
- })
  
- # Link plotRenderList and outputList
- observe({
-   input$traitME
-   
-   if(!is.null(TraitME())){
-     if(nSelTraitsME()>1){
-       lapply(1:nSelTraitsME(), function(i) {
-         outputList[[paste0("distPlot", i)]] <- plotRenderList()[[i]]
-       })
-     }
+ outputListPhME <- reactiveVal(list())
+ 
+ dummyPlt <- reactive({ 
+  
+   if(nSelTraitsME()>1){
+     outputListPhME(lapply(1:nSelTraitsME(), function(i) {
+       plotOutput(noquote(paste("'","distPlot",i,"'",sep="")))}))
    }
  })
  
+ 
+ 
+ # 
+ # outputListPhME <- reactive({
+ #   if(nSelTraitsME()>1){
+ #     lapply(1:nSelTraitsME(), function(i){
+ #       plotOutput(noquote(paste("'","distPlot",i,"'",sep="")))
+ #     })
+ #   }
+ # })
+ 
+ # Link plotRenderList and outputList
+ 
+ observeEvent(input$traitME,{
+   #browser()
+   dummyPlt()
+   if(!is.null(TraitME())){
+     if(nSelTraitsME()>1 & length(plotRenderList()) >1 & length(outputListPhME()) >1){
+           tempList <-  plotRenderList()
+           outputListPhME(tempList) 
+     }else{print(paste("The Render plot list with length", length(plotRenderList())," or outputPlot list with length",length(outputListPhME()),
+          "do not meet the requirements",sep=""))}
+     
+   }
+ })
+     
+       # tempList2 <-  outputListPhME()
+       # # 
+       # # for(i in 1:nSelTraitsME()){
+       # #   tempList2[[noquote(paste("'","distPlot",i,"'",sep=""))]] <-  tempList[[i]]
+       # # }
+ 
+
 
 #### 
- 
- 
- 
-### 
- 
- 
- output$LocDistribution <- renderUI({
+
+output$LocDistribution <- renderUI({
    print("outLD")
    if(!is.null(TraitME())){
      if (nSelTraitsME() == 1) {
        plotOutput("distPlots")
-     } else if (nSelTraitsME() > 1) { 
-       do.call(tagList, outputList())
-     }else{NULL}
+     }else if (nSelTraitsME() > 1) { 
+       plotOutList <- outputListPhME()
+       do.call(tagList,plotOutList)
+     }
    }
  })
 
@@ -2667,50 +2735,142 @@ output$envPlot <- renderPlot({
     
   })
 
-##### 
+##### CVR ME Version 
   
-  temp_file6 <- reactiveVal('none')
+  
+  observeEvent(input$infileBLUEsME, {
+    updateSelectInput(inputId ="YearMECV",choices = c("All",YearsME()) )
+  })
+  
+  observeEvent(input$infileBLUEsME, {
+    updateSelectInput(inputId ="LocationMECV",choices = c("All",LocationsME()))
+    
+  })
+  
+  
+  observeEvent(input$infileBLUEsME, {
+    updateSelectInput(inputId ="fixedMECV",choices = IDColsME())
+  })
+  
+  observeEvent(input$infileBLUEsME, {
+    updateSelectInput(inputId ="EnvVarIDCV",choices = IDColsME())
+  })
+  
+  kCV <- reactive(input$kME)
+  nIterCV <- reactive(input$nIterME)
+
+  LocationMECV <- reactiveVal(NULL)
+  YearMECV <- reactiveVal(NULL)
+  fixMECV <- reactiveVal(NULL)
+  varEnvCV <- reactiveVal(NULL)
+  
+###  
   processComplete6 <- reactiveVal(FALSE)
   MECV_Out <- reactiveVal(NULL)
   
-  # Start the background process and return rProcess
-  rProcess6 <- eventReactive(input$CrossValidationME, {
+  MECV_Out_SwitchTab <- reactiveVal(NULL)
+  
+###  
+  
+  CV_Switch <- reactiveVal(0)
+  CV_run_Tab <- reactiveVal(0)
+  CV_out_Tab <- reactiveVal(0)
+   
+  temp_file6 <- reactiveVal('none')
+  CVMet <- reactive(input$CVMet)
+  factVar <- reactive(input$CVFactor)
+ 
+### 
+   
+  observeEvent(input$CrossValidationME,{
+    
+    processComplete6(FALSE)
+    MECV_Out(NULL)
+    temp_file6('none')
+   
+    if(CVMet()!= "CV_LOFO"){
+      LocationMECV("All")
+      YearMECV("All")
+      fixMECV("Loc")
+      varEnvCV("Loc")
+    }else if(CVMet() == "CV_LOFO"){
+      YearMECV(input$YearMECV)
+      LocationMECV(input$LocationMECV)
+      fixMECV(input$fixedMECV)
+      varEnvCV(input$EnvVarIDCV)
+    }
+    
+     CV_run_Tab(CV_run_Tab()+1)
+  })
+  
+ 
+# 
+ observeEvent(input$CVMet,{
+#     
+    if(!is.null(MECV_Out()) & CV_Switch()>0){
+        MECV_Out_SwitchTab(MECV_Out())
+        MECV_Out(NULL)
+        CV_Switch(CV_Switch()+1)
+      }else if(is.null(MECV_Out()) & CV_Switch()>0){
+        MECV_Out_SwitchTab(MECV_Out())
+      }
+     
+ })
+  
+#### 
+ 
+  observeEvent(input$infileBLUEsME, {
+    updateSelectInput(inputId ="CVFactor",choices = IDColsME())
+  })
+  
+ 
+# Start the background process and return rProcess
+ 
+ rProcess6 <- eventReactive(input$CrossValidationME,{
+   
     # Path for the temporary file
     temp_file6(tempfile())
     
     #ME_argList <- list(DT_1_Filt_List,genoDat_List,traits,KG,KE,CVMet,factVar,KMethod,FitEnvModels,fixedME,envVar,IDColsME,LocME,YrME)
     
-    # Start the process in a separate R process
-    callr::r_bg(function(getME_CV,DT_1_Filt_List,genoDat_List,traits,KG,KE,CVMet,factVar,KMethod,FitEnvModels,fixedME,envVar,IDColsME,LocME,YrME,temp_file6_path) {
+    # Start the process in a separate R process ## fitMEModels_LOF_CV,fitMEModels_CV
+    callr::r_bg(function(getME_CV,DT_1_Filt_List,genoDat_List,traits,KG,KE,CVMet,factVar,k,niter,KMethod,FitEnvModels,fixedME,envVar,IDColsME,IDColME,LocME,YrME,temp_file6_path,FN) {
       library(BGLR)
       library(BGGE)
       library(EnvRtype)
-      
+      library(foreach)
+      library(doParallel)
+      registerDoParallel(5)
+      source(FN)
       sink(temp_file6_path)
-      result <- getME_CV(DT_1_Filt_List,genoDat_List,traits,KG,KE,CVMet,factVar,KMethod,FitEnvModels,fixedME,envVar,IDColsME,LocME,YrME)
+      result <- getME_CV(DT_1_Filt_List,genoDat_List,traits,KG,KE,CVMet,factVar,k,niter,KMethod,FitEnvModels,fixedME,envVar,IDColsME,IDColME,LocME,YrME)
       sink()
       result
     }, args = list(
       getME_CV = getME_CV,
       DT_1_Filt_List = DT_Filt_List(),
       genoDat_List = genoDat_List(),
-      traits = nTraits(),
-      KG = KG(),
-      KE= EnvK_Mod(), 
+      traits = TraitME(),
+      KG = NULL,
+      KE= NULL, 
       CVMet= CVMet(),
       factVar= factVar(),  
-      KMethod= KGMethod(),
-      FitEnvModels=fitEnvCovs(),
-      fixedME= fixME(),
-      envVar= varEnv(),
-      IDColsME= IDcolsME(),
-      LocME=LocationME(),
-      YrME=YearME(),
-      temp_file6_path = temp_file6()
+      k= kCV(),
+      niter=nIterCV(),
+      KMethod= "GK",
+      FitEnvModels= fitEnvCovs(),
+      fixedME= fixMECV(),
+      envVar= varEnvCV(),
+      IDColsME= IDColsME(),
+      IDColME= IDColME(),
+      LocME= LocationMECV(),
+      YrME=YearMECV(),
+      temp_file6_path = temp_file6(),
+      FN=FN
     ), stdout = temp_file6(), stderr = temp_file6())
   })
-  
- # getMEPred(DT_Filt_List(),genoDat_List(),TraitME(),KG=NULL,KE=EnvK_Mod(),KMethod= KGMethod(),FitEnvModels = fitEnvCovs(),fixedME=fixME(),envVar=varEnv(),IDColsME = IDColsME(),LocME=LocationME(),YrME=YearME())
+
+
   
   # Reactive expression to check process status and read temp file
   processStatus6 <- reactive({
@@ -2723,12 +2883,13 @@ output$envPlot <- renderPlot({
       } else {
         return("Waiting for output...")
       }
-    } else if (!is.null(rProcess6()) && !rProcess6()$is_alive()) {
+    }else if (!is.null(rProcess6()) && !rProcess6()$is_alive()) {
       if (file.exists(temp_file6())) {
         lines <- readLines(temp_file6(), warn = FALSE)
         txt <- paste(lines, collapse = "\n")
         processComplete6(TRUE)
         MECV_Out(rProcess6()$get_result())
+        # CV_out_Tab(CV_out_Tab()+1)
         return(paste(txt, "Cross-validation Completed", collapse = "\n"))
       } else {
         return("Waiting for output...")
@@ -2744,6 +2905,21 @@ output$envPlot <- renderPlot({
   })
   
   
+
+  MECV_Out_List_Init <- reactive({ 
+    a <- list() 
+    nCVMet <- length(c("CV1","CV2","CV0","CV00","CV_LOFO"))
+    for(i in 1:nCVMet){a[[i]] <- 0}
+    names(a) <- c("CV1","CV2","CV0","CV00","CV_LOFO")
+    a
+  })
+  
+  MECV_Out_List <- reactiveVal()
+  
+  # Initialize the reactive value within an observe or observeEvent
+  observeEvent(input$infileBLUEsME,{
+    MECV_Out_List(MECV_Out_List_Init())
+  })
 ######
   
   output$emCVRST <- renderTable({
@@ -2754,19 +2930,68 @@ output$envPlot <- renderPlot({
   output$emCVRMT <- renderTable({
     if(nSelTraits()>1){
       PATable <- cvrOutputListMT()
-     # colnames(PATable) <- rep("",ncol(PATable))
+      #colnames(PATable) <- rep("",ncol(PATable))
       print.data.frame(as.data.frame(PATable))
     }
-   },colnames=TRUE,rownames=TRUE)
+   },colnames=TRUE,rownames=TRUE) 
+  
+  
+  ## & CV_run_Tab()==CV_out_Tab() & CV_run_Tab()==CV_out_Tab()
+  
+  
+  cvrOutputListME <- reactive({
+    if(!is.null(MECV_Out())){
+      getOutTab_ME_CV(MECV_Out(),CVMet(),TraitME())
+    }else{NULL}
+  })
+  
+  
+ 
+dummyOut <- reactive({ 
+   if(!is.null(cvrOutputListME())){
+      b <- MECV_Out_List()
+      cvmetVar <- CVMet()
+      cvmetVarInd <- which(names(b) %in% cvmetVar)
+      b[[cvmetVarInd]] <-  cvrOutputListME()
+      MECV_Out_List(b) 
+      write.csv(as.data.frame(cvrOutputListME()),"ME_CV_OutTable.csv")
+   }
+})
+ 
+observe({
+  MECV_Out_List()
+  dummyOut()
+})
+
+####
+
+output$emCVRME <- renderTable({
+    
+    current_cvmet <- CVMet()
+    mec_list <- MECV_Out_List()
+    print(paste("MECList",mec_list))
+    print(current_cvmet)
+    current_cvmet_ind <- which(c("CV1","CV2","CV0","CV00","CV_LOFO") %in% current_cvmet)
+    
+    if(isPhenoME() & !is.null(mec_list[[current_cvmet_ind]]) & length(mec_list[[current_cvmet_ind]]) > 1){
+      print("CVMEcheckin")
+      PATable <- mec_list[[current_cvmet_ind]]
+      print.data.frame(as.data.frame(PATable))
+    }
+    # if(isPhenoME() && (MECV_Out_List()[[CVMet()]]!=0)){
+    # PATable <- MECV_Out_List()[[CVMet()]]
+  },colnames=TRUE,rownames=TRUE)
   
 
-  output$emCVRME <- renderTable({
-    
-    if(isPhenoME()){
-      PATable <- cvrOutputListME()
-      print.data.frame(as.data.frame(PATable))
-    }
-  },colnames=TRUE,rownames=TRUE)
+# 
+# output$emCVRME <- renderTable({
+# 
+  #   if(isPhenoME() & !is.null(MECV_Out())){
+  #     PATable <- cvrOutputListME()
+  #     print.data.frame(as.data.frame(PATable))
+  #   }
+  # },colnames=TRUE,rownames=TRUE)
+  
   
 ###  
   
@@ -2780,7 +3005,7 @@ output$envPlot <- renderPlot({
   
   observeEvent(input$CrossValidationME,{
     updateTextInput(session,"CVEventME", value = "ME")
-  }) 
+  })
   
 
   
@@ -2795,9 +3020,8 @@ output$envPlot <- renderPlot({
       
       optimTS <- Train_STPGA()[[2]]
     }else if(TS() == "Random Train Set from Step 3"){
-      
-      optimTS <- Train_Random()[[1]]
-      
+    
+        optimTS <- Train_Random()[[1]]
     }
     (optimTS)
   })
@@ -2897,7 +3121,7 @@ output$envPlot <- renderPlot({
   
   
   fixME <- reactive(input$fixedME)
-  varEnv <- reactive(input$EnvVarID) 
+  varEnv <- reactive(input$EnvVarID)
   GPModelME <- reactive(input$MEModelEnvR)
   
   KGMethod <- reactive({

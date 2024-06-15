@@ -1,0 +1,118 @@
+
+infileVCF <- "NUST_Geno.vcf"
+# Set the file path to the VCF file
+vcf_file <- infileVCF
+
+# Open a connection to the VCF file and skip the meta info lines
+vcf_conn <- file(vcf_file, open = "r")
+while (TRUE) {
+  line <- readLines(vcf_conn, n = 1)
+  if (startsWith(line, "##")) {
+    next
+  } else {
+    # Once we reach the information row, break out of the loop
+     info_row <- line
+    break
+  }
+}
+
+# Read in the data in the VCF file, starting from the information row
+vcf_data <- read.table(vcf_conn, header = FALSE)
+close(vcf_conn)
+
+# Print the information row and the first few rows of the VCF data
+colnames(vcf_data) <- unlist(strsplit(info_row,"\t"))
+head(vcf_data) 
+
+
+NUST_SNP6K_Allele_Data <- vcf_data
+
+
+#### Translate Genotype Data
+
+# # Define a function to translate genotype codes
+# translate_genotype <- function(genotype,REF,ALT) {
+  # alleles <- strsplit(genotype, "/")[[1]] # Split genotype into individual alleles
+  # nucleotides <- ifelse(alleles == "0", REF, ALT) # Translate alleles to nucleotides
+  # paste(nucleotides, collapse = "/") # Combine nucleotides into a single string
+# }
+
+
+# Define a function to translate genotype codes
+translate_genotype <- function(genotype,REF,ALT) {
+  alleles <- lapply(genotype,function(x)strsplit(x, "/")[[1]]) # Split genotype into individual alleles
+  nucleotides <- lapply(c(1:length(genotype)),function(x)ifelse(alleles[[x]] == "0", REF[x], ALT[x])) # Translate alleles to nucleotides
+  unlist(lapply(nucleotides,function(x) paste(x, collapse = "/"))) # Combine nucleotides into a single string
+}
+
+
+# Define a function to translate genotype codes
+translate_genotype_V2 <- function(genotype,REF,ALT) {
+  alleles <- lapply(genotype,function(x)strsplit(x, "/")[[1]]) # Split genotype into individual alleles
+  nucleotides <- lapply(c(1:length(genotype)),function(x)ifelse(alleles[[x]] == "0",ALT[x],REF[x])) # Translate alleles to nucleotides
+  unlist(lapply(nucleotides,function(x) paste(x, collapse = "/"))) # Combine nucleotides into a single string
+}
+
+
+# Translate genotypes for all samples
+REF <- vcf_data$REF # Set REF allele for each variant
+ALT <- vcf_data$ALT # Set ALT allele for each variant
+genotype_cols <- c((grep("FORMAT",colnames(vcf_data))+1):ncol(vcf_data))
+
+### V1
+vcf_data[,genotype_cols] <- do.call(cbind,lapply(vcf_data[,genotype_cols],function(x) translate_genotype(x,REF,ALT))) # Translate genotypes
+
+# V2
+vcf_data_v2 <- vcf_data
+vcf_data_v2[,genotype_cols] <- lapply(vcf_data_v2[,genotype_cols],function(x) translate_genotype_V2(x,REF,ALT)) # Translate genotypes
+
+####
+
+
+##### Process  NUST Geno VCF through rTASSEL
+tasGeno <- rTASSEL::readGenotypeTableFromPath(
+  path = infileVCF
+)
+
+tasSumExp <- rTASSEL::getSumExpFromGenotypeTable(
+  tasObj = tasGeno )
+
+
+siteMinCnt <- round(0.8*dim(tasSumExp)[2],digits=0)
+MAF <- 0.02 
+MinNotMissing <- 0.9
+
+tasGenoFilt1 <- rTASSEL::filterGenotypeTableSites(
+  tasObj = tasGeno,
+  siteMinCount = siteMinCnt,
+  siteMinAlleleFreq = MAF,
+  siteMaxAlleleFreq = 1.0,
+  siteRangeFilterType = "none"
+)
+
+tasGenoFilt2 <- rTASSEL::filterGenotypeTableTaxa(
+  tasObj=tasGenoFilt1,
+  minNotMissing = MinNotMissing,
+  minHeterozygous = 0,
+  maxHeterozygous = 1,
+  taxa = NULL
+)
+
+FiltGeno <- tasGenoFilt2
+
+source("GS_Pipeline_Jan_2022_FnsApp.R")
+genoDF <- as.data.frame(getGenoTas_to_DF(FiltGeno))
+genoDFTable <- genoDF[,-1]
+rownames(genoDFTable) <- genoDF[,1]
+ssIndFilt <- which(vcf_data_v2[,"ID"] %in% rownames(genoDFTable))
+length(ssIndFilt)
+
+######
+
+#NUST_SNP6K_Allele_Data <- vcf_data
+
+NUST_SNP6K_Allele_Data_v2 <- vcf_data_v2[ssIndFilt,-c(3,6,7,8,9)]
+StrainID <- gsub("_","",colnames(genoDFTable)[5:ncol(genoDFTable)])
+strIndFilt <- which(gsub("_","",colnames(NUST_SNP6K_Allele_Data_v2)) %in% StrainID)
+NUST_SNP6K_Allele_Data_v2_Filt <- NUST_SNP6K_Allele_Data_v2[,c(1:4,strIndFilt)]
+ssIDFilt <- vcf_data_v2[ssIndFilt,"ID"]
