@@ -22,11 +22,12 @@ library(rrBLUP)
 # WorkDir <- "C:/Users/ivanv/Desktop/UMN_GIT/GPSoy/SoyGen2/Data"
 # setwd(WorkDir)
 
+source("C:/Users/ivanv/Desktop/UMN_GIT/GPSoy/SoyGen2App/App/GS_Pipeline_Jan_2022_FnsApp.R")
+
 setwd("C:/Users/ivanv/Desktop/UMN_GIT/DataShare_Demo/")
 infileBLUEs <- "Pheno.csv" 
 infileVCF <- "Geno.vcf"
 infileTestSet <- "Target.csv"
-
 
 NUST_Genotypes_VCF <- read.table(infileVCF)
 NUST_BLUEs <- read.csv(infileBLUEs,header=TRUE)
@@ -47,8 +48,7 @@ NUST_Test_Data_Table <- read.csv(infileTestSet)
  NUST_Data_Table_Num <- getMergedData(gt2d_NUST,NUST_BLUEs,testIDs)
  NUST_Data_Table_Num_Filt_1K <- getProcessedData(NUST_Data_Table_Num,trait) 
  
- ####
- 
+####
 ### rTASSEL Test
  
  infileVCF <- "Geno.vcf"
@@ -144,11 +144,28 @@ NUST_Test_Data_Table <- read.csv(infileTestSet)
        PATableComb <- rbind(c("Trait","RR","BB","BL"),PATableComb)
        colnames(PATableComb) <- rep("",ncol(PATableComb))
    }
+   
+   
+ ###MT CVR 
+   
+ gt2d_NUST <- VCFtoDF(infileVCF)  
+ nTraits <- ncol(NUST_BLUEs)-1
+ testIDs <- as.character(NUST_Test_Data_Table[,1])
+
+
+ Pheno <- NUST_BLUEs
+ trait <- c("Oil","Protein")
+ NUST_Data_Table_Num <- getMergedData(gt2d_NUST,NUST_BLUEs,testIDs)
+ NUST_Data_Table_Num_Filt_1K <- getProcessedData(NUST_Data_Table_Num,trait) 
  
  
+ Data_Table_Num_Filt_List <- NUST_Data_Table_Num_Filt_1K
+ nTraits <- 13
  k <- 2
  nIter <- 2
- mtCVR <- getMTCVR(NUST_Data_Table_Num_Filt,trait,nTraits,k,nIter) 
+ mtCVR <- getMTCVR(NUST_Data_Table_Num_Filt_1K,trait,nTraits,k,nIter) 
+ 
+ 
  
 ### 
 ################# 
