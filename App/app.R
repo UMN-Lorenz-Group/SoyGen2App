@@ -6,14 +6,34 @@ if(!require(shinyBS)){
   install.packages("shinyBS")
 }
 
+
+if(!require(shinyjs)){
+  install.packages("shinyjs")
+}
+
 if(!require(shinyWidgets)){
   install.packages("shinyWidgets")
 }
 
-library(shiny) 
 
+if(!require(reticulate)){
+  install.packages("reticulate")
+}
+
+
+library(shiny) 
+library(shinyjs)
 library(shinyBS)
 library(shinyWidgets)
+library(reticulate)
+### 
+
+
+
+reticulate::use_virtualenv("./pyEnv", required = TRUE)
+
+# c:\users\ivanv\documents\.virtualenvs\pyenv\
+
 ### Change source file path to working directory
 
 FN <- paste(getwd(),"/GS_Pipeline_Jan_2022_FnsApp.R",sep="")
@@ -21,12 +41,14 @@ source(FN)
 
 PN <-  paste(getwd(),"/GSPipeline.png",sep="")
 
+
 ## Set the file upload limit to X MB
-options(shiny.maxRequestSize=500*1024^2)
+options(shiny.maxRequestSize=1000*1024^2)
 
 ui <- fluidPage( 
   #theme = bslib::bs_theme(bootswatch = "solar"),
   tags$style(HTML(".message-text { color: red; }")),
+  useShinyjs(),
   
   fluidRow(
     column(4),
@@ -350,7 +372,13 @@ ui <- fluidPage(
                            ),
                            tags$br(),
                            tags$br(),
-                          
+                           conditionalPanel(condition = "input.imputeMet == 'AlphaPlantImpute'",
+                                            fileInput("inHapLib", "Load Haplotype Library (.phase)", accept = ".phase"),
+                                            tags$br(),
+                                            tags$br(),
+                                            tags$br(),
+                           ),
+                           
                            checkboxInput("setGenoImpTas", "Use Imputed Genotypes For Next Steps", TRUE), 
                            tags$br(),
                            downloadButton("ExportImpGenoDF", "Export Imputed Genotypes"),
@@ -368,8 +396,7 @@ ui <- fluidPage(
                                                 "Impute missing genotype scores using rTASSEL (Monier et al. 2021), if you uploaded a raw genotype file or a QC genotype file with missing scores. 
                      Available options include numeric imputation and imputation using LD-K-Nearest Neighbors method are availble. 
                      For LD-KNN imputation set parameters l and K (Money et al. 2015). l corresponds to the number of high LD sites  
-                     and k corresponds to the number of neighboring samples that 
-                     are used to impute scores."))
+                     and k corresponds to the number of neighboring samples that are used to impute scores."))
                                             ),
                                             tags$br(),
                                             # 
@@ -379,9 +406,9 @@ ui <- fluidPage(
                                             # tags$br(),
                                             tags$head(
                                               tags$style(HTML("
+                                           
                                             #messageImpGeno1 {
-                                            
-                                              /*max-height: 1200px; Set maximum height */
+                                             /*max-height: 1200px; Set maximum height */
                                               overflow-y: scroll; /* Enable vertical scrolling */
                                               overflow-x: scroll;  /*Hide horizontal scrolling */
                                               overflow-wrap: anywhere; /* Ensure long words do not cause horizontal scrolling */
@@ -1168,7 +1195,31 @@ server <- function(input,output,session){
                   as.character(TargetTab()[,TargtIDCol()])
                })
   
-
+ 
+  
+  buildLib <- reactive({
+    libFile <- input$inHapLib
+    ext <- tools::file_ext(libFile$datapath)
+    
+    req(libFile)
+    validate(need(ext == "phase", "Please upload a .phase file"))
+    
+    read.table(libFile$datapath, header = input$header)
+  })
+  
+  observeEvent(input$inHapLib,{ 
+     shinyjs::enable("impute_APIdata")
+   
+     write.table(buildLib(),"lib.phase",quote=FALSE,sep=" ",row.names=FALSE,col.names=FALSE)
+     
+     
+     # createAlert(session, "alert", "alert1", title = "Process Completed",
+     #            content = "The build file has loaded. You can now impute", style = "success", append = FALSE)
+     # 
+    
+  })
+  
+  
   
 #### Target Table 
 
@@ -1463,7 +1514,7 @@ output$messageGenoFilt1 <- renderText({
   })
   
   ### Test output 
-  # Periodically read the file and update the UI
+  ## Periodically read the file and update the UI
   
   output$messageImpGeno1 <- renderText({
     
@@ -1512,14 +1563,12 @@ output$messageGenoFilt1 <- renderText({
   observeEvent(input$imputeMet,{ 
     
     if(impMethod()=="AlphaPlantImpute"){ 
+      # 
       
-      library(reticulate)
-      reticulate::virtualenv_create("pyEnv", python = "3.10.0")
-      reticulate::virtualenv_install("pyEnv",c("numpy","pandas"))
-      reticulate::use_virtualenv("pyEnv", required = TRUE)
       reticulate::py_run_string("import sys")
       
-      py_module_available("alphaplantimpute2")
+      API_exists <- py_module_available("alphaplantimpute2")
+      print(paste("API Available",API_exists,sep=" "))
       
       output$APIUI <- renderUI({
        
@@ -1541,7 +1590,7 @@ output$messageGenoFilt1 <- renderText({
                    numericInput(inputId="nHap",label = "Enter number of haplotypes",value=20,min=2,max=100),
             ),
             column(7),column(width=5,
-                             tags$strong(("Input founders file for pedigree based imputation")))
+                             tags$strong(("Input founders file for pedigree based imputation. No need to load any file for population based imputation.")))
           ),
           tags$br(),
           
@@ -1568,7 +1617,7 @@ output$messageGenoFilt1 <- renderText({
                              actionButton("build_library", "Build Library"),
             ),
             column(7),column(width=3,
-                             actionButton("impute_APIdata", "Impute Data")
+                             bsButton("impute_APIdata",label="Impute Data",style="primary",disabled=TRUE),
             ),
           ),   
           tags$br(),
@@ -1662,17 +1711,18 @@ output$messageGenoFilt1 <- renderText({
   HDthresh <- reactive(input$HDthresh)
   
   observeEvent(input$build_library,{
-    
+    #browser()
     # Extract necessary input values
-    
     # Path for the temporary file
     temp_file(tempfile())
     
     # Start the process in a separate R process
     rProcess <- callr::r_bg(function(nHap, nSampRnds, HDthresh, temp_file) {
       library(reticulate)
-      sys <- import("sys")
-      api2 <- import("alphaplantimpute2.alphaplantimpute2")
+      reticulate::use_virtualenv("./pyEnv", required = TRUE)
+    
+      sys <- reticulate::import("sys")
+      api2 <- reticulate::import("alphaplantimpute2.alphaplantimpute2")
       
       sys$argv <- c('alphaplantimpute2', '-createlib', '-out', 'lib',
                     '-genotypes', 'current_GenoTable.genotypes',
@@ -1707,7 +1757,13 @@ output$messageGenoFilt1 <- renderText({
         if (file.exists(temp_file())) {
           lines <- readLines(temp_file(), warn = FALSE)
           txt <- paste(lines,collapse="\n")
-          return(paste0(txt,"\n","Build Completed"))
+          shinyjs::enable("impute_APIdata")
+          # createAlert(session, "alert", "alert1", title = "Process Completed",
+          #             content = "The build process is complete. You can now impute", style = "success", append = FALSE)
+          # 
+          return(paste0(txt,"\n","Build Completed",collapse=" "))
+          
+          
         }else {
           return("Waiting for output...")
         }
@@ -1727,6 +1783,7 @@ output$messageGenoFilt1 <- renderText({
   rProcess2 <- eventReactive(input$impute_APIdata,{
     
     library(reticulate)
+    reticulate::use_virtualenv("./pyEnv", required = TRUE)
     sys <- import("sys")
     api2 <- import("alphaplantimpute2.alphaplantimpute2")
     
@@ -1741,6 +1798,7 @@ output$messageGenoFilt1 <- renderText({
     # Start the process in a separate R process
     callr::r_bg(function(founder_file,temp_file){
       library(reticulate)
+      reticulate::use_virtualenv("./pyEnv", required = TRUE)
       sys <- import("sys")
       api2 <- import("alphaplantimpute2.alphaplantimpute2")
       
@@ -2876,7 +2934,8 @@ output$envPlot <- renderPlot({
 
 
   
-  # Reactive expression to check process status and read temp file
+# Reactive expression to check process status and read temp file
+
   processStatus6 <- reactive({
     invalidateLater(1000, session) # Update every second
     
@@ -2924,6 +2983,7 @@ output$envPlot <- renderPlot({
   observeEvent(input$infileBLUEsME,{
     MECV_Out_List(MECV_Out_List_Init())
   })
+  
 ######
   
   output$emCVRST <- renderTable({

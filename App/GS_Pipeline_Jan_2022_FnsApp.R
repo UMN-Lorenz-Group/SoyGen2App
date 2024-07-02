@@ -82,6 +82,7 @@ if(!require("gplots", quietly = TRUE)){
    }
    library(reticulate)
 
+ 
    
  #   if(!require("rTASSEL", quietly = TRUE)){
 #	 devtools::install_bitbucket(
@@ -95,10 +96,22 @@ if(!require("gplots", quietly = TRUE)){
   
 #dyn.load('/usr/lib/jvm/java-17-openjdk-amd64/lib/server/libjvm.so')
 
+ if(!require("rJava", quietly = TRUE)){  
+ 
+   install.packages("rJava")
+  }
+
+
+ options(java.parameters = "-Xmx30g")
+
+
 if(file.exists("/usr/lib/jvm/java-17-openjdk-amd64/lib/server/libjvm.so")){
    
    dyn.load('/usr/lib/jvm/java-17-openjdk-amd64/lib/server/libjvm.so')
 }
+
+
+
 
  library(rJava)
 # if(!require("rTASSEL", quietly = TRUE)){
@@ -118,17 +131,25 @@ if(file.exists("/usr/lib/jvm/java-17-openjdk-amd64/lib/server/libjvm.so")){
   
 if(!require("qtl", quietly = TRUE)){
     install.packages("qtl")
-    library(qtl)
+    
  }
+ library(qtl)
  if(!require("PopVar", quietly = TRUE)){
   install.packages("PopVar")
-  library(PopVar)
+  
  }
+ library(PopVar)
  if(!require("tibble", quietly = TRUE)){
   install.packages("tibble")
-  library(tibble)
+  
  }
   
+ library(tibble)
+ 
+ if(!require("EnvRtype", quietly = TRUE)){
+  devtools::install_github("allogamous/EnvRtype")
+ }
+ library(EnvRtype)
   
 ###########################################################################################  
   
@@ -231,7 +252,7 @@ VCFtoDF_NAM <- function(infile){
   return(gt.simple)
 }
  
-
+####
 
 
 ######
@@ -538,10 +559,8 @@ getMergedData <- function(gt2d,Pheno,testIDs){
 	Genotypes_Table_Mod_Num_Filt<- cbind(rownames(Genotypes_Table_Mod_Num_Filt0),Genotypes_Table_Mod_Num_Filt0)
    }
 
-
-### Filtered Genotype Table  
-### Separate train and test sets
-
+### Filtered Genotype Table 
+	
 	Test_Genotypes_Table_Mod_Num_Filt <- NULL
 #### 
     if(!is.null(TestIDs)){
@@ -552,12 +571,11 @@ getMergedData <- function(gt2d,Pheno,testIDs){
 	  trainIndices <- which(as.character(Genotypes_Table_Mod_Num_Filt[,1]) %in% TrainIDs)
 	  Test_Genotypes_Table_Mod_Num_Filt <- Genotypes_Table_Mod_Num_Filt[testIndices,]
       Train_Genotypes_Table_Mod_Num_Filt <- Genotypes_Table_Mod_Num_Filt[trainIndices,]
-   }else if(is.null(TestIDs)){ 
+    }
+  
+   if(is.null(TestIDs) | is.null(Test_Genotypes_Table_Mod_Num_Filt)){ 
      
-	  StrainIDs <- as.character(Genotypes_Table_Mod_Num_Filt[,1])
-	  TrainIDs <- StrainIDs
-	  trainIndices <- which(as.character(Genotypes_Table_Mod_Num_Filt[,1]) %in% TrainIDs)
-	  Train_Genotypes_Table_Mod_Num_Filt <- Genotypes_Table_Mod_Num_Filt[trainIndices,]
+	  print("Load Target File")
    }
   
 ######### Data Prep for GP model training
@@ -570,16 +588,16 @@ getMergedData <- function(gt2d,Pheno,testIDs){
 
 ## Remove MG from PhenoIDs
 	if(length(grep("MG",as.character(StrainID))) >1){
-   	StrainIDMod <- gsub("MG.*","",as.character(StrainID))
-	}else if(length(grep("MG",as.character(StrainID))) <1){
-		StrainIDMod <- as.character(StrainID)
-  }	
+		  
+		  StrainIDMod <- gsub("MG.*","",as.character(StrainID))
+		 
+	}
 
-  if(length(grep("MG",as.character(StrainID))) <1){
+    if(length(grep("MG",as.character(StrainID))) <1){
 			StrainIDMod <- as.character(StrainID)
-  }	
+    }	
 
-  Pheno1 <- cbind(Pheno,StrainIDMod)
+    Pheno1 <- cbind(Pheno,StrainIDMod)
 	Pheno1[,1] <- StrainID
 	colnames(Pheno1)[ncol(Pheno1)] <- "StrainID"
 				
@@ -3893,6 +3911,8 @@ getMergedDataME <- function(phData,genoImp,TargetIDs){
 
 
 
+
+
 getPhenoDistbnPlots <- function(DT_1_Filt_List,TraitME,nTrt){
 
 ###### Distribution of Trait BLUEs & BLUPs across locations 
@@ -3901,8 +3921,6 @@ getPhenoDistbnPlots <- function(DT_1_Filt_List,TraitME,nTrt){
 	trait <- TraitME
 #### Trait BLUPs
  
-
-	
 		 
 	DT_2B <- DT_1_Filt
 	DT_2B$Loc <- as.factor(DT_2B$Loc)
@@ -4767,7 +4785,7 @@ getOutTab_ME_CV <- function(ME_Out_CV_Trt,CVMet,Traits){
  
 	if(CVMet =="CV1"){
 	
-	 ## A fraction of the strains are removed from all locations, so n corresponds the total no of unique strains 
+   ## A fraction of the strains are removed from all locations, so n corresponds the total no of unique strains 
 	
 		  n <- length(unique(DT_2B[,"gid"]))
 		  
@@ -4793,16 +4811,17 @@ getOutTab_ME_CV <- function(ME_Out_CV_Trt,CVMet,Traits){
 			 Test_Pred <- list()
 			 Y_Tst <- list() 
 			 
+			 trn_List <- list()
 			 
 			 
 			 
 			 for(nF in 1:k){
 			   k_List[[nF]] <- sample(tot,nK)
-			   tot <- setdiff(tot,k_List[[nF]])
+			   trn_List[[nF]] <- setdiff(tot,k_List[[nF]])
 			 }
 			 
 			 for(nF in 1:k){ 
-			   trIndices_List[[nF]] <- unlist(k_List[-nF])
+			   trIndices_List[[nF]] <- unlist(trn_List[[nF]])
 			   tstIndices_List[[nF]] <- k_List[[nF]]
 			   
 			   testIndices <- tstIndices_List[[nF]]
@@ -4844,14 +4863,16 @@ getOutTab_ME_CV <- function(ME_Out_CV_Trt,CVMet,Traits){
 			 trIndices_List <- list()
 			 tstIndices_List <- list()
 			 
+			 trn_List <- list()
+			 
 			 for(nF in 1:k){
 			   k_List[[nF]] <- sample(tot,nK)
-			   tot <- setdiff(tot,k_List[[nF]])
+			   trn_List[[nF]] <- setdiff(tot,k_List[[nF]])
 			 }
 			
 			 
 			 for(nF in 1:k){ 
-			   trIndices_List[[nF]] <- unlist(k_List[-nF])
+			   trIndices_List[[nF]] <- unlist(trn_List[[nF]])
 			   tstIndices_List[[nF]] <- k_List[[nF]]
 			   
 			   tstIndices <- tstIndices_List[[nF]]
