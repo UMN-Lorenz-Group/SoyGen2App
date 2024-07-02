@@ -1,8 +1,8 @@
 ## Ignore Data
-./App/Data/
+App/Data/
 
 ## Ignore Misc
-./App/Misc/
+App/Misc/
 
 ## IGnore GSOld SCripts
-./GSPipeline_OldScripts/
+GSPipeline_OldScripts/
