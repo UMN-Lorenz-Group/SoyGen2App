@@ -1,0 +1,57 @@
+GS Pipeline: 
+
+Genotype & Phenotype Data Management: 
+
+GIGWA - Genotype Investigator for Genome Wide Analyses  & PRISM database
+
+i)  Visualization of genotypic information: TASSEL and Integrated Genome Viewer (IGV) (Diversity Analyses)
+
+ii) a) Filtering R script 
+
+		  &
+	
+    b) imputation - scattered and rare missing values imputation vs high to low density imputation
+	
+       for scattered and rare missing values - beagle & TASSEL 
+
+       for high to low density imputation - PHG, alphaplantImpute, Expectation based imputation method
+
+iii) Training population optimization 
+
+iv) prediction (Genomic selection R packages) (Accuracy) 
+    and 
+	selection decision
+
+
+UNL 
+
+1K SNPs David Hyten , 
+
+Agriplex
+
+6K SNPS Illumina array data UMN genomics center
+
+Gencove - Skim seq + imputation 
+        - ? ? 
+		
+		
+		What genotyping platform to use? 
+		
+		                    	Pros    	                          cons	
+		Illumina 50K SNP    Good data, clean , high density               $$ 
+		
+		Illumina 6k         clean data, widely used 			  $$ low density
+
+
+                Targeted 1K GBS(MIPS)                                         Low density, still some missing data
+		 
+		GBS                cheap, generally clean 
+
+        					 High density	      Lots of missing data, requires lot of imputation  
+		  
+		skim seq +imputation  HD 			                 $$$ Complex bioinfo unless service used 
+		  
+		  
+		  
+		  Optimal gain/unit cost..  
+		  

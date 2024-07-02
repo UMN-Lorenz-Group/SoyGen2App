@@ -1,0 +1,89 @@
+
+
+singularity pull docker://rocker/shiny-verse
+singularity exec shiny-verse_latest.sif 
+
+singularity shell shiny-verse_latest.sif ls 
+
+singularity build Soygen2-shiny docker://rocker/shiny-verse
+
+singularity build shiny-hist docker://rocker/shiny-verse
+
+singularity run shiny-hist 3838:3838 
+
+
+##########################################################################
+#docker run --rm -p 3838:3838 shiny-hist  
+
+singularity remote login 
+
+singularity build --remote shiny-hist.sif shiny-hist.def 
+
+singularity key newpair
+
+singularity sign shiny-hist.sif 
+
+singularity verify shiny-hist.sif 
+
+
+
+ ${SINGULARITY_ROOTFS} 
+ 
+ 
+ ### SoyGen2
+ 
+singularity remote login 
+
+singularity build --remote shiny-soygen2.sif shiny-soygen2.def 
+
+singularity key newpair
+
+singularity sign shiny-hist.sif 
+
+singularity verify shiny-hist.sif 
+ singularity build --remote shiny-hist.sif shiny-hist.def
+
+
+
+### 
+
+singularity build --remote --sandbox shiny-soygen2/ docker://rocker/shiny-verse 
+
+singularity build --remote soygen2.sif ./shiny-soygen2
+
+singularity shell --writable shiny-soygen2 
+
+/opt/shiny-server/bin/sspasswd /etc/shiny-server/passwd vramasub
+
+sed -i 's/3838/134.84.0.1:3838/g' /etc/shiny-server/shiny-server.conf
+
+singularity build --remote shiny ./shiny-soygen2/  
+
+
+128.101.190.234 
+
+128.101.190.234 
+
+
+singularity build --remote ./shiny-soygen2/ shiny-hist.sif shiny-hist.def
+
+# log_dir /var/log/shiny-server;
+ 
+ 
+ singularity> 
+ 
+ singularity> cp *.Rproj  /srv/shiny-server/
+ singularity> cp *.R /srv/shiny-server/  
+ singularity> cp Data /srv/shiny-server/data
+	
+ singularity> chown -R shiny:shiny /srv/shiny-server
+ singularity> cp shiny-server.sh /usr/bin/shiny-server.sh
+ singularity> chmod  a+x /usr/bin/shiny-server.sh
+ 
+ Rscript -e 'install.packages(c("rrBLUP","bWGR","foreach","doParallel","NAM","vcfR","STPGA","dplyr"),dependencies = TRUE, repos="http://cran.rstudio.com/")'
+ 
+ ./usr/bin/shiny-server.sh 
+
+ 
+ 
+ 
