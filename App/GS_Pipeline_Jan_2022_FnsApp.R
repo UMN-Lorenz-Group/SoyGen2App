@@ -1,155 +1,163 @@
 ##### SoygenGS App Functions
+# renv::init()
+# renv::use_python()
 
- if(!require("dplyr", quietly = TRUE)){
-    install.packages("dplyr")
- }
-  library(dplyr) 
 
- if(!require("rrBLUP", quietly = TRUE)){
-     install.packages("rrBLUP")
- }
-  library(rrBLUP)
+ # if(!require("dplyr", quietly = TRUE)){
+    # install.packages("dplyr")
+ # }
+  # library(dplyr) 
 
-if(!require("vcfR", quietly = TRUE)){
-    install.packages("vcfR")
- }
-  library(vcfR)
+ # if(!require("rrBLUP", quietly = TRUE)){
+     # install.packages("rrBLUP")
+ # }
+  # library(rrBLUP)
 
- 
-if(!require("NAM", quietly = TRUE)){
-     install.packages("NAM")
- }
-  library(NAM)
-
-if(!require("bWGR", quietly = TRUE)){
-     install.packages("bWGR")
- }
- library(bWGR)
-
- if(!require("STPGA", quietly = TRUE)){
-     install.packages("STPGA")
- }
-  library(STPGA)
-if(!require("BGLR", quietly = TRUE)){
-     install.packages("BGLR")
- }
-  library(BGLR)
+# if(!require("vcfR", quietly = TRUE)){
+    # install.packages("vcfR")
+ # }
+  # library(vcfR)
 
  
-if(!require("reshape2", quietly = TRUE)){
-     install.packages("reshape2")
- }
-  library(reshape2)
+# if(!require("NAM", quietly = TRUE)){
+     # install.packages("NAM")
+ # }
+  # library(NAM)
+
+# if(!require("bWGR", quietly = TRUE)){
+     # install.packages("bWGR")
+ # }
+ # library(bWGR)
+
+ # if(!require("STPGA", quietly = TRUE)){
+     # install.packages("STPGA")
+ # }
+  # library(STPGA)
+# if(!require("BGLR", quietly = TRUE)){
+     # install.packages("BGLR")
+ # }
+  # library(BGLR)
+
+ 
+# if(!require("reshape2", quietly = TRUE)){
+     # install.packages("reshape2")
+ # }
+  # library(reshape2)
   
  
  
-if(!require("gplots", quietly = TRUE)){
-     install.packages("gplots")
- } 
+# if(!require("gplots", quietly = TRUE)){
+     # install.packages("gplots")
+ # } 
   
-  library(gplots)
+  # library(gplots)
 
   
-#if (!require("BiocManager", quietly = TRUE))
- # install.packages("BiocManager")
- # BiocManager::install(version = "3.14")
+# #if (!require("BiocManager", quietly = TRUE))
+ # # install.packages("BiocManager")
+ # # BiocManager::install(version = "3.14")
  
- # options(repos = BiocManager::repositories())
-  #suppressPackageStartupMessages(library(BiocManager))
+ # # options(repos = BiocManager::repositories())
+  # #suppressPackageStartupMessages(library(BiocManager))
    
  
-  options(rsconnect.http.trace = TRUE)
+  # options(rsconnect.http.trace = TRUE)
   
-   if(!require("devtools", quietly = TRUE)){
-     install.packages("devtools")
-   }
-   library(devtools)
+   # if(!require("devtools", quietly = TRUE)){
+     # install.packages("devtools")
+   # }
+   # library(devtools)
    
    
-   if(!require("sommer", quietly = TRUE)){
-     library(devtools); install_github('covaruber/sommer')
-   }
-   suppressPackageStartupMessages(library(sommer))
+   # if(!require("sommer", quietly = TRUE)){
+     # library(devtools); install_github('covaruber/sommer')
+   # }
+   # suppressPackageStartupMessages(library(sommer))
    
-   if(!require("ggplot2", quietly = TRUE)){
-     install.packages("ggplot2")
-   }
-   library(ggplot2)
+   # if(!require("ggplot2", quietly = TRUE)){
+     # install.packages("ggplot2")
+   # }
+   # library(ggplot2)
    
    
-   if(!require("reticulate", quietly = TRUE)){
-     install.packages("reticulate")
-   }
-   library(reticulate)
+   # if(!require("reticulate", quietly = TRUE)){
+     # install.packages("reticulate")
+   # }
+   # library(reticulate)
 
  
    
- #   if(!require("rTASSEL", quietly = TRUE)){
-#	 devtools::install_bitbucket(
-#		repo = "bucklerlab/rTASSEL",
-#		host = "bitbucket.org",
-#		ref = "master",
-#		build_vignettes = FALSE,
-#		INSTALL_opts = "--no-multiarch"
-#	 ) 
-# } 
+ # #   if(!require("rTASSEL", quietly = TRUE)){
+# #	 devtools::install_bitbucket(
+# #		repo = "bucklerlab/rTASSEL",
+# #		host = "bitbucket.org",
+# #		ref = "master",
+# #		build_vignettes = FALSE,
+# #		INSTALL_opts = "--no-multiarch"
+# #	 ) 
+# # } 
   
-#dyn.load('/usr/lib/jvm/java-17-openjdk-amd64/lib/server/libjvm.so')
+# #dyn.load('/usr/lib/jvm/java-17-openjdk-amd64/lib/server/libjvm.so')
 
- if(!require("rJava", quietly = TRUE)){  
+ # if(!require("rJava", quietly = TRUE)){  
  
-   install.packages("rJava")
-  }
+   # install.packages("rJava")
+  # }
 
 
- options(java.parameters = "-Xmx30g")
+ # options(java.parameters = "-Xmx30g")
 
 
-if(file.exists("/usr/lib/jvm/java-17-openjdk-amd64/lib/server/libjvm.so")){
+# if(file.exists("/usr/lib/jvm/java-17-openjdk-amd64/lib/server/libjvm.so")){
    
-   dyn.load('/usr/lib/jvm/java-17-openjdk-amd64/lib/server/libjvm.so')
-}
+   # dyn.load('/usr/lib/jvm/java-17-openjdk-amd64/lib/server/libjvm.so')
+# }
 
 
 
 
- library(rJava)
-# if(!require("rTASSEL", quietly = TRUE)){
-      # devtools::install_bitbucket(
-		# repo = "bucklerlab/rTASSEL",
-	 	# ref = "master",
-	 	# build_vignettes = FALSE
-      # ) 
-   # } 
+ # library(rJava)
+# # if(!require("rTASSEL", quietly = TRUE)){
+      # # devtools::install_bitbucket(
+		# # repo = "bucklerlab/rTASSEL",
+	 	# # ref = "master",
+	 	# # build_vignettes = FALSE
+      # # ) 
+   # # } 
    
- if(!require("rTASSEL", quietly = TRUE)){  
-   devtools::install_github("maize-genetics/rTASSEL")
-  }
- library(rTASSEL)
+ # if(!require("rTASSEL", quietly = TRUE)){  
+   # devtools::install_github("maize-genetics/rTASSEL")
+  # }
+ # library(rTASSEL)
    
   
-  
-if(!require("qtl", quietly = TRUE)){
-    install.packages("qtl")
+# if(!require("qtl", quietly = TRUE)){
+    # install.packages("qtl")
     
- }
- library(qtl)
- if(!require("PopVar", quietly = TRUE)){
-  install.packages("PopVar")
+ # }
+ # library(qtl)
+ # if(!require("PopVar", quietly = TRUE)){
+  # install.packages("PopVar")
   
- }
- library(PopVar)
- if(!require("tibble", quietly = TRUE)){
-  install.packages("tibble")
+ # }
+ # library(PopVar)
+ # if(!require("tibble", quietly = TRUE)){
+  # install.packages("tibble")
   
- }
+ # }
   
- library(tibble)
+ # library(tibble)
  
- if(!require("EnvRtype", quietly = TRUE)){
-  devtools::install_github("allogamous/EnvRtype")
- }
- library(EnvRtype)
+ # if(!require("EnvRtype", quietly = TRUE)){
+  # devtools::install_github("allogamous/EnvRtype")
+ # }
+ # library(EnvRtype) 
+ 
+# library(renv)
+# # Automatically load all installed packages
+# installed_packages <- renv::dependencies()$Package
+# lapply(installed_packages, library, character.only = TRUE)
+ 
   
 ###########################################################################################  
   
@@ -889,6 +897,7 @@ getGenoTas_to_DF_Old <- function(tasGeno){
 }
 
 
+
 getGenoTas_to_DF <- function(tasGeno){
 
     tasGenoMat <- as.matrix(tasGeno)
@@ -899,8 +908,8 @@ getGenoTas_to_DF <- function(tasGeno){
     ### Extract Table Report DF 
 	
 	tableReport <- rJava::new(
-    rJava::J("net.maizegenetics.dna.map.PositionListTableReport"),
-    tasGeno %>% rTASSEL:::getPositionList()) %>% 
+		rJava::J("net.maizegenetics.dna.map.PositionListTableReport"),
+		tasGeno %>% rTASSEL:::getPositionList()) %>% 
     rTASSEL:::tableReportToDF() %>% as.data.frame()
       	
 	varSplit <- strsplit(tableReport[,"VARIANT"],"/")
@@ -2142,7 +2151,7 @@ getMTCVR <- function(Data_Table_Num_Filt_List,trait,nTraits,k,nIter){
 			A.Tot <- A.mat(X)
 			rownames(A.Tot) <- rownames(X) 
 			colnames(A.Tot) <- rownames(X)
-			fm3 <- SOMMER::mmer(as.formula(paste("cbind(",paste(trait,collapse=","),")~1",sep="")),
+			fm3 <- sommer::mmer(as.formula(paste("cbind(",paste(trait,collapse=","),")~1",sep="")),
             random=~vs(id,Gu=A.Tot),
             rcov=~units,
             data=yNA_DF,verbose = TRUE)

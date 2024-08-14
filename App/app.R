@@ -21,18 +21,28 @@ if(!require(reticulate)){
 }
 
 
+if(!require(renv)){
+  install.packages("renv")
+}
+
+
 library(shiny) 
 library(shinyjs)
 library(shinyBS)
 library(shinyWidgets)
-library(reticulate)
-### 
+library(reticulate) 
+library(renv)
+
+#renv::activate()
+
+options(java.parameters = "-Xmx30g")
+installed_packages <- renv::dependencies()$Package
+lapply(installed_packages, library, character.only = TRUE)
 
 
-
-reticulate::use_virtualenv("./pyEnv", required = TRUE)
-
-# c:\users\ivanv\documents\.virtualenvs\pyenv\
+# reticulate::use_virtualenv("./pyEnv", required = TRUE)
+# reticulate::py_config() 
+#setwd("C:/Users/ivanv/Desktop/UMN_GIT/GPSoy/SoyGen2App/App/")
 
 ### Change source file path to working directory
 
@@ -41,6 +51,10 @@ source(FN)
 
 PN <-  paste(getwd(),"/GSPipeline.png",sep="")
 
+####
+
+
+reticulate::use_virtualenv("./renv/python/virtualenvs/renv-python-3.12", required = TRUE)
 
 ## Set the file upload limit to X MB
 options(shiny.maxRequestSize=1000*1024^2)
@@ -1195,8 +1209,6 @@ server <- function(input,output,session){
                   as.character(TargetTab()[,TargtIDCol()])
                })
   
- 
-  
   buildLib <- reactive({
     libFile <- input$inHapLib
     ext <- tools::file_ext(libFile$datapath)
@@ -1204,7 +1216,7 @@ server <- function(input,output,session){
     req(libFile)
     validate(need(ext == "phase", "Please upload a .phase file"))
     
-    read.table(libFile$datapath, header = input$header)
+    read.table(libFile$datapath, header = FALSE)
   })
   
   observeEvent(input$inHapLib,{ 
@@ -1719,8 +1731,9 @@ output$messageGenoFilt1 <- renderText({
     # Start the process in a separate R process
     rProcess <- callr::r_bg(function(nHap, nSampRnds, HDthresh, temp_file) {
       library(reticulate)
-      reticulate::use_virtualenv("./pyEnv", required = TRUE)
-    
+      #reticulate::use_virtualenv("./pyEnv", required = TRUE)
+      reticulate::use_virtualenv("./renv/python/virtualenvs/renv-python-3.12", required = TRUE)
+      
       sys <- reticulate::import("sys")
       api2 <- reticulate::import("alphaplantimpute2.alphaplantimpute2")
       
@@ -1731,13 +1744,21 @@ output$messageGenoFilt1 <- renderText({
                     '-hd_threshold', as.character(HDthresh),
                     '-seed', '42')
       
-      
       sink(temp_file)
       api2$main()
       sink()
     }, args = list(nHap(), nSampRnds(), HDthresh(), temp_file()), stdout = temp_file(), stderr = temp_file())
     
-    ### Test output 
+### Test output 
+    
+    on.exit({
+      if (exists("rProcess") && rProcess$is_alive()) {
+        rProcess$kill()
+      }
+    }, add = TRUE)
+    
+    
+    ###
     
     processAlive <- reactive(rProcess$is_alive())
     # Periodically read the file and update the UI
@@ -1758,6 +1779,7 @@ output$messageGenoFilt1 <- renderText({
           lines <- readLines(temp_file(), warn = FALSE)
           txt <- paste(lines,collapse="\n")
           shinyjs::enable("impute_APIdata")
+          
           # createAlert(session, "alert", "alert1", title = "Process Completed",
           #             content = "The build process is complete. You can now impute", style = "success", append = FALSE)
           # 
@@ -1783,7 +1805,8 @@ output$messageGenoFilt1 <- renderText({
   rProcess2 <- eventReactive(input$impute_APIdata,{
     
     library(reticulate)
-    reticulate::use_virtualenv("./pyEnv", required = TRUE)
+    #reticulate::use_virtualenv("./pyEnv", required = TRUE)
+    reticulate::use_virtualenv("./renv/python/virtualenvs/renv-python-3.12", required = TRUE)
     sys <- import("sys")
     api2 <- import("alphaplantimpute2.alphaplantimpute2")
     
@@ -3118,8 +3141,7 @@ output$emCVRME <- renderTable({
       for(nSelT in 1:nSelTraits()){
         i <- reactive(nSelT)
         outputDF <-  withProgress(message = 'Running Computations', value = 0, {
-          getRankedPredictedValues(predictionData(),nTraits(),unlist(Trait())[i()],GPModelST(),fixedX=Fixed(),fixedData=fixedData_List(),optTS())})
-        
+           getRankedPredictedValues(predictionData(),nTraits(),unlist(Trait())[i()],GPModelST(),fixedX=Fixed(),fixedData=fixedData_List(),optTS())})
         outputDFComb <- cbind(outputDFComb,outputDF[,2])
       } 
       outputDFComb <- cbind(outputDF[,1],outputDFComb,outputDF[,3])
@@ -3217,7 +3239,9 @@ output$emCVRME <- renderTable({
 ## Render Table for ST  
   
   output$Ranked_Lines_for_SelectionST <- renderTable({
-    as.data.frame(outputList()[1:20,])
+    if(nSelTraits()>=1){
+     as.data.frame(outputList()[1:20,])
+    }  
   })
   
   ## Render Table for MT
