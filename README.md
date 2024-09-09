@@ -5,7 +5,7 @@
 ### The recommended method to run the application is via the docker container 
 #### 1) Install docker engine in your system and make sure that is running 
 #### 2) docker pull ivanvishnu/soygen2:updated
-#### 3) 
+#### 3) Run docker 
 #### &nbsp; &nbsp; a) On gitbash: winpty docker run -d -p 3838:3838 ivanvishnu/soygen2:updated 
 #### &nbsp; &nbsp;  b) On other systems: docker run -d -p 3838:3838 ivanvishnu/soygen2:updated 
 #### 4) Access through the local link: http://localhost:3838/
